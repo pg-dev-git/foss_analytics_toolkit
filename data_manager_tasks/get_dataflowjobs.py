@@ -7,9 +7,9 @@ from data_manager_tasks.get_dataflowjobs_list import *
 def get_dataflowsJobs(access_token):
     prGreen("\r\n" + "getting dataflows jobs..." + "\r\n")
     headers = {
-        'Authorization': "Bearer {}".format(access_token)
+        'Authorization': "Bearer {}".format(access_token,server_id)
         }
-    resp = requests.get('https://na156.salesforce.com/services/data/v51.0/wave/dataflowjobs', headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs'.format(server_id), headers=headers)
     #print(resp.json())
     #Print PrettyJSON in Terminal
 
