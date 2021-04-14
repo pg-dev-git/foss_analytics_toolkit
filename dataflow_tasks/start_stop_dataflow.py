@@ -6,7 +6,7 @@ import os
 
 d_job_id = "ffghd234dffhd23"
 
-def start_dataflow(access_token,dataflow_id_):
+def start_dataflow(access_token,dataflow_id_,server_id):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -17,7 +17,7 @@ def start_dataflow(access_token,dataflow_id_):
 
         payload = json.dumps(payload)
 
-        resp = requests.post('https://na156.salesforce.com/services/data/v51.0/wave/dataflowjobs', headers=headers, data=payload)
+        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs'.format(server_id), headers=headers, data=payload)
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -28,7 +28,7 @@ def start_dataflow(access_token,dataflow_id_):
 
         prGreen("\r\n" + "Dataflow started. Check the Data Manager for more details." + "\r\n")
 
-def stop_dataflow(access_token,dataflow_id_):
+def stop_dataflow(access_token,dataflow_id_,server_id):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -41,6 +41,6 @@ def stop_dataflow(access_token,dataflow_id_):
 
         print(d_job_id)
 
-        resp = requests.patch('https://na156.salesforce.com/services/data/v51.0/wave/dataflowjobs/{}'.format(d_job_id), headers=headers, data=payload)
+        resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs/{}'.format(server_id,d_job_id), headers=headers, data=payload)
 
         prGreen("\r\n" + "Dataflow stopped. Check the Data Manager for more details." + "\r\n")

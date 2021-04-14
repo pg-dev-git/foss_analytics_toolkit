@@ -25,6 +25,7 @@ if __name__ == "__main__":
     prGreen("                                                                       v0.1-beta")
     print("\r\n")
 
+    #Beta Lock - Start
     current_time = datetime.datetime.now()
 
     try:
@@ -36,6 +37,7 @@ if __name__ == "__main__":
     except ValueError:
         print("\r\n" + "The beta test period has expired." + "\r\n")
         quit()
+    #Beta Lock - End
 
     flag = "N"
     sfdc_login.setup_ini(flag)
@@ -67,10 +69,10 @@ if __name__ == "__main__":
             get_datasets(access_token,server_id)
 
         if user_input == "2":
-            get_dashboards(access_token)
+            get_dashboards(access_token,server_id)
 
         if user_input == "3":
-            get_dataflows(access_token)
+            get_dataflows(access_token,server_id)
 
         if user_input == "4":
             get_dataflowsJobs(access_token)

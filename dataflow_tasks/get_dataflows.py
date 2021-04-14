@@ -8,12 +8,12 @@ from dataflow_tasks.get_dataflow_history import *
 from dataflow_tasks.backup_current import *
 
 
-def get_dataflows(access_token):
+def get_dataflows(access_token,server_id):
     prGreen("\r\n" + "getting dataflows list..." + "\r\n")
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://na156.salesforce.com/services/data/v51.0/wave/dataflows', headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dataflows'.format(server_id), headers=headers)
     #print(resp.json())
 
     #Print PrettyJSON in Terminal
@@ -62,19 +62,19 @@ def get_dataflows(access_token):
                 user_input = input("Enter your selection: ")
 
                 if user_input == "1":
-                    start_dataflow(access_token,dataflow_id_)
+                    start_dataflow(access_token,dataflow_id_,server_id)
 
                 if user_input == "2":
-                    stop_dataflow(access_token,dataflow_id_)
+                    stop_dataflow(access_token,dataflow_id_,server_id)
 
                 if user_input == "3":
-                    get_dataflow_history(access_token,dataflow_his_url,dataflow_id_)
+                    get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id)
 
                 if user_input == "4":
-                    backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_)
+                    backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id)
 
-                if user_input == "5":
-                    get_dataset_details(access_token)
+                #if user_input == "5":
+                #    get_dataset_details(access_token,server_id)
 
                 check_token = input("Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
 

@@ -6,12 +6,12 @@ import os
 import time
 
 
-def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_):
+def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
     headers = {
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
         }
-    resp = requests.get('https://na156.salesforce.com{}'.format(dataflow_his_url), headers=headers)
+    resp = requests.get('https://{}.salesforce.com{}'.format(server_id,dataflow_his_url), headers=headers)
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -74,7 +74,7 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_):
 
                         payload = json.dumps(payload)
 
-                        resp = requests.put('https://na156.salesforce.com/services/data/v51.0/wave/dataflows/{}'.format(dataflow_id_), headers=headers, data=payload)
+                        resp = requests.put('https://{}.salesforce.com/services/data/v51.0/wave/dataflows/{}'.format(server_id,dataflow_id_), headers=headers, data=payload)
 
                         prYellow("\r\n" + "Dataflow version replaced." + "\r\n")
                         time.sleep(2)

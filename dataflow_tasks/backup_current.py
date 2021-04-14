@@ -5,7 +5,7 @@ from sfdc_login import *
 import os
 import time
 
-def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_):
+def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id):
 
     #os.chdir("..")
 
@@ -27,7 +27,7 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
         }
-    resp = requests.get('https://na156.salesforce.com{}'.format(dataflow_his_url), headers=headers)
+    resp = requests.get('https://{}.salesforce.com{}'.format(server_id,dataflow_his_url), headers=headers)
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -53,7 +53,7 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
                 privatePreviewUrl = x["privatePreviewUrl"]
 
 
-        resp = requests.get('https://na156.salesforce.com{}'.format(previewUrl), headers=headers)
+        resp = requests.get('https://{}.salesforce.com{}'.format(server_id,previewUrl), headers=headers)
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
