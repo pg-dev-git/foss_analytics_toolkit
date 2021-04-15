@@ -59,7 +59,9 @@ def get_dataflows(access_token,server_id):
                 prCyan("3 - Show Dataflow Version History (#1 on the list is the current version.)")
                 prCyan("4 - Backup Current version")
 
-                user_input = input("Enter your selection: ")
+                user_input = input("\r\n" + "Enter your selection: ")
+
+                print("\r\n")
 
                 if user_input == "1":
                     start_dataflow(access_token,dataflow_id_,server_id)

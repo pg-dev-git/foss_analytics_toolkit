@@ -2,6 +2,7 @@ import json
 import requests
 from terminal_colors import *
 from sfdc_login import *
+import time
 
 def get_datasets_field_details(access_token,dataset_,server_id):
     headers = {
@@ -61,6 +62,8 @@ def get_datasets_field_details(access_token,dataset_,server_id):
     except ValueError:
         prRed("there are no dates present in the dataset.")
 
+    time.sleep(2)
+
     try:
         measures_list = formatted_response.get('measures')
         measures_counter = 0
@@ -73,6 +76,8 @@ def get_datasets_field_details(access_token,dataset_,server_id):
     except ValueError:
         prRed("there are no measures present in the dataset.")
 
+    time.sleep(2)
+
     try:
         dimension_list = formatted_response.get('dimensions')
         dimension_counter = 0
@@ -84,5 +89,7 @@ def get_datasets_field_details(access_token,dataset_,server_id):
             prRed("there are no dimensions present in the dataset.")
     except ValueError:
         prRed("there are no dimensions present in the dataset.")
+
+    time.sleep(2)
 
     prCyan("\r\n" + "{} date fields - {} dimensions - {} measures - {} Total Records".format(dates_counter,dimension_counter,measures_counter,count_rows) + "\r\n")

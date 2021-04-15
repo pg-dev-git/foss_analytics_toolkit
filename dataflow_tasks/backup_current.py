@@ -64,7 +64,10 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
 
         prYellow("\r\n" + "Dataflow JSON definition succesfully backed up here: {}".format(d_ext) + "\r\n")
 
+        time.sleep(2)
+
         os.chdir("..")
     else:
         prRed("\r\n" + "There is no JSON available to backup." + "\r\n")
         os.chdir("..")
+        time.sleep(2)

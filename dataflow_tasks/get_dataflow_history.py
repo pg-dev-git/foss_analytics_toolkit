@@ -37,8 +37,8 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
         for x in dataflow_his_list:
             counter += 1
             print("{}- ".format(counter) ,"History id:",x["id"],"- Name: ",x["name"],"- Label:",x["label"],"- Created On:",x["createdDate"])
-        print("\r\n")
 
+        time.sleep(2)
         prYellow("\r\n" + "#1 is your active version of the Dataflow." + "\r\n")
 
         action_track = input("Choose a Dataflow History id between #2 and {} to replace the current version or hit any other key to go back:".format(counter))
@@ -57,9 +57,15 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
                         dataflow_his_label_ = x["label"]
                         dataflow_his_date_ = x["createdDate"]
 
+                time.sleep(1)
+
                 prYellow("\r\n" + "Version selected: Id:{} - Name:{} - Label:{} - Created On:{}".format(dataflow_his_id_, dataflow_his_name_,dataflow_his_label_,dataflow_his_date_) + "\r\n")
 
+                time.sleep(1)
+
                 prRed("Do you want to replace your current Dataflow with the version selected?")
+
+                time.sleep(1)
 
                 action_track = input("Press \"Y\" to confirm or hit any other key to cancel:")
 
@@ -88,3 +94,4 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
             time.sleep(2)
     else:
         prRed("\r\n" + "There are no history records available." + "\r\n")
+        time.sleep(2)

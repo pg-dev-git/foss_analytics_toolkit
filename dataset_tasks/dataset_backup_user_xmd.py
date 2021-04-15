@@ -3,6 +3,7 @@ import requests
 from terminal_colors import *
 from sfdc_login import *
 import os
+import time
 
 def backup_xmd_user(access_token,dataset_,server_id):
 
@@ -50,6 +51,8 @@ def backup_xmd_user(access_token,dataset_,server_id):
         json.dump(formatted_response, outfile)
 
     prGreen("\r\n" + "User XMD Succesfully Exported. Find the file here: {}".format(d_ext) + "\r\n")
+
+    time.sleep(2)
 
 
     #Go back to parent folder:

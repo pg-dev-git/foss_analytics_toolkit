@@ -4,7 +4,7 @@ from terminal_colors import *
 import time
 from data_manager_tasks.get_dataflowjobs_list import *
 
-def get_dataflowsJobs(access_token):
+def get_dataflowsJobs(access_token,server_id):
     prGreen("\r\n" + "getting dataflows jobs..." + "\r\n")
     headers = {
         'Authorization': "Bearer {}".format(access_token,server_id)

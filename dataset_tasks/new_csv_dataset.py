@@ -34,39 +34,50 @@ def upload_new_csv_dataset(access_token,server_id):
     #Input check for file placement
     while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
+        time.sleep(1)
         if user_input_1 == "Y":
-            print("\r\n")
+            print("")
         elif user_input_1 == "N":
             prYellow("Please place the file and try again.")
+            time.sleep(2)
         else:
             prRed("Wrong value. Try again.")
+            time.sleep(2)
 
     #Input check for file encoding
     while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
+        time.sleep(1)
         if user_input_2 == "Y":
-            print("\r\n")
+            print("")
         elif user_input_2 == "N":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
+            time.sleep(2)
         else:
             prRed("Wrong value. Try again.")
+            time.sleep(2)
 
     #Input check for total # of rows
     while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
         user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
+        time.sleep(2)
         try:
             user_input_3 = int(user_input_3)
             if type(user_input_3) == int and user_input_3 > 0:
-                print("\r\n")
+                print("")
             elif type(user_input_3) == int and user_input_3 < 1:
                 prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
+                time.sleep(2)
             else:
                 prRed("\r\n" + "Please use an integer.")
+                time.sleep(2)
         except ValueError:
             prRed("\r\n" + "Please use an integer.")
+            time.sleep(2)
 
     if user_input_1 == "Y" and user_input_2 == "Y":
         dataset_name = input("Enter your filename without the csv extension: ")
+        time.sleep(2)
         print("\r\n")
         dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores isntead \"_\": ")
 
@@ -80,6 +91,7 @@ def upload_new_csv_dataset(access_token,server_id):
         #os.remove("{}_CSV_upload_metadata.json".format(dataset_name))
         _end = time.time()
         enc_time = round((_end-_start),2)
+        time.sleep(1)
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
 
         batches_ = math.ceil(user_input_3 / 50000)

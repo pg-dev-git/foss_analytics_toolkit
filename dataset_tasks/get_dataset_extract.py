@@ -117,7 +117,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
     #multithreaded function to submit the queries
     if batches_ > 0:
         threads = list()
-        prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_))
+        prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_) + "\r\n")
         for index in range(batches_):
             x = threading.Thread(target=data_extract_thread, args=(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,))
             threads.append(x)
@@ -130,7 +130,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
             thread.join()
             time.sleep(1)
 
-        prGreen("\r\n" + "Ending {} CPU threads.".format(batches_))
+        prGreen("\r\n" + "Multithreaded extraction completed.")
         time.sleep(1)
 
     if batches_ > 0:
@@ -147,12 +147,13 @@ def get_datasets_extract(access_token,dataset_,server_id):
 
         #Append all csv files from the batches - start:
 
+        prGreen("\r\n" + "Compiling CSV.")
         extension = 'csv'
         csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
         combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
         #print(combined_csv)
         combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, encoding='utf-8-sig')
-        print("\r\n" + "Dataset Succesfully Exported. Find the file here: {}".format(d_ext) + "\r\n")
+        prCyan("\r\n" + "Dataset Succesfully Exported. Find the file here: {}".format(d_ext) + "\r\n")
 
         #Append all csv files from the batches - end.
 

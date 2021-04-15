@@ -3,6 +3,7 @@ import requests
 from terminal_colors import *
 import csv
 import pandas as pd
+import time
 
 def data_extract_thread(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id):
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
@@ -28,3 +29,6 @@ def data_extract_thread(dataset_,dataset_currentVersionId,query_fields_str,q_off
 
     df = pd.read_json(r'{}_{}_query_results.json'.format(dataset_name,i))
     export_csv = df.to_csv(r'{}_{}_query_results.csv'.format(dataset_name,i), index = None, header=True)
+
+    print("Thread #{} finished.".format(i))
+    time.sleep(0.5)

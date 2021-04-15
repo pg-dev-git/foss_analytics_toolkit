@@ -75,7 +75,7 @@ if __name__ == "__main__":
             get_dataflows(access_token,server_id)
 
         if user_input == "4":
-            get_dataflowsJobs(access_token)
+            get_dataflowsJobs(access_token,server_id)
 
         if user_input == "5":
             upload_new_csv_dataset(access_token,server_id)

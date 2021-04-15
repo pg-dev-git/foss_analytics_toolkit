@@ -9,7 +9,7 @@ def get_dataflowsJobs_list(dataflowjobs_list):
     #Check running jobs
     counter = 0
     prCyan("\r\n" + "Checking for jobs currently running:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] != "datasync" and x["status"] == "Running":
@@ -19,10 +19,12 @@ def get_dataflowsJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no Dataflows running at the moment.")
 
+    print("\r\n")
+
     #Check failed jobs
     counter = 0
     prRed("\r\n" + "Checking for failed jobs:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] != "datasync" and x["status"] == "Failure":
@@ -32,10 +34,12 @@ def get_dataflowsJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no failed Dataflows.")
 
+    print("\r\n")
+
     #Check successfull jobs
     counter = 0
     prGreen("\r\n" + "Checking for succesfully completed jobs:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] != "datasync" and x["status"] == "Success":
@@ -45,10 +49,12 @@ def get_dataflowsJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no completed Dataflows.")
 
+    print("\r\n")
+
     #Check all other jobs
     counter = 0
     prYellow("\r\n" + "Checking all other status:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] != "datasync" and (x["status"] != "Success" and x["status"] != "Failure" and x["status"] != "Running"):
@@ -66,7 +72,7 @@ def get_datasyncJobs_list(dataflowjobs_list):
     #Check running jobs
     counter = 0
     prCyan("\r\n" + "Checking for jobs currently running:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] == "datasync" and x["status"] == "Running":
@@ -76,10 +82,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no Datasyncs running at the moment.")
 
+    print("\r\n")
+
     #Check failed jobs
     counter = 0
     prRed("\r\n" + "Checking for failed jobs:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] == "datasync" and x["status"] == "Failure":
@@ -89,10 +97,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no failed Datasyncs.")
 
+    print("\r\n")
+
     #Check successfull jobs
     counter = 0
     prGreen("\r\n" + "Checking for succesfully completed jobs:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] == "datasync" and x["status"] == "Success":
@@ -102,10 +112,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no completed Datasyncs.")
 
+    print("\r\n")
+
     #Check all other jobs
     counter = 0
     prYellow("\r\n" + "Checking all other status:")
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
 
         if x["jobType"] == "datasync" and (x["status"] != "Success" and x["status"] != "Failure" and x["status"] != "Running"):
@@ -118,10 +130,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
 def get_AllJobs_list(dataflowjobs_list):
     counter_2 = 0
 
+    print("\r\n")
+
     #Check running jobs
     prGreen("\r\n" + "Checking for job types:")
     counter = 0
-    time.sleep(1)
+    time.sleep(2)
     for x in dataflowjobs_list:
         counter += 1
         counter_2 += 1
