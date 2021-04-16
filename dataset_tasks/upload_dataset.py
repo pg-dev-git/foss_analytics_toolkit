@@ -10,6 +10,7 @@ import os
 import base64
 from dataset_tasks.json_metadata_generator import *
 import math
+from dataflow_tasks.start_stop_dataflow import *
 
 def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
 
@@ -164,6 +165,48 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
                 time.sleep(5)
 
                 operation_flag = 'Append'
+
+        try:
+
+            time.sleep(2)
+
+            headers = {
+                'Authorization': "Bearer {}".format(access_token)
+                }
+            resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dependencies/{}'.format(server_id,dataset_), headers=headers)
+            #print(resp.json())
+            #Print PrettyJSON in Terminal
+
+            formatted_response = json.loads(resp.text)
+            #print(formatted_response)
+            formatted_response_str = json.dumps(formatted_response, indent=2)
+            #prGreen(formatted_response_str)
+
+            try:
+                counter = 0
+                depend_flow_list = formatted_response.get('workflows').get("dependencies")
+                for x in depend_flow_list:
+                    counter += 1
+                    print("\r\n" + "The following dataflows are dependent on this csv dataset:" + "\r\n")
+                    if counter >= 1 and counter <= 9:
+                        print(" {} - ".format(counter) ,"Dataflow id: ",x["id"]," - Type: ",x["type"]," - Name: ",x["name"])
+                    else:
+                        print("{} - ".format(counter) ,"Dataflow id: ",x["id"]," - Type: ",x["type"]," - Name: ",x["name"])
+                print("\r\n")
+
+                user_input = input("\r\n" + "Do you want to run them now? (Y/N): ")
+
+                if user_input == "Y":
+                    for x in depend_flow_list:
+                        dataflow_id_ = x["id"]
+                        start_dataflow(access_token,dataflow_id_,server_id)
+                        time.sleep(3)
+            except AttributeError:
+                pass
+
+        except ValueError:
+            pass
+
 
     #Go back to parent folder:
     os.chdir("..")

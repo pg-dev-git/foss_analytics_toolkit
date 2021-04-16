@@ -9,6 +9,8 @@ from dataset_tasks.upload_dataset import *
 from dataset_tasks.dataset_backup_user_xmd import *
 from dataset_tasks.append_dataset import *
 from dataset_tasks.delete_dataset import *
+from dataset_tasks.get_dataset_history import *
+from dataset_tasks.get_dataset_dependencies import *
 import time
 
 def get_datasets(access_token,server_id):
@@ -23,7 +25,7 @@ def get_datasets(access_token,server_id):
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
-    #formatted_response_str = json.dumps(formatted_response, indent=2)
+    formatted_response_str = json.dumps(formatted_response, indent=2)
     #prGreen(formatted_response_str)
 
     datasets_list = formatted_response.get('datasets')
@@ -36,9 +38,9 @@ def get_datasets(access_token,server_id):
     for x in datasets_list:
         counter += 1
         if counter >= 1 and counter <= 9:
-            print(" {} - ".format(counter) ,"Datset id: ",x["id"]," - Label: ",x["label"])
+            print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
         else:
-            print("{} - ".format(counter) ,"Datset id: ",x["id"]," - Label: ",x["label"])
+            print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
     print("\r\n")
 
     dataset_ = 999999999
@@ -56,11 +58,8 @@ def get_datasets(access_token,server_id):
                 counter_2 += 1
                 if counter_2 == action_track:
                     dataset_ = x["id"]
-
-            for x in datasets_list:
-                counter_3 += 1
-                if counter_3 == action_track:
                     dataset_name = x["name"]
+                    versionsUrl = x["versionsUrl"]
 
             run_token = True
             while run_token:
@@ -78,7 +77,11 @@ def get_datasets(access_token,server_id):
                 time.sleep(0.15)
                 prCyan("5 - Backup User XMD")
                 time.sleep(0.15)
-                prRed("6 - Delete dataset")
+                prCyan("6 - Show Version History")
+                time.sleep(0.15)
+                prCyan("7 - Show Dependencies")
+                time.sleep(0.15)
+                prRed("8 - Delete dataset")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -99,6 +102,12 @@ def get_datasets(access_token,server_id):
                     backup_xmd_user(access_token,dataset_,server_id)
 
                 if user_input == "6":
+                    dataset_history(access_token,dataset_,server_id,versionsUrl)
+
+                if user_input == "7":
+                    dataset_dependencies(access_token,dataset_,server_id)
+
+                if user_input == "8":
                     delete_dataset(access_token,dataset_,server_id)
 
                 check_token = input("\r\n" + "Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
