@@ -12,6 +12,7 @@ import os
 from initial_checks import *
 import configparser
 import datetime
+import time
 
 if __name__ == "__main__":
 
@@ -20,10 +21,15 @@ if __name__ == "__main__":
     os.chdir(d_ext)
 
     print("\r\n")
+    time.sleep(0.1)
     tprint("TCRM",font="block")
+    time.sleep(0.5)
     tprint("     Tool Kit     ")
+    time.sleep(0.5)
     prGreen("                                                                       v0.1-beta")
     print("\r\n")
+    time.sleep(0.5)
+
 
     #Beta Lock - Start
     current_time = datetime.datetime.now()
@@ -31,6 +37,7 @@ if __name__ == "__main__":
     try:
         if (current_time.year) == 2021 and (current_time.month) == 4 and (current_time.day) <= 30:
             print("\r\n" + "Welcome to the beta testing. Please try all the features and share your feedback!" + "\r\n")
+            time.sleep(1)
         else:
             print("\r\n" + "The beta test period has expired." + "\r\n")
             quit()
@@ -53,13 +60,21 @@ if __name__ == "__main__":
     run_token = True
     while run_token:
         prGreen("What do you want to do?:")
+        time.sleep(0.3)
         prYellow("(Choose a number from the list below)" + "\r\n")
+        time.sleep(0.5)
         prCyan("1 - List datasets")
+        time.sleep(0.15)
         prCyan("2 - List dashboards")
+        time.sleep(0.15)
         prCyan("3 - List dataflows")
+        time.sleep(0.15)
         prCyan("4 - List Data Manager jobs")
+        time.sleep(0.15)
         prCyan("5 - Create New Dataset from CSV")
+        time.sleep(0.15)
         prYellow("6 - Run Login Parameters Configuration")
+        time.sleep(0.5)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
         print("\r\n")
@@ -87,7 +102,9 @@ if __name__ == "__main__":
 
         print("\r\n")
 
-        check_token = input("Do you want to do something else (Y) or exit the program (N)?" + "\r\n")
+        #check_token = input("Do you want to do something else (Y) or exit the program (N)?" + "\r\n")
+
+        check_token = "Y"
 
         if check_token == "Y":
             run_token = True

@@ -8,13 +8,14 @@ import pandas as pd
 import glob
 import os
 import base64
-import threading
-from dataset_tasks.dataset_extract_MT import *
+import multiprocessing as mp
+from dataset_tasks.dataset_extract_MP import *
+from dataset_tasks.mt_for_mp import *
 import time
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
-def get_datasets_extract(access_token,dataset_,server_id):
+def get_datasets_extract_mp(access_token,dataset_,server_id):
 
     try:
         dataset_extraction_dir = "dataset_extraction"
@@ -63,6 +64,17 @@ def get_datasets_extract(access_token,dataset_,server_id):
     count_rows = count_rows.get('count')
     batches_ = math.ceil(count_rows / 9999)
     #print(batches_)
+
+    #Folder Cleanup
+    i = 0
+    while i <= batches_:
+        #Remove partial json files
+        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
+            os.remove('{}_{}_query_results.json'.format(dataset_name,i))
+        #Remove partial csv files
+        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
+            os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
+        i += 1
 
     dataset_current_version_url = "https://{}.salesforce.com".format(server_id) + "{}".format(dataset_current_version_url) + "/xmds/main"
 
@@ -114,26 +126,50 @@ def get_datasets_extract(access_token,dataset_,server_id):
     q_offset = 0
     dataset_extraction_dir = "dataset_extraction"
 
-    #multithreaded function to submit the queries
+    #multicore & threads function to submit the queries
     if batches_ > 0:
-        threads = list()
-        prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_) + "\r\n")
+        pool = mp.Pool((mp.cpu_count()))
+        cpus = int(mp.cpu_count())
+        prCyan("\r\n" + "Starting extraction using {} CPU cores...".format(cpus) + "\r\n")
+        mts = math.ceil(batches_ / cpus)
+        pool_cycles_A = math.ceil(batches_ / mts)
+        pool_cycles_B = math.floor(batches_ / mts)
+        control_flag = mts
         _start = time.time()
-        for index in range(batches_):
-            x = threading.Thread(target=data_extract_thread, args=(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,))
-            threads.append(x)
-            x.start()
-            i += 1
-            q_offset += 9999
-            time.sleep(1)
+        #for index in range(batches_):
+        #    print("P{}".format(i))
+        #    inputs = [dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id]
+        #    outputs_async = pool.map_async(data_extract_mp, dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id)
+        #    outputs = outputs_async.get()
+        #    i += 1
+        #    q_offset += 9999
+        #    time.sleep(1)
+        result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_, )) for i in
+                        range(batches_)]
+        try:
+            for r in result_async:
+                results = r.get()
+                progress = round((results / batches_) * 100)
+                if progress < 10:
+                    prYellow("  {}%".format(progress))
+                elif progress < 30:
+                    prYellow(" {}%".format(progress))
+                elif progress < 60:
+                    prLightPurple(" {}%".format(progress))
+                elif progress < 100:
+                    prCyan(" {}%".format(progress))
+                time.sleep(0.5)
+        except ValueError:
+            pass
 
-        for index, thread in enumerate(threads):
-            thread.join()
-            time.sleep(1)
+        #results = [r.get() for r in result_async]
 
+        prGreen("100%")
+        pool.close()
+        pool.join()
         _end = time.time()
         total_time = round((_end - _start),2)
-        prGreen("\r\n" + "Multithreaded extraction completed in {}s.".format(total_time))
+        prGreen("\r\n" + "Extraction completed in {}s.".format(total_time))
         time.sleep(1)
 
     if batches_ > 0:
@@ -165,12 +201,14 @@ def get_datasets_extract(access_token,dataset_,server_id):
 
 
     #Folder Cleanup
-    i = 1
+    i = 0
     while i <= batches_:
         #Remove partial json files
-        os.remove('{}_{}_query_results.json'.format(dataset_name,i))
+        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
+            os.remove('{}_{}_query_results.json'.format(dataset_name,i))
         #Remove partial csv files
-        os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
+        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
+            os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
         i += 1
 
     #Go back to parent folder:
