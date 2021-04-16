@@ -136,14 +136,6 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         pool_cycles_B = math.floor(batches_ / mts)
         control_flag = mts
         _start = time.time()
-        #for index in range(batches_):
-        #    print("P{}".format(i))
-        #    inputs = [dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id]
-        #    outputs_async = pool.map_async(data_extract_mp, dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id)
-        #    outputs = outputs_async.get()
-        #    i += 1
-        #    q_offset += 9999
-        #    time.sleep(1)
         result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_, )) for i in
                         range(batches_)]
         try:
