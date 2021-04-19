@@ -87,3 +87,108 @@ class sfdc_login():
                                          'server_id': '{}'.format(server_id)}
                     with open('sfdc_auth.ini', 'w') as configfile:
                         config.write(configfile)
+
+    def web_auth(flag):
+        import subprocess
+        import configparser
+
+        username = "Enter your username"
+        server_id = "Enter you server id \"na100\""
+        access_token = "Value_Replace"
+
+        if flag == "Y":
+            os.remove("web_sfdc_auth.ini")
+
+        while username == "Enter your username" and server_id == "Enter you server id \"na100\"" and access_token == "Value_Replace":
+
+            if os.path.exists("web_sfdc_auth.ini") == False:
+                prYellow("\r\n"+ "Running first time configuration login configuration" + "\r\n")
+                time.sleep(3)
+                config = configparser.ConfigParser()
+                config['DEFAULT'] = {'username': '{}'.format(username),
+                                     'server_id': '{}'.format(server_id),
+                                     'access_token': '{}'.format(access_token)}
+                with open('web_sfdc_auth.ini', 'w') as configfile:
+                    config.write(configfile)
+            elif os.path.exists("web_sfdc_auth.ini"):
+                config = configparser.ConfigParser()
+                config.read("web_sfdc_auth.ini")
+                username = config.get("DEFAULT", "username")
+                server_id = config.get("DEFAULT", "server_id")
+                access_token = config.get("DEFAULT", "access_token")
+                if username == "Enter your username" and server_id == "Enter you server id \"na100\"" and access_token == "Value_Replace":
+                    username = input("\r\n"+ "Enter your username: ")
+                    server_id = input("\r\n"+ "Enter you server id \"na100\": ")
+                    config['DEFAULT'] = {'username': '{}'.format(username),
+                                         'server_id': '{}'.format(server_id),
+                                         'access_token': '{}'.format(access_token)}
+                    with open('web_sfdc_auth.ini', 'w') as configfile:
+                        config.write(configfile)
+
+    def web_get_token():
+        import configparser
+        import subprocess
+
+        config = configparser.ConfigParser()
+        config.read("web_sfdc_auth.ini")
+        username = config.get("DEFAULT", "username")
+        server_id = config.get("DEFAULT", "server_id")
+        access_token = config.get("DEFAULT", "access_token")
+
+        if access_token == "Value_Replace":
+            sfdc_login_command = subprocess.run(["sfdx", "force:auth:web:login", "-r", "https://{}.salesforce.com".format(server_id)], stdout=subprocess.PIPE, text=True, shell=True)
+
+            log_credentials = subprocess.run(["sfdx", "force:org:display", "-u", "{}".format(username), "--json"], stdout=subprocess.PIPE, text=True, shell=True)
+
+            access_token = json.loads(log_credentials.stdout)
+
+            access_token = access_token.get("result").get("accessToken")
+
+            config['DEFAULT'] = {'username': '{}'.format(username),
+                                 'server_id': '{}'.format(server_id),
+                                 'access_token': '{}'.format(access_token)}
+
+            with open('web_sfdc_auth.ini', 'w') as configfile:
+                config.write(configfile)
+
+            return access_token
+
+        else:
+
+            return access_token
+
+    def auth_check(flag):
+
+        import configparser
+
+        auth_method = "999"
+
+        if flag == "Y":
+            os.remove("auth_method.ini")
+
+        while auth_method == "999":
+            if os.path.exists("auth_method.ini") == False:
+                config = configparser.ConfigParser()
+                config['DEFAULT'] = {'method': '{}'.format(auth_method)}
+                with open('auth_method.ini', 'w') as configfile:
+                    config.write(configfile)
+            elif os.path.exists("auth_method.ini"):
+                config = configparser.ConfigParser()
+                config.read("auth_method.ini")
+                auth_method = config.get("DEFAULT", "method")
+                if auth_method == "999":
+                    auth_method = input("What Authentication Method do you want to use? Enter 1 for Web or 2 for Connected App: ")
+                    config['DEFAULT'] = {'method': '{}'.format(auth_method)}
+                with open('auth_method.ini', 'w') as configfile:
+                    config.write(configfile)
+
+        if auth_method == "2":
+            sfdc_login.setup_ini(flag)
+            config_file = "sfdc_auth.ini"
+            access_token = sfdc_login.get_token()
+            return config_file,access_token
+        elif auth_method == "1":
+            sfdc_login.web_auth(flag)
+            config_file = "web_sfdc_auth.ini"
+            access_token = sfdc_login.web_get_token()
+            return config_file,access_token

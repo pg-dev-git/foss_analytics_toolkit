@@ -47,12 +47,15 @@ if __name__ == "__main__":
     #Beta Lock - End
 
     flag = "N"
-    sfdc_login.setup_ini(flag)
 
-    access_token = sfdc_login.get_token()
+    config_file,access_token = sfdc_login.auth_check(flag)
+
+
+
+    #access_token = sfdc_login.get_token()
 
     config = configparser.ConfigParser()
-    config.read("sfdc_auth.ini")
+    config.read("{}".format(config_file))
     server_id = config.get("DEFAULT", "server_id")
 
 
@@ -97,7 +100,7 @@ if __name__ == "__main__":
 
         if user_input == "6":
             flag = "Y"
-            sfdc_login.setup_ini(flag)
+            sfdc_login.auth_check(flag)
             flag = "N"
 
         print("\r\n")
