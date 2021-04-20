@@ -4,7 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_datasets import *
 from dataset_tasks.new_csv_dataset import *
-from get_dashboards import *
+#from get_dashboards import *
 from dataflow_tasks.get_dataflows import *
 from data_manager_tasks.get_dataflowjobs import *
 from art import *
@@ -13,6 +13,7 @@ from initial_checks import *
 import configparser
 import datetime
 import time
+from dashboards_tasks.get_dashboards import *
 
 if __name__ == "__main__":
 
@@ -20,15 +21,9 @@ if __name__ == "__main__":
 
     os.chdir(d_ext)
 
-    print("\r\n")
-    time.sleep(0.1)
-    tprint("TCRM",font="block")
-    time.sleep(0.5)
-    tprint("     Tool Kit     ")
-    time.sleep(0.5)
-    prGreen("                                                                       v0.1-beta")
-    print("\r\n")
-    time.sleep(0.5)
+    sfdc_login.intro()
+
+
 
 
     #Beta Lock - Start
@@ -50,9 +45,6 @@ if __name__ == "__main__":
 
     config_file,access_token = sfdc_login.auth_check(flag)
 
-
-
-    #access_token = sfdc_login.get_token()
 
     config = configparser.ConfigParser()
     config.read("{}".format(config_file))

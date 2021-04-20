@@ -3,6 +3,7 @@ import requests
 from terminal_colors import *
 import os
 import time
+from art import *
 
 
 class sfdc_login():
@@ -56,7 +57,7 @@ class sfdc_login():
         while client_id == "Enter your client id" and client_secret == "Enter your client secret" and username == "Enter your username" and password == "Enter your password + token" and server_id == "Enter you server id \"na100\"":
 
             if os.path.exists("sfdc_auth.ini") == False:
-                prYellow("\r\n"+ "Running first time configuration login configuration" + "\r\n")
+                prYellow("\r\n"+ "Running first time configuration of login credentials..." + "\r\n")
                 time.sleep(3)
                 config = configparser.ConfigParser()
                 config['DEFAULT'] = {'client_id': '{}'.format(client_id),
@@ -102,7 +103,7 @@ class sfdc_login():
         while username == "Enter your username" and server_id == "Enter you server id \"na100\"" and access_token == "Value_Replace":
 
             if os.path.exists("web_sfdc_auth.ini") == False:
-                prYellow("\r\n"+ "Running first time configuration login configuration" + "\r\n")
+                prYellow("\r\n"+ "Running first time configuration of login credentials..." + "\r\n")
                 time.sleep(3)
                 config = configparser.ConfigParser()
                 config['DEFAULT'] = {'username': '{}'.format(username),
@@ -136,6 +137,7 @@ class sfdc_login():
         access_token = config.get("DEFAULT", "access_token")
 
         if access_token == "Value_Replace":
+
             sfdc_login_command = subprocess.run(["sfdx", "force:auth:web:login", "-r", "https://{}.salesforce.com".format(server_id)], stdout=subprocess.PIPE, text=True, shell=True)
 
             log_credentials = subprocess.run(["sfdx", "force:org:display", "-u", "{}".format(username), "--json"], stdout=subprocess.PIPE, text=True, shell=True)
@@ -153,9 +155,27 @@ class sfdc_login():
 
             return access_token
 
-        else:
+        elif access_token != "Value_Replace":
 
-            return access_token
+            headers = {
+                'Authorization': "Bearer {}".format(access_token)
+                }
+            resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave'.format(server_id), headers=headers)
+            formatted_response = json.loads(resp.text)
+            formatted_response_str = json.dumps(formatted_response, indent=2)
+
+            try:
+                for x in formatted_response:
+                    msg = x["message"]
+                    errorCode = x["errorCode"]
+
+                if msg == "Session expired or invalid" or errorCode == "INVALID_SESSION_ID":
+                    prRed("\r\n" + "Token expired. The Web Login process will run now to generate a new one." + "\r\n")
+                    time.sleep(5)
+                    access_token = "INVALID_TOKEN"
+                    return access_token
+            except:
+                return access_token
 
     def auth_check(flag):
 
@@ -191,4 +211,22 @@ class sfdc_login():
             sfdc_login.web_auth(flag)
             config_file = "web_sfdc_auth.ini"
             access_token = sfdc_login.web_get_token()
+            if access_token == "INVALID_TOKEN":
+                flag = "Y"
+                sfdc_login.auth_check(flag)
+                flag = "N"
+                access_token = sfdc_login.web_get_token()
             return config_file,access_token
+
+    def intro():
+
+        print("\r\n")
+        time.sleep(0.1)
+        tprint("TCRM",font="block")
+        time.sleep(0.5)
+        tprint("     Tool Kit     ")
+        time.sleep(0.5)
+        prGreen("                                                                       v0.1-beta2" + "\r\n")
+        prCyan("                                                             Salesforce API v51.0")
+        print("\r\n")
+        time.sleep(0.5)

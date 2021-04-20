@@ -15,7 +15,7 @@ def get_dashboards(access_token,server_id):
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prGreen(formatted_response_str)
+    #prGreen(formatted_response_str)
 
     dashboards_list = formatted_response.get('dashboards')
 
