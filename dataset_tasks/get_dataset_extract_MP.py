@@ -94,8 +94,12 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         measures_counter = 0
         #prYellow("\r\n" + "Measures:")
         for x in measures_list:
-            measures_counter += 1
-            query_fields.append(x["field"])
+            field = x["field"]
+            if field.endswith("_epoch"):
+                pass
+            else:
+                measures_counter += 1
+                query_fields.append(x["field"])
         print("\r\n")
     except ValueError:
         prRed("there are no measures present in the dataset.")
@@ -105,9 +109,13 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         dimension_counter = 0
         #prYellow("\r\n" + "Dimensions:")
         for x in dimension_list:
-            dimension_counter += 1
-            query_fields.append(x["field"])
-        #print(type(query_fields))
+            field = x["field"]
+            if field.endswith("_Second") or field.endswith("_Minute") or field.endswith("_Hour") or field.endswith("_Day") or field.endswith("_Week") or field.endswith("_Month") or field.endswith("_Quarter") or field.endswith("_Year") or field.endswith("_epoch"):
+                pass
+            else:
+                dimension_counter += 1
+                query_fields.append(x["field"])
+        
     except ValueError:
         prRed("there are no dimensions present in the dataset.")
 

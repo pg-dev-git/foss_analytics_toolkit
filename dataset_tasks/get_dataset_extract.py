@@ -73,7 +73,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
     resp = requests.get('{}'.format(dataset_current_version_url), headers=headers)
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prYellow(formatted_response_str)
+    prYellow(formatted_response_str)
 
     try:
         measures_list = formatted_response.get('measures')
@@ -93,8 +93,13 @@ def get_datasets_extract(access_token,dataset_,server_id):
         dimension_counter = 0
         #prYellow("\r\n" + "Dimensions:")
         for x in dimension_list:
-            dimension_counter += 1
-            query_fields.append(x["field"])
+            field = x["field"]
+            if field.endswith("_Second") or field.endswith("_Minute") or field.endswith("_Hour") or field.endswith("_Day") or field.endswith("_Week") or field.endswith("_Month") or field.endswith("_Quarter") or field.endswith("_Year") or field.endswith("_epoch"):
+                pass
+            else:
+                dimension_counter += 1
+                query_fields.append(x["field"])
+                print(field)
         #print(type(query_fields))
     except ValueError:
         prRed("there are no dimensions present in the dataset.")

@@ -63,19 +63,7 @@ def get_dashboards(access_token,server_id):
                 time.sleep(0.5)
                 prCyan("1 - List Dashboard Datasets")
                 time.sleep(0.15)
-                prCyan("2 - Backup Dashboard JSON")
-                time.sleep(0.15)
-                prCyan("3 - Override dataset")
-                time.sleep(0.15)
-                prCyan("4 - Append to dataset")
-                time.sleep(0.15)
-                prCyan("5 - Backup User XMD")
-                time.sleep(0.15)
-                prCyan("6 - Show Version History")
-                time.sleep(0.15)
-                prCyan("7 - Show Dependencies")
-                time.sleep(0.15)
-                prRed("8 - Delete dataset")
+                prCyan("2 - Show Version History / Restore")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -84,25 +72,7 @@ def get_dashboards(access_token,server_id):
                     get_dash_datasets(access_token,dashboard_,server_id)
 
                 if user_input == "2":
-                    backup_dash_json(access_token,dashboard_,server_id,dashboard_label)
-
-                if user_input == "3":
-                    upload_csv_dataset(access_token,dataset_name,dataset_,server_id)
-
-                if user_input == "4":
-                    append_csv_dataset(access_token,dataset_name,dataset_,server_id)
-
-                if user_input == "5":
-                    backup_xmd_user(access_token,dataset_,server_id)
-
-                if user_input == "6":
                     dashboard_history(access_token,dashboard_,server_id,historiesUrl)
-
-                if user_input == "7":
-                    dataset_dependencies(access_token,dataset_,server_id)
-
-                if user_input == "8":
-                    delete_dataset(access_token,dataset_,server_id)
 
                 prCyan("\r\n" + "Selected Dashboard: {} - {}".format(dashboard_, dashboard_label))
                 check_token = input("Press \"Y\" to see the dashboard actions or hit any key to go back" + "\r\n")

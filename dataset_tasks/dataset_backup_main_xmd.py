@@ -4,7 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 import os
 
-def backup_xmd_main(access_token,dataset_):
+def backup_xmd_main(access_token,dataset_,server_id):
 
     #Backup folder creation - start:
     try:
@@ -25,7 +25,7 @@ def backup_xmd_main(access_token,dataset_):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://na156.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(dataset_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -36,7 +36,7 @@ def backup_xmd_main(access_token,dataset_):
     dataset_currentVersionId = formatted_response.get('currentVersionId')
     dataset_currentNameId = formatted_response.get('name')
 
-    dataset_current_version_url = "https://na156.salesforce.com" + "{}".format(dataset_current_version_url) + "/xmds/main"
+    dataset_current_version_url = "https://{}.salesforce.com".format(server_id) + "{}".format(dataset_current_version_url) + "/xmds/main"
 
     headers = {
         'Authorization': "Bearer {}".format(access_token)

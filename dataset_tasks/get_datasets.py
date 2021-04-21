@@ -7,6 +7,7 @@ from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.get_dataset_extract_MP import *
 from dataset_tasks.upload_dataset import *
 from dataset_tasks.dataset_backup_user_xmd import *
+from dataset_tasks.dataset_backup_main_xmd import *
 from dataset_tasks.append_dataset import *
 from dataset_tasks.delete_dataset import *
 from dataset_tasks.get_dataset_history import *
@@ -82,6 +83,8 @@ def get_datasets(access_token,server_id):
                 prCyan("7 - Show Dependencies")
                 time.sleep(0.15)
                 prRed("8 - Delete dataset")
+                time.sleep(0.15)
+                prRed("9 - Backup Main XMD")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -109,6 +112,9 @@ def get_datasets(access_token,server_id):
 
                 if user_input == "8":
                     delete_dataset(access_token,dataset_,server_id)
+
+                if user_input == "9":
+                    backup_xmd_main(access_token,dataset_,server_id)
 
                 check_token = input("\r\n" + "Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
 

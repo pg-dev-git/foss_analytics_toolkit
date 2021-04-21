@@ -15,7 +15,7 @@ def dashboard_history(access_token,dashboard_,server_id,historiesUrl):
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prGreen(formatted_response_str)
+    #prGreen(formatted_response_str)
 
     dash_his_list = formatted_response.get('histories')
 
