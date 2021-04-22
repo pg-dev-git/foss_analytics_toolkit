@@ -11,7 +11,7 @@ def delete_dataset(access_token,dataset_,server_id):
     user_input = input("Do you want to proceed? (Y/N): ")
 
     try:
-            if user_input == "Y":
+            if user_input == "Y" or user_input == "y":
                 headers = {
                     'Authorization': "Bearer {}".format(access_token)
                     }
@@ -21,7 +21,7 @@ def delete_dataset(access_token,dataset_,server_id):
                 formatted_response_str = json.dumps(formatted_response, indent=2)
                 prGreen(formatted_response_str)
                 prYellow("\r\n" + "The dataset has been deleted.")
-            elif user_input == "N":
+            elif user_input == "N" or user_input == "n":
                 prYellow("\r\n" + "Dataset deletion cancelled.")
                 time.sleep(2)
             else:

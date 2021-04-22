@@ -70,7 +70,7 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
                 action_track = input("Press \"Y\" to confirm or hit any other key to cancel:")
 
                 try:
-                    if action_track == "Y":
+                    if action_track == "Y" or action_track == "y":
                         headers = {
                             'Authorization': "Bearer {}".format(access_token),
                             'Content-Type': "application/json"

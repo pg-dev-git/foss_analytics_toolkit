@@ -80,7 +80,7 @@ def get_dataflows(access_token,server_id):
 
                 check_token = input("Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
 
-                if check_token == "Y":
+                if check_token == "Y" or check_token == "y":
                     run_token = True
                 else:
                     run_token = False

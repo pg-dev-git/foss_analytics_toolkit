@@ -35,9 +35,9 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id):
     while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(2)
-        if user_input_1 == "Y":
+        if user_input_1 == "Y" or user_input_1 == "y":
             print("\r\n")
-        elif user_input_1 == "N":
+        elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
             time.sleep(1)
         else:

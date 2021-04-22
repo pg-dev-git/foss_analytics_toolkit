@@ -133,7 +133,7 @@ def get_dash_datasets(access_token,dashboard_,server_id):
                 prCyan("\r\n" + "Selected Dataset: {} - {}".format(dataset_, dataset_name))
                 check_token = input("Press \"Y\" to see this Dashboard or hit any key to go back" + "\r\n")
 
-                if check_token == "Y":
+                if check_token == "Y" or check_token == "y":
                     run_token = True
                 else:
                     run_token = False

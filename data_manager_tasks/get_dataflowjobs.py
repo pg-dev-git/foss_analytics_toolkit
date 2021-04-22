@@ -52,9 +52,9 @@ def get_dataflowsJobs(access_token,server_id):
 
             check_token = input("Do you want to do something else (Y) or go back (N)?" + "\r\n")
 
-            if check_token == "Y":
+            if check_token == "Y" or check_token == "y":
                 run_token = True
-            elif check_token == "N":
+            elif check_token == "N" or check_token == "n":
                 run_token = False
     except ValueError:
         prRed("Wrong selection. Going back.")

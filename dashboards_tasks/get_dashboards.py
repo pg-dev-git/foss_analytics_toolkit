@@ -77,7 +77,7 @@ def get_dashboards(access_token,server_id):
                 prCyan("\r\n" + "Selected Dashboard: {} - {}".format(dashboard_, dashboard_label))
                 check_token = input("Press \"Y\" to see the dashboard actions or hit any key to go back" + "\r\n")
 
-                if check_token == "Y":
+                if check_token == "Y" or check_token == "y":
                     run_token = True
                 else:
                     run_token = False

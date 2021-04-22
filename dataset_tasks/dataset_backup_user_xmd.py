@@ -47,10 +47,40 @@ def backup_xmd_user(access_token,dataset_,server_id):
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
 
+    #Cleanup JSON - Start
+
+    formatted_response.pop('createdBy')
+    formatted_response.pop('url')
+    formatted_response.pop('type')
+    formatted_response.pop('lastModifiedDate')
+    formatted_response.pop('lastModifiedBy')
+    formatted_response.pop('language')
+    formatted_response.pop('createdDate')
+    formatted_response.pop('dataset')
+
+    #Cleanup JSON - End
+
+#Cleanup Derived Measures - Start:
+    try:
+        deriv_meas_format = formatted_response.get('derivedMeasures')
+        for x in deriv_meas_format:
+            #fields_counter += 1
+            if x['format']:
+                format_ = x['format']
+                #format_ = format.get('customFormat')
+                format_ = format_['customFormat']
+                new_form = format_.replace('&quot;','\"')
+                x['format']['customFormat'] = new_form
+        formatted_response.pop('derivedMeasures')
+        formatted_response['derivedMeasures'] = deriv_meas_format
+    except:
+        pass
+#Cleanup Derived Measures - End.
+
     with open('{}_backup_user.xmd.json'.format(dataset_currentNameId), 'w') as outfile:
         json.dump(formatted_response, outfile)
 
-    prGreen("\r\n" + "User XMD Succesfully Exported. Find the file here: {}".format(d_ext) + "\r\n")
+    prGreen("\r\n" + "User XMD Succesfully Exported." + "\r\n" + "Find the file here: {}".format(d_ext) + "\r\n")
 
     time.sleep(2)
 
