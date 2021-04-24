@@ -99,9 +99,9 @@ def get_datasets_extract(access_token,dataset_,server_id):
             else:
                 dimension_counter += 1
                 query_fields.append(x["field"])
-                print(field)
+                #print(field)
         #print(type(query_fields))
-    except ValueError:
+    except:
         prRed("there are no dimensions present in the dataset.")
 
     #def convert_list_to_string(query_fields, seperator=','):

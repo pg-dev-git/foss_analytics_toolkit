@@ -9,17 +9,22 @@ def data_extract_mp(dataset_,dataset_currentVersionId,query_fields_str,q_offset,
 
     time.sleep(1)
 
+    prRed("Starting MP Function now.")
+
     if i == 0:
         q_offset = 0
     else:
         q_offset = 9999 * i
 
 
+    prRed("Building query")
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
     #print(saql)
 
+    prRed("Building payload")
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}
 
+    prRed("dumping payload")
     saql_payload = json.dumps(saql_payload)
 
     headers = {'Authorization': "Bearer {}".format(access_token),
@@ -27,7 +32,9 @@ def data_extract_mp(dataset_,dataset_currentVersionId,query_fields_str,q_offset,
                }
     x = 0
     while x != 1:
+        prRed("sending requst")
         resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+        prRed("Loading results")
         query_results = json.loads(resp.text)
         formatted_response_str = json.dumps(query_results, indent=2)
         #prYellow(formatted_response_str)

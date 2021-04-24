@@ -5,6 +5,7 @@ from sfdc_login import *
 from dataset_tasks.get_dataset_field_detail import *
 from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.get_dataset_extract_MP import *
+from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.upload_dataset import *
 from dataset_tasks.dataset_backup_user_xmd import *
 from dataset_tasks.xmd_cleanup import *
@@ -82,9 +83,9 @@ def get_datasets(access_token,server_id):
                 time.sleep(0.15)
                 prCyan("7 - Show Dependencies")
                 time.sleep(0.15)
-                prRed("8 - Delete dataset")
+                prCyan("8 - XMD Cleanup")
                 time.sleep(0.15)
-                prRed("9 - XMD Cleanup")
+                prRed("9 - Delete dataset")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -93,7 +94,7 @@ def get_datasets(access_token,server_id):
                     get_datasets_field_details(access_token,dataset_,server_id)
 
                 if user_input == "2":
-                    get_datasets_extract_mp(access_token,dataset_,server_id)
+                    get_datasets_extract(access_token,dataset_,server_id)
 
                 if user_input == "3":
                     upload_csv_dataset(access_token,dataset_name,dataset_,server_id)
@@ -111,10 +112,10 @@ def get_datasets(access_token,server_id):
                     dataset_dependencies(access_token,dataset_,server_id)
 
                 if user_input == "8":
-                    delete_dataset(access_token,dataset_,server_id)
+                    xmd_cleanup(access_token,dataset_,server_id)
 
                 if user_input == "9":
-                    xmd_cleanup(access_token,dataset_,server_id)
+                    delete_dataset(access_token,dataset_,server_id)
 
                 check_token = input("\r\n" + "Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
 

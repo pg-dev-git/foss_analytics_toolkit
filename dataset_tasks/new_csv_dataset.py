@@ -79,7 +79,7 @@ def upload_new_csv_dataset(access_token,server_id):
         dataset_name = input("Enter your filename without the csv extension: ")
         time.sleep(2)
         print("\r\n")
-        dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores isntead \"_\": ")
+        dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores instead \"_\": ")
 
         time.sleep(1)
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")

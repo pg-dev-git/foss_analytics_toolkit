@@ -138,9 +138,9 @@ class sfdc_login():
 
         if access_token == "Value_Replace":
 
-            sfdc_login_command = subprocess.run(["sfdx", "force:auth:web:login", "-r", "https://{}.salesforce.com".format(server_id)], stdout=subprocess.PIPE, text=True, shell=True)
+            sfdc_login_command = subprocess.run(["sfdx", "force:auth:web:login", "-r", "https://{}.salesforce.com".format(server_id)], stdout=subprocess.PIPE, text=True, shell=True, stderr=subprocess.DEVNULL)
 
-            log_credentials = subprocess.run(["sfdx", "force:org:display", "-u", "{}".format(username), "--json"], stdout=subprocess.PIPE, text=True, shell=True)
+            log_credentials = subprocess.run(["sfdx", "force:org:display", "-u", "{}".format(username), "--json"], stdout=subprocess.PIPE, text=True, shell=True, stderr=subprocess.DEVNULL)
 
             access_token = json.loads(log_credentials.stdout)
 

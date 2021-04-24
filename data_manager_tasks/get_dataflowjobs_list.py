@@ -139,6 +139,10 @@ def get_AllJobs_list(dataflowjobs_list):
     for x in dataflowjobs_list:
         counter += 1
         counter_2 += 1
-        print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+        try:
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+        except:
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no jobs available.")

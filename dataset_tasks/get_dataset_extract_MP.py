@@ -13,8 +13,6 @@ from dataset_tasks.dataset_extract_MP import *
 from dataset_tasks.mt_for_mp import *
 import time
 
-#os.chdir("/Users/pgagliar/Desktop/api_test/")
-
 def get_datasets_extract_mp(access_token,dataset_,server_id):
 
     try:
@@ -115,7 +113,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
             else:
                 dimension_counter += 1
                 query_fields.append(x["field"])
-        
+
     except ValueError:
         prRed("there are no dimensions present in the dataset.")
 
@@ -144,6 +142,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         pool_cycles_B = math.floor(batches_ / mts)
         control_flag = mts
         _start = time.time()
+        prRed("Calling MP Function now.")
         result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_, )) for i in
                         range(batches_)]
         try:
