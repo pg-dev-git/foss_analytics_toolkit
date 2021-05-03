@@ -73,7 +73,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
     resp = requests.get('{}'.format(dataset_current_version_url), headers=headers)
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prYellow(formatted_response_str)
+    #prYellow(formatted_response_str)
 
     try:
         measures_list = formatted_response.get('measures')

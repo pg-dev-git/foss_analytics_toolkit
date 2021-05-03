@@ -94,10 +94,10 @@ def xmd_cleanup(access_token,dataset_,server_id):
         fields_counter = 0
         for x in fields:
             fields_counter += 1
-            print(type(x['isMultiValue']))
+            #print(type(x['isMultiValue']))
             if x['isMultiValue'] == True or x['isMultiValue'] == False or type(x['isMultiValue']) == bool:
                 del x['isMultiValue']
-                print("deleting multivalue {}".format(fields_counter))
+                #print("deleting multivalue {}".format(fields_counter))
         formatted_response.pop('dimensions')
         formatted_response['dimensions'] = fields
         #time.sleep(0.5)
@@ -114,7 +114,7 @@ def xmd_cleanup(access_token,dataset_,server_id):
             fields_counter += 1
             if x['type']:
                 del x['type']
-                print("deleting type {}".format(fields_counter))
+                #print("deleting type {}".format(fields_counter))
         formatted_response.pop('dimensions')
         formatted_response['dimensions'] = fields
         #time.sleep(0.5)
@@ -193,7 +193,7 @@ def xmd_cleanup(access_token,dataset_,server_id):
             fields_counter += 1
             if x['type']:
                 del x['type']
-                print("deleting type {}".format(fields_counter))
+                #print("deleting type {}".format(fields_counter))
         formatted_response.pop('dates')
         formatted_response['dates'] = fields
         #time.sleep(0.5)

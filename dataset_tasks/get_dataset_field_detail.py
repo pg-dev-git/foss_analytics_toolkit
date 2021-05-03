@@ -59,8 +59,8 @@ def get_datasets_field_details(access_token,dataset_,server_id):
             print("{} - ".format(dates_counter) ,"alias: ",x["alias"]," - type: ",x["type"])
         if dates_counter == 0:
             prRed("there are no dates present in the dataset.")
-    except ValueError:
-        prRed("there are no dates present in the dataset.")
+    except:
+        pass
 
     time.sleep(2)
 
@@ -73,8 +73,8 @@ def get_datasets_field_details(access_token,dataset_,server_id):
             print("{} - ".format(measures_counter) ,"field: ",x["field"]," - label: ",x["label"])
         if measures_counter == 0:
             prRed("there are no measures present in the dataset.")
-    except ValueError:
-        prRed("there are no measures present in the dataset.")
+    except:
+        pass
 
     time.sleep(2)
 
@@ -83,12 +83,16 @@ def get_datasets_field_details(access_token,dataset_,server_id):
         dimension_counter = 0
         prYellow("\r\n" + "Dimensions:")
         for x in dimension_list:
-            dimension_counter += 1
-            print("{} - ".format(dimension_counter) ,"field: ",x["field"]," - label: ",x["label"])
+            field = x["field"]
+            if field.endswith("_Second") or field.endswith("_Minute") or field.endswith("_Hour") or field.endswith("_Day") or field.endswith("_Week") or field.endswith("_Month") or field.endswith("_Quarter") or field.endswith("_Year") or field.endswith("_epoch"):
+                pass
+            else:
+                dimension_counter += 1
+                print("{} - ".format(dimension_counter) ,"field: ",x["field"]," - label: ",x["label"])
         if dimension_counter == 0:
             prRed("there are no dimensions present in the dataset.")
-    except ValueError:
-        prRed("there are no dimensions present in the dataset.")
+    except:
+        pass
 
     time.sleep(2)
 
