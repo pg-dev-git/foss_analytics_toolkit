@@ -5,6 +5,7 @@ from sfdc_login import *
 from dashboards_tasks.get_dash_datasets import *
 from dashboards_tasks.backup_dash_json import *
 from dashboards_tasks.get_dashboard_history import *
+from dashboards_tasks.delete_dashboard import *
 import time
 
 def get_dashboards(access_token,server_id):
@@ -64,6 +65,8 @@ def get_dashboards(access_token,server_id):
                 prCyan("1 - List Dashboard Datasets")
                 time.sleep(0.15)
                 prCyan("2 - Show Version History / Restore")
+                time.sleep(0.15)
+                prRed("3 - Delete Dashboard")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -73,6 +76,9 @@ def get_dashboards(access_token,server_id):
 
                 if user_input == "2":
                     dashboard_history(access_token,dashboard_,server_id,historiesUrl)
+
+                if user_input == "3":
+                    delete_dash(access_token,dashboard_,server_id)
 
                 prCyan("\r\n" + "Selected Dashboard: {} - {}".format(dashboard_, dashboard_label))
                 check_token = input("Press \"Y\" to see the dashboard actions or hit any key to go back" + "\r\n")

@@ -3,9 +3,8 @@ import requests
 from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_dataset_field_detail import *
-from dataset_tasks.get_dataset_extract import *
+from dataset_tasks.get_dataset_extract_v2 import *
 from dataset_tasks.get_dataset_extract_MP import *
-from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.upload_dataset import *
 from dataset_tasks.dataset_backup_user_xmd import *
 from dataset_tasks.xmd_cleanup import *

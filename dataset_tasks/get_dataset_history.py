@@ -15,7 +15,7 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl):
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prGreen(formatted_response_str)
+    #prGreen(formatted_response_str)
 
     dataset_his_list = formatted_response.get('versions')
 
@@ -34,12 +34,15 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl):
 
         counter = 0
 
+        prGreen("\r\n" + "Getting all versions available..." + "\r\n")
+        time.sleep(2)
+
         for x in dataset_his_list:
             counter += 1
-            print("{}- ".format(counter) ,"Version id:",x["id"],"Total Rows:",x["totalRows"],"- Created On:",x["createdDate"],"- Last Modified On:",x["lastModifiedDate"])
+            print("{} -".format(counter),"Id:",x["id"],"- Rows:",x["totalRows"],"- Created On:",x["createdDate"],"- Last Modified On:",x["lastModifiedDate"])
 
         time.sleep(2)
-        prYellow("\r\n" + "#1 is your active version of the Dataset." + "\r\n")
+        prYellow("\r\n" + "#1 is the latest version of the Dataset." + "\r\n")
 
         ####action_track = input("Choose a Dataflow History id between #2 and {} to replace the current version or hit any other key to go back:".format(counter))
 

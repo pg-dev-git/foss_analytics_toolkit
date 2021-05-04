@@ -11,6 +11,7 @@ import base64
 import threading
 from dataset_tasks.dataset_extract_MT import *
 import time
+import subprocess
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
@@ -25,8 +26,8 @@ def get_datasets_extract(access_token,dataset_,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/dataset_extraction/"
-    #print(d_ext)
+    d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    print(d_ext)
 
     os.chdir(d_ext)
 
@@ -82,8 +83,12 @@ def get_datasets_extract(access_token,dataset_,server_id):
         measures_counter = 0
         #prYellow("\r\n" + "Measures:")
         for x in measures_list:
-            measures_counter += 1
-            query_fields.append(x["field"])
+            field = x["field"]
+            if field.endswith("_epoch"):
+                pass
+            else:
+                measures_counter += 1
+                query_fields.append(x["field"])
         print("\r\n")
     except ValueError:
         prRed("there are no measures present in the dataset.")
@@ -172,10 +177,13 @@ def get_datasets_extract(access_token,dataset_,server_id):
         prGreen("\r\n" + "Compiling CSV.")
         extension = 'csv'
         _start = time.time()
-        csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
-        combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
+        #combined_csv = subprocess.run(["Get-ChildItem", "-Filter", "*_results.csv", "|", "Select-Object", "-ExpandProperty", "FullName", "|", "Import-Csv", "|", "Export-Csv", "-Path","{}".format(d_ext), "-NoTypeInformation"], stdout=subprocess.PIPE, text=True, shell=True, stderr=subprocess.DEVNULL)
+        cmd = "Get-ChildItem -Filter *_results.csv | Select-Object -ExpandProperty FullName | Import-Csv | Export-Csv .\{}_extract.csv -NoTypeInformation".format(dataset_name)
+        completed = subprocess.run(["powershell", "-Command", cmd], capture_output=True)
+        #csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
+        #combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
         #print(combined_csv)
-        combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, encoding='utf-8-sig')
+        #combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, encoding='utf-8-sig')
         _end = time.time()
         total_time = round((_end - _start),2)
         prGreen("\r\n" + "CSV compiled in {}s".format(total_time))

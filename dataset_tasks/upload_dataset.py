@@ -33,12 +33,12 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
     user_input_3 = 9567385638567265
 
     #Input check for file placement
-    while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N":
+    while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N" or user_input_1 == "n":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
-        if user_input_1 == "Y":
+        if user_input_1 == "Y" or user_input_1 == "y":
             print("")
-        elif user_input_1 == "N":
+        elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
             time.sleep(2)
         else:
@@ -46,12 +46,12 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
             time.sleep(2)
 
     #Input check for file encoding
-    while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N":
+    while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N" or user_input_2 == "n":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(1)
-        if user_input_2 == "Y":
+        if user_input_2 == "Y" or user_input_2 == "y":
             print("")
-        elif user_input_2 == "N":
+        elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
             time.sleep(2)
         else:
@@ -102,6 +102,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
 
         if batches_ > 0:
             prGreen("\r\n" + "Your file will be upladed in {} batches".format(batches_))
+            _start_main = time.time()
 
             for x in range(batches_):
 
@@ -134,10 +135,16 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
                 resp = requests.post('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
                 time.sleep(1)
                 resp_results = json.loads(resp.text)
+                success = resp_results.get('success')
+                errors = resp_results.get('errors')
                 formatted_response_str = json.dumps(resp_results, indent=2)
-                prYellow(formatted_response_str)
+                #prYellow(formatted_response_str)
                 job_id = resp_results.get("id")
                 prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
+                if success:
+                    prYellow("Status: Succesfull")
+                else:
+                    prRed(errors)
                 time.sleep(1)
 
                 payload = {'DataFile' : '{}'.format(base64_encoded),'InsightsExternalDataId' : '{}'.format(job_id),'PartNumber': 1}
@@ -146,8 +153,14 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
                 _start = time.time()
                 resp = requests.post('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
                 resp_results = json.loads(resp.text)
+                success = resp_results.get('success')
+                errors = resp_results.get('errors')
                 formatted_response_str = json.dumps(resp_results, indent=2)
-                prYellow(formatted_response_str)
+                #prYellow(formatted_response_str)
+                if success:
+                    prYellow("Status: Succesfull")
+                else:
+                    prRed(errors)
                 _end = time.time()
                 upl_time = round((_end-_start),2)
                 prGreen("\r\n" + "CSV uploaded in {}s".format(upl_time))
@@ -165,6 +178,11 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
                 time.sleep(5)
 
                 operation_flag = 'Append'
+
+            _end_main = time.time()
+            full_time = round((_end_main-_start_main),2)
+            prGreen("\r\n" + "All {} batches were uploaded in {}s".format(batches_,full_time))
+
 
         try:
 
@@ -185,9 +203,9 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
             try:
                 counter = 0
                 depend_flow_list = formatted_response.get('workflows').get("dependencies")
+                print("\r\n" + "The following dataflows are dependent on this csv dataset:" + "\r\n")
                 for x in depend_flow_list:
                     counter += 1
-                    print("\r\n" + "The following dataflows are dependent on this csv dataset:" + "\r\n")
                     if counter >= 1 and counter <= 9:
                         print(" {} - ".format(counter) ,"Dataflow id: ",x["id"]," - Type: ",x["type"]," - Name: ",x["name"])
                     else:
