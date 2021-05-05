@@ -76,7 +76,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
             prRed("\r\n" + "Please use an integer.")
             time.sleep(2)
 
-    if user_input_1 == "Y" and user_input_2 == "Y":
+    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
         dataset_name = input("Enter your filename without the csv extension:")
 
         time.sleep(1)
