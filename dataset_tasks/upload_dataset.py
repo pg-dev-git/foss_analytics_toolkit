@@ -156,7 +156,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
                 payload = {'DataFile' : '{}'.format(base64_encoded),'InsightsExternalDataId' : '{}'.format(job_id),'PartNumber': 1}
                 payload = json.dumps(payload)
                 prGreen("\r\n" + "Uploading file to TCRM")
-                
+
                 x = 0
                 while x != 1:
                     try:
@@ -234,7 +234,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
 
                 user_input = input("\r\n" + "Do you want to run them now? (Y/N): ")
 
-                if user_input == "Y":
+                if user_input == "Y" or user_input == "y":
                     for x in depend_flow_list:
                         dataflow_id_ = x["id"]
                         start_dataflow(access_token,dataflow_id_,server_id)

@@ -48,7 +48,7 @@ def get_dataflows(access_token,server_id):
                     dataflow_name_ = x["name"]
                     dataflow_his_url = x["historiesUrl"]
 
-            prYellow("\r\n" + "Dataset selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
+            prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
             run_token = True
             while run_token:
@@ -78,7 +78,7 @@ def get_dataflows(access_token,server_id):
                 #if user_input == "5":
                 #    get_dataset_details(access_token,server_id)
 
-                check_token = input("Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
+                check_token = input("Press \"Y\" to see the Dataflow actions or hit any key to go back" + "\r\n")
 
                 if check_token == "Y" or check_token == "y":
                     run_token = True
