@@ -8,8 +8,8 @@ executables = [
 
 setup(
     name="tcrm_toolkit",
-    version="0.1b4",
-    description="TCRM Toolkit v0.1-beta4",
+    version="0.1b5",
+    description="TCRM Toolkit v0.1-beta5",
     executables=executables,
     options=options,
 )
