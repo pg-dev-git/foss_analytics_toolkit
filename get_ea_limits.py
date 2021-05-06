@@ -5,7 +5,7 @@ import time
 from line import *
 
 def get_EA_limits(access_token,server_id):
-    line_print()
+
     time.sleep(0.5)
     prGreen("\r\n" + "Checking your instance..." + "\r\n")
     time.sleep(1)
