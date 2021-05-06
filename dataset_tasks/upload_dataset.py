@@ -12,7 +12,7 @@ from dataset_tasks.json_metadata_generator import *
 import math
 from dataflow_tasks.start_stop_dataflow import *
 
-def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
+def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
 
     try:
         dataset_upload_dir = "dataset_upload"
@@ -23,7 +23,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/dataset_upload/"
+    d_ext = "{}".format(cd)+"\\dataset_upload\\"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -248,3 +248,4 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

@@ -5,7 +5,7 @@ from sfdc_login import *
 import os
 import time
 
-def backup_xmd_user(access_token,dataset_,server_id):
+def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
 
     #Backup folder creation - start:
     try:
@@ -87,3 +87,4 @@ def backup_xmd_user(access_token,dataset_,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

@@ -45,7 +45,7 @@ def get_datasets(access_token,server_id):
     print("\r\n")
 
     dataset_ = 999999999
-    action_track = input("Enter a dataset # (1 - {}) to view more actions or hit any other key to go back:".format(counter))
+    action_track = input("Enter a dataset # (1 - {}) to view more actions or hit any other key to go back: ".format(counter))
 
     counter_2 = 0
 
@@ -64,7 +64,7 @@ def get_datasets(access_token,server_id):
 
             run_token = True
             while run_token:
-                prGreen("What do you want to do?:")
+                prGreen("\r\n" + "What do you want to do?:")
                 time.sleep(0.3)
                 prYellow("(Choose a number from the list below)" + "\r\n")
                 time.sleep(0.5)
@@ -90,25 +90,25 @@ def get_datasets(access_token,server_id):
                 user_input = input("\r\n" + "Enter your selection: ")
 
                 if user_input == "1":
-                    get_datasets_field_details(access_token,dataset_,server_id)
+                    get_datasets_field_details(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "2":
-                    get_datasets_extract(access_token,dataset_,server_id)
+                    get_datasets_extract(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "3":
-                    upload_csv_dataset(access_token,dataset_name,dataset_,server_id)
+                    upload_csv_dataset(access_token,dataset_name,dataset_,server_id,dataset_name)
 
                 if user_input == "4":
-                    append_csv_dataset(access_token,dataset_name,dataset_,server_id)
+                    append_csv_dataset(access_token,dataset_name,dataset_,server_id,dataset_name)
 
                 if user_input == "5":
-                    backup_xmd_user(access_token,dataset_,server_id)
+                    backup_xmd_user(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "6":
                     dataset_history(access_token,dataset_,server_id,versionsUrl)
 
                 if user_input == "7":
-                    dataset_dependencies(access_token,dataset_,server_id)
+                    dataset_dependencies(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "8":
                     xmd_cleanup(access_token,dataset_,server_id)
@@ -125,6 +125,6 @@ def get_datasets(access_token,server_id):
                     prYellow("\r\n" + "Going back to the previous menu.")
                     time.sleep(2)
 
-    except ValueError:
+    except:
         prYellow("\r\n" + "Going back to the previous menu.")
         time.sleep(2)

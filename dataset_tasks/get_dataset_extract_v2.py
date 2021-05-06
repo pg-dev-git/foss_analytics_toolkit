@@ -15,7 +15,7 @@ import subprocess
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
-def get_datasets_extract(access_token,dataset_,server_id):
+def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
 
     try:
         dataset_extraction_dir = "dataset_extraction"
@@ -27,7 +27,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
     #print(cd)
 
     d_ext = "{}".format(cd)+"\\dataset_extraction\\"
-    print(d_ext)
+    #print(d_ext)
 
     os.chdir(d_ext)
 
@@ -207,3 +207,4 @@ def get_datasets_extract(access_token,dataset_,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

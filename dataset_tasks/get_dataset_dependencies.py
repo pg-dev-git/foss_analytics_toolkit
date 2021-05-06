@@ -4,7 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 import time
 
-def dataset_dependencies(access_token,dataset_,server_id):
+def dataset_dependencies(access_token,dataset_,server_id,dataset_name):
 
     prGreen("\r\n" + "Getting dependencies..." + "\r\n")
     time.sleep(2)
@@ -79,3 +79,5 @@ def dataset_dependencies(access_token,dataset_,server_id):
 
     if counter == 0:
         prYellow("\r\n" + "This asset doesn't have any dependencies.")
+
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))
