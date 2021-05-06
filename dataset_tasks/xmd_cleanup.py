@@ -14,7 +14,7 @@ import time
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
-def xmd_cleanup(access_token,dataset_,server_id):
+def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
     try:
         dataset_extraction_dir = "xmd_backups"
@@ -273,3 +273,4 @@ def xmd_cleanup(access_token,dataset_,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

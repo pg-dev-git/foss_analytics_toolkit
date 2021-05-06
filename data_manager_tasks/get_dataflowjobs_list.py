@@ -15,7 +15,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
         if x["jobType"] != "datasync" and x["status"] == "Running":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no Dataflows running at the moment.")
 
@@ -30,7 +34,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
         if x["jobType"] != "datasync" and x["status"] == "Failure":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no failed Dataflows.")
 
@@ -45,7 +53,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
         if x["jobType"] != "datasync" and x["status"] == "Success":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no completed Dataflows.")
 
@@ -60,7 +72,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
         if x["jobType"] != "datasync" and (x["status"] != "Success" and x["status"] != "Failure" and x["status"] != "Running"):
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no available Dataflows.")
 
@@ -78,7 +94,11 @@ def get_datasyncJobs_list(dataflowjobs_list):
         if x["jobType"] == "datasync" and x["status"] == "Running":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no Datasyncs running at the moment.")
 
@@ -93,7 +113,11 @@ def get_datasyncJobs_list(dataflowjobs_list):
         if x["jobType"] == "datasync" and x["status"] == "Failure":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no failed Datasyncs.")
 
@@ -108,7 +132,11 @@ def get_datasyncJobs_list(dataflowjobs_list):
         if x["jobType"] == "datasync" and x["status"] == "Success":
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no completed Datasyncs.")
 
@@ -123,7 +151,11 @@ def get_datasyncJobs_list(dataflowjobs_list):
         if x["jobType"] == "datasync" and (x["status"] != "Success" and x["status"] != "Failure" and x["status"] != "Running"):
             counter += 1
             counter_2 += 1
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
     if counter == 0:
         prYellow("\r\n" + "There are no other available Datasyncs.")
 
@@ -140,7 +172,11 @@ def get_AllJobs_list(dataflowjobs_list):
         counter += 1
         counter_2 += 1
         try:
-            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:",x["executedDate"],"- Label:",x["label"])
+            ex_date = x["executedDate"]
+            ex_date = ex_date[:10]
+            ex_time = x["executedDate"]
+            ex_time = ex_time[11:19]
+            print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
         except:
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Label:",x["label"])
 

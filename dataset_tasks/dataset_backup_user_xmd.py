@@ -80,7 +80,13 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     with open('{}_backup_user.xmd.json'.format(dataset_currentNameId), 'w') as outfile:
         json.dump(formatted_response, outfile)
 
-    prGreen("\r\n" + "User XMD Succesfully Exported." + "\r\n" + "Find the file here: {}".format(d_ext) + "\r\n")
+    time.sleep(1)
+
+    prGreen("\r\n" + "User XMD Succesfully Exported. Find the file here: ")
+
+    time.sleep(0.5)
+
+    prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
 
     time.sleep(2)
 

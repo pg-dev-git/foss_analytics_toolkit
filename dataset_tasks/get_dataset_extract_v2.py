@@ -186,11 +186,11 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
         #combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, encoding='utf-8-sig')
         _end = time.time()
         total_time = round((_end - _start),2)
-        prGreen("\r\n" + "CSV compiled in {}s".format(total_time))
+        prGreen("\r\n" + "CSV compiled in {}s".format(total_time) + "\r\n")
         time.sleep(0.2)
-        prCyan("\r\n" + "Dataset Succesfully Exported." + "\r\n")
+        prCyan("\r\n" + "Dataset Succesfully Exported. Find the file here:")
         time.sleep(0.5)
-        prCyan("\r\n" + "Find the file here: {}".format(d_ext) + "\r\n")
+        prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
         time.sleep(0.2)
 
         #Append all csv files from the batches - end.

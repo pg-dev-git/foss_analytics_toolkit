@@ -19,7 +19,7 @@ def dataset_dependencies(access_token,dataset_,server_id,dataset_name):
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
+    prGreen(formatted_response_str)
 
     counter = 0
 

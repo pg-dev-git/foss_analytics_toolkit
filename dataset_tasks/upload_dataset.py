@@ -108,6 +108,8 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                 batch_count += 1
 
+                prCyan("\r\n" + "***  Starting batch #{}  ***".format(batch_count))
+
                 load_csv_split = pd.read_csv("{}.csv".format(dataset_name), header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
                 #print(load_csv_split)
                 #load_csv_split.to_csv( "{}_dataset_split_{}.csv".format(dataset_name,batch_count), index=False, encoding='utf-8-sig')
@@ -195,7 +197,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 if os.path.exists("{}_dataset_split_{}.csv".format(dataset_name,batch_count)):
                     os.remove("{}_dataset_split_{}.csv".format(dataset_name,batch_count))
 
-                time.sleep(5)
+                time.sleep(2)
 
                 operation_flag = 'Append'
 

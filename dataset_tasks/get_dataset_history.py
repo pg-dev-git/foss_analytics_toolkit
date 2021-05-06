@@ -6,7 +6,7 @@ import os
 import time
 
 
-def dataset_history(access_token,dataset_,server_id,versionsUrl):
+def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
@@ -51,3 +51,5 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl):
     else:
         prRed("\r\n" + "There are no history records available." + "\r\n")
         time.sleep(2)
+
+    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

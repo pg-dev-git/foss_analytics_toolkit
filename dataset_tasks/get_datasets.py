@@ -105,13 +105,13 @@ def get_datasets(access_token,server_id):
                     backup_xmd_user(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "6":
-                    dataset_history(access_token,dataset_,server_id,versionsUrl)
+                    dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name)
 
                 if user_input == "7":
                     dataset_dependencies(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "8":
-                    xmd_cleanup(access_token,dataset_,server_id)
+                    xmd_cleanup(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "9":
                     delete_dataset(access_token,dataset_,server_id)
