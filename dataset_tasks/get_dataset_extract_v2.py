@@ -195,6 +195,7 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
         time.sleep(0.5)
         prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
         time.sleep(0.2)
+        line_print()
 
         #Append all csv files from the batches - end.
 
@@ -204,7 +205,7 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
     while i <= batches_:
         #Remove partial json files
         os.remove('{}_{}_query_results.json'.format(dataset_name,i))
-        #Remove partial csv files 
+        #Remove partial csv files
         os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
         i += 1
 
