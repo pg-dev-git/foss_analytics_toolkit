@@ -5,6 +5,7 @@ from sfdc_login import *
 import time
 import pandas as pd
 import csv
+from line import *
 
 def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
 
@@ -67,7 +68,6 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     formatted_response_str = json.dumps(formatted_response, indent=2)
     #prYellow(formatted_response_str)
 
-    print("\r\n" + "------------------------------------------------------------")
     prGreen("\r\n" + "Getting fields...")
     time.sleep(1)
     fields = []
@@ -132,6 +132,8 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
 
     prCyan("\r\n" + "{} date fields - {} dimensions - {} measures - {} Total Records".format(dates_counter,dimension_counter,measures_counter,count_rows) + "\r\n")
 
+    line_print()
+
     time.sleep(0.5)
 
     user_input = input("\r\n" + "Do you want to export this list as a csv file? (Y/N): ")
@@ -165,6 +167,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
 
         prGreen("\r\n" + "File successfuly exported here:")
         prLightPurple("\r\n" + "{}".format(d_ext))
+        line_print()
 
         time.sleep(1)
 
@@ -172,6 +175,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
         prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))
 
     else:
+        line_print()
         time.sleep(1)
         os.chdir("..")
         prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

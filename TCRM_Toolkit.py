@@ -14,6 +14,8 @@ import configparser
 import datetime
 import time
 from dashboards_tasks.get_dashboards import *
+from get_ea_limits import *
+from line import *
 
 if __name__ == "__main__":
 
@@ -54,6 +56,7 @@ if __name__ == "__main__":
 
     run_token = True
     while run_token:
+        line_print()
         prGreen("What do you want to do?:")
         time.sleep(0.3)
         prYellow("(Choose a number from the list below)" + "\r\n")
@@ -68,12 +71,15 @@ if __name__ == "__main__":
         time.sleep(0.15)
         prCyan("5 - Create New Dataset from CSV")
         time.sleep(0.15)
-        prYellow("6 - Run Login Parameters Configuration")
+        prYellow("6 - Check TCRM Limits")
+        time.sleep(0.15)
+        prYellow("7 - Run Login Parameters Configuration")
         time.sleep(0.5)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
         print("\r\n")
         user_input = input("Enter your selection: ")
+        line_print()
 
         if user_input == "1":
             get_datasets(access_token,server_id)
@@ -91,6 +97,9 @@ if __name__ == "__main__":
             upload_new_csv_dataset(access_token,server_id)
 
         if user_input == "6":
+            get_EA_limits(access_token,server_id)
+
+        if user_input == "7":
             flag = "Y"
             sfdc_login.auth_check(flag)
             flag = "N"

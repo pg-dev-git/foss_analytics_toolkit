@@ -13,6 +13,7 @@ from dataset_tasks.delete_dataset import *
 from dataset_tasks.get_dataset_history import *
 from dataset_tasks.get_dataset_dependencies import *
 import time
+from line import *
 
 def get_datasets(access_token,server_id):
     prGreen("\r\n" + "Getting datasets list..." + "\r\n")
@@ -64,6 +65,7 @@ def get_datasets(access_token,server_id):
 
             run_token = True
             while run_token:
+                line_print()
                 prGreen("\r\n" + "What do you want to do?:")
                 time.sleep(0.3)
                 prYellow("(Choose a number from the list below)" + "\r\n")
@@ -88,6 +90,7 @@ def get_datasets(access_token,server_id):
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
+                line_print()
 
                 if user_input == "1":
                     get_datasets_field_details(access_token,dataset_,server_id,dataset_name)

@@ -4,9 +4,10 @@ from terminal_colors import *
 from sfdc_login import *
 import os
 import time
+from line import *
 
 
-def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
+def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id,dataflow_name_):
     headers = {
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
@@ -40,6 +41,7 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
 
         time.sleep(2)
         prYellow("\r\n" + "#1 is your active version of the Dataflow." + "\r\n")
+        line_print()
 
         action_track = input("Choose a Dataflow History id between #2 and {} to replace the current version or hit any other key to go back:".format(counter))
 
@@ -84,14 +86,21 @@ def get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id):
 
                         prYellow("\r\n" + "Dataflow version replaced." + "\r\n")
                         time.sleep(2)
+                        line_print()
+                        prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
                 except ValueError:
                     prRed("\r\n" + "Dataflow replacement cancelled." + "\r\n")
                     time.sleep(2)
+                    line_print()
+                    prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
 
         except ValueError:
             prYellow("\r\n" + "Going back to the previous menu." + "\r\n")
             time.sleep(2)
+            prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
+            line_print()
     else:
         prRed("\r\n" + "There are no history records available." + "\r\n")
         time.sleep(2)
+        line_print()

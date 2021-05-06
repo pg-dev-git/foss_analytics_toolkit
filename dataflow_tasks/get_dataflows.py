@@ -6,10 +6,11 @@ import os
 from dataflow_tasks.start_stop_dataflow import *
 from dataflow_tasks.get_dataflow_history import *
 from dataflow_tasks.backup_current import *
+from line import *
 
 
 def get_dataflows(access_token,server_id):
-    prGreen("\r\n" + "getting dataflows list..." + "\r\n")
+    prGreen("\r\n" + "Getting Dataflows List..." + "\r\n")
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
@@ -33,7 +34,7 @@ def get_dataflows(access_token,server_id):
         print("{} - ".format(counter) ,"Dataflow id: ",x["id"]," - Label: ",x["label"])
     print("\r\n")
 
-    action_track = input("Choose a Dataflow # (1 - {}) to view more actions or hit any other key to go back:".format(counter))
+    action_track = input("Choose a Dataflow # (1 - {}) to view more actions or hit any other key to go back: ".format(counter))
 
     counter_2 = 0
 
@@ -52,6 +53,7 @@ def get_dataflows(access_token,server_id):
 
             run_token = True
             while run_token:
+                line_print()
                 prGreen("What do you want to do?:")
                 prYellow("(Choose a number from the list below)" + "\r\n")
                 prCyan("1 - Start Dataflow")
@@ -60,17 +62,18 @@ def get_dataflows(access_token,server_id):
                 prCyan("4 - Backup Current version")
 
                 user_input = input("\r\n" + "Enter your selection: ")
+                line_print()
 
                 print("\r\n")
 
                 if user_input == "1":
-                    start_dataflow(access_token,dataflow_id_,server_id)
+                    start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_)
 
                 if user_input == "2":
-                    stop_dataflow(access_token,dataflow_id_,server_id)
+                    stop_dataflow(access_token,dataflow_id_,server_id,dataflow_name_)
 
                 if user_input == "3":
-                    get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id)
+                    get_dataflow_history(access_token,dataflow_his_url,dataflow_id_,server_id,dataflow_name_)
 
                 if user_input == "4":
                     backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id)

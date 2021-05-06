@@ -2,6 +2,7 @@ import json
 import requests
 from terminal_colors import *
 import time
+from line import *
 
 def get_dataflowsJobs_list(dataflowjobs_list):
     counter_2 = 0
@@ -20,10 +21,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no Dataflows running at the moment.")
 
-    print("\r\n")
+    line_print()
 
     #Check failed jobs
     counter = 0
@@ -39,10 +41,11 @@ def get_dataflowsJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no failed Dataflows.")
 
-    print("\r\n")
+    line_print()
 
     #Check successfull jobs
     counter = 0
@@ -58,14 +61,15 @@ def get_dataflowsJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no completed Dataflows.")
 
-    print("\r\n")
+    line_print()
 
     #Check all other jobs
     counter = 0
-    prYellow("\r\n" + "Checking all other status:")
+    prYellow("\r\n" + "Checking all other job types:")
     time.sleep(2)
     for x in dataflowjobs_list:
 
@@ -77,10 +81,12 @@ def get_dataflowsJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no available Dataflows.")
 
-    print("\r\n")
+    line_print()
+
 
 def get_datasyncJobs_list(dataflowjobs_list):
     counter_2 = 0
@@ -99,10 +105,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no Datasyncs running at the moment.")
 
-    print("\r\n")
+    line_print()
+
 
     #Check failed jobs
     counter = 0
@@ -118,10 +126,12 @@ def get_datasyncJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no failed Datasyncs.")
 
-    print("\r\n")
+    line_print()
+
 
     #Check successfull jobs
     counter = 0
@@ -137,10 +147,11 @@ def get_datasyncJobs_list(dataflowjobs_list):
             ex_time = x["executedDate"]
             ex_time = ex_time[11:19]
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Run Date:","{} {}".format(ex_date,ex_time),"- Label:",x["label"])
+
     if counter == 0:
         prYellow("\r\n" + "There are no completed Datasyncs.")
 
-    print("\r\n")
+    line_print()
 
     #Check all other jobs
     counter = 0
@@ -159,13 +170,14 @@ def get_datasyncJobs_list(dataflowjobs_list):
     if counter == 0:
         prYellow("\r\n" + "There are no other available Datasyncs.")
 
+    line_print()
+
 def get_AllJobs_list(dataflowjobs_list):
     counter_2 = 0
 
-    print("\r\n")
 
     #Check running jobs
-    prGreen("\r\n" + "Checking for job types:")
+    prGreen("\r\n" + "Checking for all job types:")
     counter = 0
     time.sleep(2)
     for x in dataflowjobs_list:
@@ -180,5 +192,8 @@ def get_AllJobs_list(dataflowjobs_list):
         except:
             print("{} - ".format(counter_2) ,"Job id:",x["id"],"- Status:",x["status"],"- Label:",x["label"])
 
+    line_print()
+
     if counter == 0:
         prYellow("\r\n" + "There are no jobs available.")
+        line_print()

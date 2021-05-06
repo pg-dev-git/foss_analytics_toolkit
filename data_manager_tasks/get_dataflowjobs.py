@@ -3,9 +3,11 @@ import requests
 from terminal_colors import *
 import time
 from data_manager_tasks.get_dataflowjobs_list import *
+from line import *
 
 def get_dataflowsJobs(access_token,server_id):
-    prGreen("\r\n" + "getting dataflows jobs..." + "\r\n")
+    prGreen("\r\n" + "Checking Data Manager Logs..." + "\r\n")
+    time.sleep(1)
     headers = {
         'Authorization': "Bearer {}".format(access_token,server_id)
         }
@@ -24,6 +26,7 @@ def get_dataflowsJobs(access_token,server_id):
 
     try:
         while run_token:
+            line_print()
             prYellow("Choose an option from the list below:" + "\r\n")
             prCyan("1 - List Dataflow Jobs by Status")
             prCyan("2 - List Datasync Jobs by Status")
@@ -32,6 +35,7 @@ def get_dataflowsJobs(access_token,server_id):
             #prCyan("5 - Upload a CSV Dataset - New/Override")
             print("\r\n")
             user_input = input("Enter your selection: ")
+            line_print()
 
             if user_input == "1":
                 get_dataflowsJobs_list(dataflowjobs_list)

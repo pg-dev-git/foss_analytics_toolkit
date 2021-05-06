@@ -7,6 +7,7 @@ import time
 import html
 import sys
 import subprocess
+from line import *
 
 def get_platform():
     platforms = {
@@ -28,7 +29,7 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
         dataflow_extraction_dir = "dataflow_backup"
         os.mkdir(dataflow_extraction_dir)
     except OSError as error:
-            print(" ")
+            pass
 
     cd = os.getcwd()
 
@@ -43,7 +44,6 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
     except:
         pass
 
-    print("----------------------------------------")
     headers = {
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
@@ -130,11 +130,16 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
 
         prCyan("\r\n" + "Dataflow JSON definition succesfully backed up here: ")
         prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
+        line_print()
 
         time.sleep(2)
+
+        prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
         os.chdir("..")
     else:
         prRed("\r\n" + "There is no JSON available to backup." + "\r\n")
         os.chdir("..")
+        line_print()
         time.sleep(2)
+        prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")

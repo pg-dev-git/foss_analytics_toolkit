@@ -33,7 +33,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     user_input_3 = 9567385638567265
 
     #Input check for file placement
-    while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N" or user_input_1 == "n":
+    while user_input_1 != "Y" and user_input_1 != "y":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
@@ -46,7 +46,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             time.sleep(2)
 
     #Input check for file encoding
-    while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N" or user_input_2 == "n":
+    while user_input_2 != "Y" and user_input_2 != "y":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(1)
         if user_input_2 == "Y" or user_input_2 == "y":

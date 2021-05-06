@@ -4,10 +4,11 @@ from terminal_colors import *
 from sfdc_login import *
 import os
 import time
+from line import *
 
 d_job_id = "ffghd234dffhd23"
 
-def start_dataflow(access_token,dataflow_id_,server_id):
+def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -25,13 +26,16 @@ def start_dataflow(access_token,dataflow_id_,server_id):
         #prGreen(formatted_response_str)
         global d_job_id
         d_job_id = formatted_response.get("id")
-        print(d_job_id)
+        #print(d_job_id)
 
         prGreen("\r\n" + "Dataflow started. Check the Data Manager for more details." + "\r\n")
+        line_print()
 
-        time.sleep(2)
+        time.sleep(1)
 
-def stop_dataflow(access_token,dataflow_id_,server_id):
+        prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
+
+def stop_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -48,4 +52,8 @@ def stop_dataflow(access_token,dataflow_id_,server_id):
 
         prGreen("\r\n" + "Dataflow stopped. Check the Data Manager for more details." + "\r\n")
 
+        line_print()
+
         time.sleep(2)
+
+        prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")

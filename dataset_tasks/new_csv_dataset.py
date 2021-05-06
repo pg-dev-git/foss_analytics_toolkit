@@ -10,6 +10,7 @@ import os
 import base64
 from dataset_tasks.json_metadata_generator import *
 import math
+from line import *
 
 def upload_new_csv_dataset(access_token,server_id):
 
@@ -22,7 +23,7 @@ def upload_new_csv_dataset(access_token,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/dataset_upload/"
+    d_ext = "{}".format(cd)+"\\dataset_upload\\"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -32,12 +33,12 @@ def upload_new_csv_dataset(access_token,server_id):
     user_input_3 = 9567385638567265
 
     #Input check for file placement
-    while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N":
+    while user_input_1 != "y" and user_input_1 != "Y":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
-        if user_input_1 == "Y":
-            print("")
-        elif user_input_1 == "N":
+        if user_input_1 == "Y" or user_input_1 == "y":
+            line_print()
+        elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
             time.sleep(2)
         else:
@@ -45,12 +46,12 @@ def upload_new_csv_dataset(access_token,server_id):
             time.sleep(2)
 
     #Input check for file encoding
-    while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N":
+    while user_input_2 != "y" and user_input_2 != "Y":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(1)
-        if user_input_2 == "Y":
-            print("")
-        elif user_input_2 == "N":
+        if user_input_2 == "Y" or user_input_2 == "y":
+            line_print()
+        elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
             time.sleep(2)
         else:
@@ -64,7 +65,7 @@ def upload_new_csv_dataset(access_token,server_id):
         try:
             user_input_3 = int(user_input_3)
             if type(user_input_3) == int and user_input_3 > 0:
-                print("")
+                line_print()
             elif type(user_input_3) == int and user_input_3 < 1:
                 prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
                 time.sleep(2)
@@ -75,13 +76,15 @@ def upload_new_csv_dataset(access_token,server_id):
             prRed("\r\n" + "Please use an integer.")
             time.sleep(2)
 
-    if user_input_1 == "Y" and user_input_2 == "Y":
+    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
         dataset_name = input("Enter your filename without the csv extension: ")
         time.sleep(2)
         print("\r\n")
         dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores instead \"_\": ")
 
         time.sleep(1)
+        line_print()
+
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
         time.sleep(1)
         _start = time.time()
@@ -93,6 +96,7 @@ def upload_new_csv_dataset(access_token,server_id):
         enc_time = round((_end-_start),2)
         time.sleep(1)
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
+        line_print()
 
         batches_ = math.ceil(user_input_3 / 50000)
 
@@ -104,6 +108,7 @@ def upload_new_csv_dataset(access_token,server_id):
 
         if batches_ > 0:
             prGreen("\r\n" + "Your file will be upladed in {} batches".format(batches_))
+            line_print()
 
             for x in range(batches_):
 
@@ -126,6 +131,7 @@ def upload_new_csv_dataset(access_token,server_id):
                 _end = time.time()
                 enc_time = round((_end-_start),2)
                 prGreen("\r\n" + "CSV encoded in {}s".format(enc_time))
+                line_print()
 
                 headers = {'Authorization': "Bearer {}".format(access_token),
                            'Content-Type': "application/json"}
@@ -140,6 +146,7 @@ def upload_new_csv_dataset(access_token,server_id):
                 prYellow(formatted_response_str)
                 job_id = resp_results.get("id")
                 prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
+                line_print()
                 time.sleep(1)
 
                 payload = {'DataFile' : '{}'.format(base64_encoded),'InsightsExternalDataId' : '{}'.format(job_id),'PartNumber': 1}
@@ -153,6 +160,7 @@ def upload_new_csv_dataset(access_token,server_id):
                 _end = time.time()
                 upl_time = round((_end-_start),2)
                 prGreen("\r\n" + "CSV uploaded in {}s".format(upl_time))
+                line_print()
                 time.sleep(1)
 
                 payload = {'Action' : 'Process'}
@@ -160,11 +168,12 @@ def upload_new_csv_dataset(access_token,server_id):
                 resp = requests.patch('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
                 prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
                 prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
+                line_print()
 
                 if os.path.exists("{}_dataset_split_{}.csv".format(dataset_name,batch_count)):
                     os.remove("{}_dataset_split_{}.csv".format(dataset_name,batch_count))
 
-                time.sleep(5)
+                time.sleep(3)
 
                 operation_flag = 'Append'
 

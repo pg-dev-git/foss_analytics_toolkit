@@ -11,21 +11,24 @@ import base64
 import threading
 from dataset_tasks.dataset_extract_MT import *
 import time
+from line import *
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
 def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
+    line_print()
+
     try:
         dataset_extraction_dir = "xmd_backups"
         os.mkdir(dataset_extraction_dir)
     except OSError as error:
-            print(" ")
+            pass
 
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/xmd_backups/"
+    d_ext = "{}".format(cd)+"\\xmd_backups\\"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -247,8 +250,9 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
     with open('{}_clean_user.xmd.json'.format(dataset_), 'w') as outfile:
         json.dump(formatted_response, outfile)
-    prGreen("\r\n" + "XMD Succesfully Cleaned Up.")
-    prGreen("\r\n" + "You can find it here: {}".format(d_ext))
+    prGreen("\r\n" + "XMD Succesfully Cleaned Up. You can find it here:")
+    prLightPurple("\r\n" + "{}".format(d_ext))
+    line_print()
 
     time.sleep(2)
 
@@ -270,6 +274,9 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
         time.sleep(1)
         prCyan("\r\n" + "XMD Updated")
         time.sleep(1)
+        line_print()
+    else:
+        line_print()
 
     #Go back to parent folder:
     os.chdir("..")
