@@ -7,7 +7,7 @@ from line import *
 def get_EA_limits(access_token,server_id):
 
     time.sleep(0.5)
-    prGreen("\r\n" + "Checking your instance..." + "\r\n")
+    prGreen("\r\n" + "Checking the instance..." + "\r\n")
     time.sleep(1)
     headers = {
         'Authorization': "Bearer {}".format(access_token,server_id)
