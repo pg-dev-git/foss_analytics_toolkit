@@ -12,6 +12,7 @@ import threading
 from dataset_tasks.dataset_extract_MT import *
 import time
 import subprocess
+from line import *
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
@@ -158,6 +159,7 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
         _end = time.time()
         total_time = round((_end - _start),2)
         prGreen("\r\n" + "Multithreaded extraction completed in {}s.".format(total_time))
+        line_print()
         time.sleep(1)
 
     if batches_ > 0:
@@ -187,7 +189,8 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
         _end = time.time()
         total_time = round((_end - _start),2)
         prGreen("\r\n" + "CSV compiled in {}s".format(total_time) + "\r\n")
-        time.sleep(0.2)
+        line_print()
+        time.sleep(1)
         prCyan("\r\n" + "Dataset Succesfully Exported. Find the file here:")
         time.sleep(0.5)
         prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
