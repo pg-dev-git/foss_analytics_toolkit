@@ -2,9 +2,10 @@ import json
 import requests
 from terminal_colors import *
 import time
+from line import *
 
 def get_EA_limits(access_token,server_id):
-    print("\r\n" + "----------------------------------------")
+    line_print()
     time.sleep(0.5)
     prGreen("\r\n" + "Checking your instance..." + "\r\n")
     time.sleep(1)
@@ -51,5 +52,4 @@ def get_EA_limits(access_token,server_id):
         prYellow("You have used all rows available in your instance. You won't be able to create new datasets!")
         time.sleep(3)
 
-    print("\r\n" + "----------------------------------------")
     time.sleep(1)
