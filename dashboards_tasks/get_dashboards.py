@@ -8,7 +8,7 @@ from dashboards_tasks.get_dashboard_history import *
 from dashboards_tasks.delete_dashboard import *
 import time
 
-def get_dashboards(access_token,server_id):
+def get_dashboards_main(access_token,server_id):
     prGreen("\r\n" + "Getting dashboards list..." + "\r\n")
     time.sleep(1)
     headers = {
@@ -66,7 +66,9 @@ def get_dashboards(access_token,server_id):
                 time.sleep(0.15)
                 prCyan("2 - Show Version History / Restore")
                 time.sleep(0.15)
-                prRed("3 - Delete Dashboard")
+                prCyan("3 - Backup JSON definition")
+                time.sleep(0.15)
+                prRed("4 - Delete Dashboard")
                 time.sleep(0.5)
 
                 user_input = input("\r\n" + "Enter your selection: ")
@@ -78,6 +80,9 @@ def get_dashboards(access_token,server_id):
                     dashboard_history(access_token,dashboard_,server_id,historiesUrl)
 
                 if user_input == "3":
+                    backup_dash_json(access_token,dashboard_,server_id,dashboard_label)
+
+                if user_input == "4":
                     delete_dash(access_token,dashboard_,server_id)
 
                 prCyan("\r\n" + "Selected Dashboard: {} - {}".format(dashboard_, dashboard_label))

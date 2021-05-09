@@ -11,7 +11,6 @@ from dataset_tasks.append_dataset import *
 from dataset_tasks.delete_dataset import *
 from dataset_tasks.get_dataset_history import *
 from dataset_tasks.get_dataset_dependencies import *
-from get_dashboards import *
 import time
 
 def get_dash_datasets(access_token,dashboard_,server_id):

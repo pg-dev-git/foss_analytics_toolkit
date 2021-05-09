@@ -4,7 +4,6 @@ from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_datasets import *
 from dataset_tasks.new_csv_dataset import *
-#from get_dashboards import *
 from dataflow_tasks.get_dataflows import *
 from data_manager_tasks.get_dataflowjobs import *
 from art import *
@@ -17,6 +16,7 @@ from dashboards_tasks.get_dashboards import *
 from get_ea_limits import *
 from line import *
 from dataflow_tasks.mass_dataflows_backup import *
+from mass_dashboard_backup import *
 
 if __name__ == "__main__":
 
@@ -74,9 +74,11 @@ if __name__ == "__main__":
         time.sleep(0.15)
         prLightPurple("6 - Mass Backup all Dataflows")
         time.sleep(0.15)
-        prYellow("7 - Check TCRM Limits")
+        prLightPurple("7 - Mass Backup all Dashboards")
         time.sleep(0.15)
-        prYellow("8 - Run Login Parameters Configuration")
+        prYellow("8 - Check TCRM Limits")
+        time.sleep(0.15)
+        prYellow("9 - Run Login Parameters Configuration")
         time.sleep(0.5)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
@@ -88,7 +90,7 @@ if __name__ == "__main__":
             get_datasets(access_token,server_id)
 
         if user_input == "2":
-            get_dashboards(access_token,server_id)
+            get_dashboards_main(access_token,server_id)
 
         if user_input == "3":
             get_dataflows(access_token,server_id)
@@ -103,9 +105,12 @@ if __name__ == "__main__":
             mass_dataflows(access_token,server_id)
 
         if user_input == "7":
-            get_EA_limits(access_token,server_id)
+            mass_dashboards(access_token,server_id)
 
         if user_input == "8":
+            get_EA_limits(access_token,server_id)
+
+        if user_input == "9":
             flag = "Y"
             sfdc_login.auth_check(flag)
             flag = "N"

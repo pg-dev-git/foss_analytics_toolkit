@@ -8,7 +8,11 @@ from dataflow_tasks.get_dataflow_history import *
 from dataflow_tasks.backup_current import *
 from line import *
 import datetime
+from zipper import *
+import shutil
 
+def remove(string):
+    return string.replace(" ", "_")
 
 def mass_dataflows(access_token,server_id):
 
@@ -68,7 +72,7 @@ def mass_dataflows(access_token,server_id):
     for x in dataflow_list:
         counter += 1
 
-    prGreen("\r\n" + "{} Dataflows will backed up now...".format(counter) + "\r\n")
+    prGreen("\r\n" + "{} Dataflows will be backed up now...".format(counter) + "\r\n")
     line_print()
 
     counter = 0
@@ -141,6 +145,12 @@ def mass_dataflows(access_token,server_id):
             #quit()
             os_running = get_platform()
 
+            try:
+                dataflow_name_ = remove(dataflow_name_)
+            except:
+                pass
+
+
             if os_running == "Windows":
 
                 #bat_ = open("replace.bat", "w")
@@ -159,15 +169,7 @@ def mass_dataflows(access_token,server_id):
                 for x in ps_1_dict.values():
                     #print(x)
                     completed = subprocess.run(["powershell", "-Command", x], capture_output=True)
-                    #ps1_ = open("replace.ps1", "w")
-                    #time.sleep(0.1)
-                    #ps1_.write(x)
-                    #time.sleep(0.1)
-                    #ps1_.close()
-                    #time.sleep(0.1)
-                    #replace_ = subprocess.run(["replace.bat"], stdout=subprocess.PIPE, text=True, shell=True)
-                    #print(replace_.stdout)
-                    time.sleep(0.25)
+                    time.sleep(0.15)
 
                 #os.remove("replace.bat")
                 #os.remove("replace.ps1")
@@ -177,7 +179,7 @@ def mass_dataflows(access_token,server_id):
             #prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
             line_print()
 
-            time.sleep(0.25)
+            #time.sleep(0.15)
 
             #prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
@@ -185,16 +187,23 @@ def mass_dataflows(access_token,server_id):
         else:
             prRed("\r\n" + "There is no JSON available to backup." + "\r\n")
             line_print()
-            time.sleep(0.5)
+            time.sleep(0.15)
             #prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
     _end = time.time()
 
     total_time = round((_end - _start),2)
 
-    prCyan("\r\n" + "Mass Dataflow Backup succesfully completed in {}s. Find the files here: ".format(total_time))
-    prLightPurple("\r\n" + "{}".format(d_ext))
+    os.chdir("..")
+    directory = './{}'.format(dataflow_extraction_dir)
+    tcrm_zipper(directory,dataflow_extraction_dir)
+    shutil.rmtree(r'./{}'.format(dataflow_extraction_dir))
+    prGreen("\r\n" + "Mass Dataflow Backup succesfully completed in {}s.".format(total_time))
+    time.sleep(0.15)
+    cd = os.getcwd()
+    prCyan("\r\n" + "Find the files here: ")
+    prLightPurple("\r\n" + "{}".format(cd))
     #line_print()
 
-    os.chdir("..")
+
     os.chdir("..")
