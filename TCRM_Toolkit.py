@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
     try:
         if (current_time.year) == 2021 and (((current_time.month) == 4 and (current_time.day) <= 30) or ((current_time.month) == 5 and (current_time.day) <= 20)):
-            print("\r\n" + "Welcome to the beta testing. Please try all the features and share your feedback!" + "\r\n")
-            time.sleep(1)
+            prGreen("\r\n" + "Welcome to the beta testing. Please try all the features and share your feedback!" + "\r\n")
+            time.sleep(3)
         else:
             print("\r\n" + "The beta test period has expired." + "\r\n")
             quit()
