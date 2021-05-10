@@ -27,5 +27,5 @@ def delete_dataset(access_token,dataset_,server_id):
             else:
                 print("\r\n" + "Wrong value entered. Going back.")
                 time.sleep(2)
-    except ValueError:
+    except:
         pass
