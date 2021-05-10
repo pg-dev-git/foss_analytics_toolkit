@@ -77,7 +77,17 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             time.sleep(2)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
-        dataset_name = input("Enter your filename without the csv extension:")
+
+        x = 0
+
+        while x !=1:
+            dataset_name = input("Enter your filename without the csv extension:")
+            if os.path.exists("{}.csv".format(dataset_name)):
+                x += 1
+                pass
+            else:
+                prRed("File not found. Did you enter the right name? Try again.")
+                time.sleep(2)
 
         time.sleep(1)
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
@@ -147,7 +157,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         job_id = resp_results.get("id")
                         prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
                         if success:
-                            prYellow("Status: Succesfull")
+                            prYellow("Status: Successful")
                             x += 1
                         else:
                             prRed(errors)
@@ -170,7 +180,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         formatted_response_str = json.dumps(resp_results, indent=2)
                         #prYellow(formatted_response_str)
                         if success:
-                            prYellow("Status: Succesfull")
+                            prYellow("Status: Successful")
                             x += 1
                         else:
                             prRed(errors)
@@ -239,14 +249,38 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 if user_input == "Y" or user_input == "y":
                     for x in depend_flow_list:
                         dataflow_id_ = x["id"]
-                        start_dataflow(access_token,dataflow_id_,server_id)
-                        time.sleep(3)
-            except AttributeError:
+                        print(dataflow_id_)
+                        headers = {
+                            'Authorization': "Bearer {}".format(access_token),
+                            'Content-Type': "application/json"
+                            }
+
+                        payload = {"dataflowId": "{}".format(dataflow_id_),"command": "start"}
+
+                        payload = json.dumps(payload)
+
+                        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs'.format(server_id), headers=headers, data=payload)
+
+                        formatted_response = json.loads(resp.text)
+                        formatted_response_str = json.dumps(formatted_response, indent=2)
+                        #prGreen(formatted_response_str)
+                        global d_job_id
+                        d_job_id = formatted_response.get("id")
+                        #print(d_job_id)
+
+                        prGreen("\r\n" + "Dataflow started. Check the Data Manager for more details." + "\r\n")
+                        line_print()
+
+                        time.sleep(1)
+
+            except:
                 pass
 
-        except ValueError:
+        except:
             pass
 
+
+    prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
 
     #Go back to parent folder:
     os.chdir("..")

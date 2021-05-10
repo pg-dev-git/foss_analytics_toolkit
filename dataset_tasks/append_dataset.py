@@ -147,7 +147,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         job_id = resp_results.get("id")
                         prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
                         if success:
-                            prYellow("Status: Succesfull")
+                            prYellow("Status: Successful")
                             x += 1
                         else:
                             prRed(errors)
@@ -175,7 +175,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         prGreen("\r\n" + "CSV uploaded in {}s".format(upl_time))
                         time.sleep(1)
                         if success:
-                            prYellow("Status: Succesfull")
+                            prYellow("Status: Successful")
                             x += 1
                         else:
                             prRed(errors)
