@@ -29,14 +29,16 @@ def data_extract_thread(dataset_,dataset_currentVersionId,query_fields_str,q_off
             with open('{}_{}_query_results.json'.format(dataset_name,i), 'w') as outfile:
                 json.dump(query_results, outfile)
 
+            outfile.close()
+
             df = pd.read_json(r'{}_{}_query_results.json'.format(dataset_name,i))
             export_csv = df.to_csv(r'{}_{}_query_results.csv'.format(dataset_name,i), index = None, header=True)
 
-            time.sleep(2)
+            time.sleep(0.25)
             x = 1
         except:
             pass
 
     #print("Thread #{} finished.".format(i))
-    time.sleep(0.5)
+    time.sleep(0.15)
     return(i)

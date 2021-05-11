@@ -81,7 +81,7 @@ def upload_new_csv_dataset(access_token,server_id):
 
     #Input check for date format
     while user_input_4 != "y" and user_input_4 != "Y":
-        user_input_4 = input("\r\n" + "Are the dates formatted as \"yyyy/mm/dd\"? The job will fail if the aren't (Y/N): ")
+        user_input_4 = input("\r\n" + "Are the dates formatted as \"yyyy/mm/dd\"? The job will fail if they aren't (Y/N): ")
         time.sleep(1)
         if user_input_4 == "Y" or user_input_4 == "y":
             line_print()
@@ -94,7 +94,7 @@ def upload_new_csv_dataset(access_token,server_id):
 
     #Input check for headers
     while user_input_5 != "y" and user_input_5 != "Y":
-        user_input_5 = input("\r\n" + "Have you removed all spaces and dots from your column names? You can use underscores \"_\". The job will fail if the are spaces or dots. (Y/N): ")
+        user_input_5 = input("\r\n" + "Have you removed all spaces and dots from your column names? You can use underscores \"_\". The job will fail if there are spaces or dots. (Y/N): ")
         time.sleep(1)
         if user_input_5 == "Y" or user_input_5 == "y":
             line_print()

@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(['TCRM_Toolkit.py'],
-             pathex=['C:\\Users\\Pedro Gagliardi\\Documents\\GitHub\\tcrm_toolkit_source'],
+             pathex=['C:\\dev\\tcrm_toolkit_source'],
              binaries=[],
              datas=[],
              hiddenimports=[],

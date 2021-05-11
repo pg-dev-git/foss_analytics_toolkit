@@ -6,6 +6,12 @@ import math
 
 def csv_upload_json_meta(dataset_name_,dataset_name):
 
+    try:
+        if os.path.exists('{}_CSV_upload_metadata.json'.format(dataset_name)):
+            os.remove('{}_CSV_upload_metadata.json'.format(dataset_name))
+    except:
+        pass
+
     #Define regex for date match yyyy/MM/dd only
     csv_date_match = '((19|20)\d{2})[-/.](0[1-9]|1[012])[-/.](0[1-9]|[12][0-9]|3[01])'
 
