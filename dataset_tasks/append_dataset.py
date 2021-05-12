@@ -10,6 +10,10 @@ import os
 import base64
 from dataset_tasks.json_metadata_generator import *
 import math
+from dataset_tasks.append_dataset_MT import *
+import threading
+import datetime
+import sys
 
 def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
 
@@ -81,7 +85,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         dataset_name = input("Enter your filename without the csv extension:")
         time.sleep(2)
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
-        time.sleep(2)
+        time.sleep(0.5)
         _start = time.time()
         csv_upload_json_meta(dataset_name_,dataset_name)
         meta_json_data = open("{}_CSV_upload_metadata.json".format(dataset_name), 'rb').read()
@@ -90,7 +94,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         _end = time.time()
         enc_time = round((_end-_start),2)
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
-        time.sleep(2)
+        time.sleep(0.5)
 
         batches_ = math.ceil(user_input_3 / 50000)
 
@@ -101,106 +105,132 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         operation_flag = 'Append'
 
         if batches_ > 0:
+
+            full_start = time.time()
+
             prGreen("\r\n" + "Your file will be upladed in {} batches".format(batches_))
 
-            for x in range(batches_):
+            headers = {'Authorization': "Bearer {}".format(access_token),
+                       'Content-Type': "application/json"}
 
-                batch_count += 1
+            payload = {'Format' : 'Csv','EdgemartAlias' : '{}'.format(dataset_name_),'Operation': '{}'.format(operation_flag),'Action': 'None','MetadataJson': "{}".format(meta_json_base64_encoded)}
+            payload = json.dumps(payload)
+            prGreen("\r\n" + "Creating Workbench Job")
 
-                prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
-
-                load_csv_split = pd.read_csv("{}.csv".format(dataset_name), skiprows=skiprows, nrows=50000, chunksize=50000)
-
-                export_csv = pd.concat(load_csv_split)
-                export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,batch_count), index = None, header=True, encoding='utf-8-sig')
-                skiprows += 50000
-
-                prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))
-                time.sleep(2)
-                _start = time.time()
-                #Enconde csv to base64 for upload - start
-                data = open("{}_dataset_split_{}.csv".format(dataset_name,batch_count), 'rb').read()
-                base64_encoded = base64.b64encode(data).decode('UTF-8')
-                #Enconde csv to base64 for upload - end
-                _end = time.time()
-                enc_time = round((_end-_start),2)
-                prGreen("\r\n" + "CSV encoded in {}s".format(enc_time))
-                time.sleep(2)
-
-                headers = {'Authorization': "Bearer {}".format(access_token),
-                           'Content-Type': "application/json"}
-
-                payload = {'Format' : 'Csv','EdgemartAlias' : '{}'.format(dataset_name_),'Operation': '{}'.format(operation_flag),'Action': 'None','MetadataJson': "{}".format(meta_json_base64_encoded)}
-                payload = json.dumps(payload)
-                prGreen("\r\n" + "Creating Workbench Job #{} of {}".format(batch_count,batches_))
-
-                x = 0
-                while x != 1:
+            x = 0
+            xx = 5
+            while x != 1:
+                try:
+                    resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+                    time.sleep(0.5)
+                    resp_results = json.loads(resp.text)
+                    formatted_response_str = json.dumps(resp_results, indent=2)
+                    #prYellow(formatted_response_str)
                     try:
-                        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
-                        time.sleep(1)
-                        resp_results = json.loads(resp.text)
                         success = resp_results.get('success')
+                    except:
+                        pass
+                    try:
                         errors = resp_results.get('errors')
-                        formatted_response_str = json.dumps(resp_results, indent=2)
-                        #prYellow(formatted_response_str)
+                    except:
+                        pass
+                    try:
                         job_id = resp_results.get("id")
+                    except:
+                        pass
+                    try:
+                        message = resp_results[0]["message"]
+                    except:
+                        pass
+                    if job_id:
                         prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
-                        if success:
-                            prYellow("Status: Successful")
-                            x += 1
-                        else:
-                            prRed(errors)
-                            time.sleep(1)
-                    except:
+                    else:
                         pass
-
-                payload = {'DataFile' : '{}'.format(base64_encoded),'InsightsExternalDataId' : '{}'.format(job_id),'PartNumber': 1}
-                payload = json.dumps(payload)
-                prGreen("\r\n" + "Uploading file to TCRM")
-                time.sleep(1)
-
-                x = 0
-                while x != 1:
-                    try:
-                        _start = time.time()
-                        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
-                        resp_results = json.loads(resp.text)
-                        formatted_response_str = json.dumps(resp_results, indent=2)
-                        #prYellow(formatted_response_str)
-                        success = resp_results.get('success')
-                        errors = resp_results.get('errors')
-                        _end = time.time()
-                        upl_time = round((_end-_start),2)
-                        prGreen("\r\n" + "CSV uploaded in {}s".format(upl_time))
-                        time.sleep(1)
-                        if success:
-                            prYellow("Status: Successful")
-                            x += 1
-                        else:
-                            prRed(errors)
-                            time.sleep(1)
-                    except:
-                        pass
-
-                payload = {'Action' : 'Process'}
-                payload = json.dumps(payload)
-
-                x = 0
-                while x != 1:
-                    try:
-                        resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
-                        prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
-                        prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
+                    if success:
+                        prYellow("Status: Successful")
                         x += 1
-                        time.sleep(2)
-                    except:
-                        pass
+                    else:
+                        try:
+                            prRed(errors)
+                        except:
+                            prRed(message)
+                            x += 1
+                            batches_ = 0
+                        time.sleep(0.5)
+                except:
+                    prRed(message)
+                    x += 1
+                    time.sleep(2)
+                    batches_ = 0
 
-                if os.path.exists("{}_dataset_split_{}.csv".format(dataset_name,batch_count)):
-                    os.remove("{}_dataset_split_{}.csv".format(dataset_name,batch_count))
+            i = 1
+            batches_10 = math.ceil(batches_ / 10)
+            batch_10_count = 0
+            delete_count = 0
+            ii = 1
+            rem_jobs = batches_
+            job_count = 0
+            threads = list()
+            line_print()
+            prCyan("\r\n" + "Starting Upload Now...")
+            while batch_10_count <= batches_10:
+                batch_10_count += 1
+                delete_count += 10
+                job_count = 10
 
-                operation_flag = 'Append'
+                if job_count <= rem_jobs:
+                    rem_jobs -= 10
+                    t_count = 10
+                else:
+                    t_count = rem_jobs
+                    rem_jobs = 0
+
+                for index in range(t_count):
+                    batch_count += 1
+                    x = threading.Thread(target=data_append_thread, args=(dataset_name,batch_count,skiprows,job_id,server_id,access_token,))
+                    threads.append(x)
+                    x.start()
+                    skiprows += 50000
+                    time.sleep(0.1)
+
+                for index, thread in enumerate(threads):
+                    thread.join()
+                    time.sleep(0.1)
+
+                progress = round((batch_10_count/batches_10)*100,1)
+
+                prCyan("\r\n" + "Progress:" + "\r\n")
+
+                if progress < 10:
+                    prYellow("  {}%".format(progress))
+                elif progress < 30:
+                    prYellow(" {}%".format(progress))
+                elif progress < 60:
+                    prLightPurple(" {}%".format(progress))
+                elif progress < 100:
+                    prCyan(" {}%".format(progress))
+                elif progress == 100:
+                    prGreen("{}%".format(progress))
+
+
+            payload = {'Action' : 'Process'}
+            payload = json.dumps(payload)
+
+            x = 0
+            while x != 1:
+                try:
+                    resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+                    prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
+                    prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
+                    x += 1
+                    time.sleep(1)
+                except:
+                    pass
+
+    full_end = time.time()
+    full_time = round((full_end-full_start),2)
+    full_time = time.strftime("%H h : %M m : %S s", time.gmtime(total_time))
+    prGreen("\r\n" + "Append Completed in {}s".format(upl_time))
 
     #Go back to parent folder:
     os.chdir("..")
