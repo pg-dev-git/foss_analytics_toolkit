@@ -17,8 +17,11 @@ from get_ea_limits import *
 from line import *
 from dataflow_tasks.mass_dataflows_backup import *
 from mass_dashboard_backup import *
+import multiprocessing as mp
 
 if __name__ == "__main__":
+
+    mp.freeze_support()
 
     d_ext = init_folders()
 

@@ -96,7 +96,8 @@ def get_datasets(access_token,server_id):
                     get_datasets_field_details(access_token,dataset_,server_id,dataset_name)
 
                 if user_input == "2":
-                    get_datasets_extract(access_token,dataset_,server_id,dataset_name)
+                    #get_datasets_extract(access_token,dataset_,server_id,dataset_name)
+                    get_datasets_extract_mp(access_token,dataset_,server_id)
 
                 if user_input == "3":
                     upload_csv_dataset(access_token,dataset_name,dataset_,server_id,dataset_name)
