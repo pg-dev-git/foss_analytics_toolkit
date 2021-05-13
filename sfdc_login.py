@@ -144,16 +144,31 @@ class sfdc_login():
 
             access_token = json.loads(log_credentials.stdout)
 
-            access_token = access_token.get("result").get("accessToken")
+            res_json = json.loads(log_credentials.stdout)
 
-            config['DEFAULT'] = {'username': '{}'.format(username),
-                                 'server_id': '{}'.format(server_id),
-                                 'access_token': '{}'.format(access_token)}
+            status = res_json.get('status')
 
-            with open('web_sfdc_auth.ini', 'w') as configfile:
-                config.write(configfile)
+            if status == 0:
 
-            return access_token
+                access_token = access_token.get("result").get("accessToken")
+                config['DEFAULT'] = {'username': '{}'.format(username),'server_id': '{}'.format(server_id),'access_token': '{}'.format(access_token)}
+
+                with open('web_sfdc_auth.ini', 'w') as configfile:
+                    config.write(configfile)
+
+                return access_token
+
+            elif status == 1:
+                message_error = res_json.get('message')
+                prRed("\r\n" + "{}".format(message_error))
+                time.sleep(2)
+                prRed("\r\n" + "Quitting now. Reconfigure the app with the correct username on the next launch..." + "\r\n")
+                if os.path.exists("web_sfdc_auth.ini"):
+                    os.remove("web_sfdc_auth.ini")
+                if os.path.exists("auth_method.ini"):
+                    os.remove("auth_method.ini")
+                time.sleep(2)
+                quit()
 
         elif access_token != "Value_Replace":
 
@@ -174,6 +189,7 @@ class sfdc_login():
                     time.sleep(5)
                     access_token = "INVALID_TOKEN"
                     return access_token
+
             except:
                 return access_token
 

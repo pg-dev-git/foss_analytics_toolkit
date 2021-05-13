@@ -148,7 +148,9 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     if batches_ > 0:
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
-        prCyan("\r\n" + "Starting extraction using {} CPU cores...".format(cpus) + "\r\n" + "\r\n")
+        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
+        line_print()
+        prGreen("\r\n" + "Progress:" + "\r\n")
         mts = math.ceil(batches_ / cpus)
         pool_cycles_A = math.ceil(batches_ / mts)
         pool_cycles_B = math.floor(batches_ / mts)
@@ -194,11 +196,11 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         if os.path.exists("{}_dataset_extraction.csv".format(dataset_name)):
             os.remove("{}_dataset_extraction.csv".format(dataset_name))
 
-        del_ = 0
-        for del_ in range(batches_):
-            if os.path.exists('{}_{}_query_results.json'.format(dataset_name,del_)):
-                os.remove('{}_{}_query_results.json'.format(dataset_name,del_))
-                del_ += 1
+        #del_ = 0
+        #for del_ in range(batches_):
+        #    if os.path.exists('{}_{}_query_results.json'.format(dataset_name,del_)):
+        #        os.remove('{}_{}_query_results.json'.format(dataset_name,del_))
+        #        del_ += 1
 
         #if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
         #    os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
