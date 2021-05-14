@@ -58,7 +58,7 @@ class sfdc_login():
 
             if os.path.exists("sfdc_auth.ini") == False:
                 prYellow("\r\n"+ "Running first time configuration of login credentials..." + "\r\n")
-                time.sleep(3)
+                time.sleep(2)
                 config = configparser.ConfigParser()
                 config['DEFAULT'] = {'client_id': '{}'.format(client_id),
                                      'client_secret': '{}'.format(client_secret),
@@ -104,7 +104,7 @@ class sfdc_login():
 
             if os.path.exists("web_sfdc_auth.ini") == False:
                 prYellow("\r\n"+ "Running first time configuration of login credentials..." + "\r\n")
-                time.sleep(3)
+                time.sleep(2)
                 config = configparser.ConfigParser()
                 config['DEFAULT'] = {'username': '{}'.format(username),
                                      'server_id': '{}'.format(server_id),
@@ -242,7 +242,7 @@ class sfdc_login():
         time.sleep(0.5)
         tprint("     Tool Kit     ")
         time.sleep(0.5)
-        prGreen("                                                                     v0.1.1-beta1" + "\r\n")
+        prGreen("                                                                     v0.1.2-beta1" + "\r\n")
         prCyan("                                                             Salesforce API v51.0")
         print("\r\n")
         time.sleep(0.5)

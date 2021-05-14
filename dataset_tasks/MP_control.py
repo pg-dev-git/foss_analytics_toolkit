@@ -16,6 +16,7 @@ import pandas as pd
 import base64
 from line import *
 import datetime
+import gc
 
 def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
 
@@ -44,7 +45,7 @@ def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
 
 def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count):
 
-    time.sleep(0.1)
+    time.sleep(0.01)
 
     if thread_id == 0:
         q_offset = 0
@@ -63,9 +64,9 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     while x != 1:
         #print(thread_id)
         resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
-        query_results = json.loads(resp.text)
+        resp_text = json.loads(resp.text)
         try:
-            query_results = ((query_results.get("results").get("records")))
+            query_results = ((resp_text.get("results").get("records")))
             query_results_json = json.dumps(query_results)
 
             #with open('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count), 'w') as outfile:
@@ -78,15 +79,26 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
             df.fillna(0)
             export_csv = df.to_csv(r'{}_{}_query_results.csv'.format(dataset_name,thread_id), index = None, header=True, encoding='utf-8')
 
-            time.sleep(0.1)
+            #time.sleep(0.1)
+            del export_csv
+            gc.collect()
             x = 1
         except:
             xx += 1
-            if xx == 5:
+            #prRed("\r\n" + "Error in process #{}. Trying again... {}".format(thread_id,xx) + "\r\n")
+            time.sleep(0.15)
+            if xx == 15:
                 x = 1
-                prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(thread_id) + "\r\n")
-                prYellow(query_results_json)
-                time.sleep(2)
+                prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(thread_id) + "The file won't contain all records." + "\r\n")
+                try:
+                    prYellow(resp)
+                except:
+                    pass
+                try:
+                    prRed(resp.text)
+                except:
+                    pass
+                time.sleep(1)
             pass
 
     #try:

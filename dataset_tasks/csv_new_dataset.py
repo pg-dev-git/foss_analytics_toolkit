@@ -22,7 +22,7 @@ def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
 
-def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
+def new_csv_dataset(access_token,server_id):
 
     try:
         dataset_upload_dir = "dataset_upload"
@@ -41,33 +41,34 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     user_input_1 = "Xhhrydjanshtttx"
     user_input_2 = "xbyr5546shdnc"
     user_input_3 = 9567385638567265
+    user_input_4 = "4"
+    user_input_5 = "5"
 
     #Input check for file placement
-    while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N" or user_input_1 == "n":
+    while user_input_1 != "y" and user_input_1 != "Y":
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
-        time.sleep(2)
+        time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
-            print("\r\n")
+            line_print()
         elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
-            time.sleep(1)
+            time.sleep(2)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(1)
+            time.sleep(2)
 
     #Input check for file encoding
-    while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N" or user_input_2 == "n":
+    while user_input_2 != "y" and user_input_2 != "Y":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
-        time.sleep(2)
+        time.sleep(1)
         if user_input_2 == "Y" or user_input_2 == "y":
-            print("")
-            time.sleep(0.5)
+            line_print()
         elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
             time.sleep(2)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(1)
+            time.sleep(2)
 
     #Input check for total # of rows
     while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
@@ -76,23 +77,55 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         try:
             user_input_3 = int(user_input_3)
             if type(user_input_3) == int and user_input_3 > 0:
-                print("")
-                time.sleep(0.5)
+                user_input_3_flag = 'y'
+                line_print()
             elif type(user_input_3) == int and user_input_3 < 1:
                 prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
                 time.sleep(2)
             else:
                 prRed("\r\n" + "Please use an integer.")
-                time.sleep(1)
+                time.sleep(2)
         except ValueError:
             prRed("\r\n" + "Please use an integer.")
             time.sleep(2)
 
-    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
-        dataset_name = input("Enter your filename without the csv extension:")
+    #Input check for date format
+    while user_input_4 != "y" and user_input_4 != "Y":
+        user_input_4 = input("\r\n" + "Are the dates formatted as \"yyyy/mm/dd\"? The job will fail if they aren't (Y/N): ")
+        time.sleep(1)
+        if user_input_4 == "Y" or user_input_4 == "y":
+            line_print()
+        elif user_input_4 == "N" or user_input_4 == "n":
+            prYellow("Please format your date fields as \"yyyy/mm/dd\".")
+            time.sleep(2)
+        else:
+            prRed("Wrong value. Try again.")
+            time.sleep(2)
+
+    #Input check for headers
+    while user_input_5 != "y" and user_input_5 != "Y":
+        user_input_5 = input("\r\n" + "Have you removed all spaces and dots from your column names? You can use underscores \"_\". The job will fail if there are spaces or dots. (Y/N): ")
+        time.sleep(1)
+        if user_input_5 == "Y" or user_input_5 == "y":
+            line_print()
+        elif user_input_5 == "N" or user_input_5 == "n":
+            prYellow("Please remove all spaces and dots. You can use underscores \"_\".")
+            time.sleep(2)
+        else:
+            prRed("Wrong value. Try again.")
+            time.sleep(2)
+
+    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y") and user_input_3_flag == 'y':
+        dataset_name = input("Enter your filename without the csv extension: ")
         time.sleep(2)
+        print("\r\n")
+        dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores instead \"_\": ")
+
+        time.sleep(1)
+        line_print()
+
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
-        time.sleep(0.5)
+        time.sleep(1)
         _start = time.time()
         csv_upload_json_meta(dataset_name_,dataset_name)
         meta_json_data = open("{}_CSV_upload_metadata.json".format(dataset_name), 'rb').read()
@@ -100,8 +133,9 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         #os.remove("{}_CSV_upload_metadata.json".format(dataset_name))
         _end = time.time()
         enc_time = round((_end-_start),2)
+        time.sleep(1)
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
-        time.sleep(0.5)
+        line_print()
 
         batches_ = math.ceil(user_input_3 / 50000)
 
@@ -109,7 +143,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
         skiprows = 0
 
-        operation_flag = 'Append'
+        operation_flag = 'Overwrite'
 
         if batches_ > 0:
 
@@ -189,7 +223,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             if x != 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
-                prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n")
+                prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus) + "\r\n")
                 line_print()
                 prCyan("\r\n")
                 mts = math.ceil(batches_ / cpus)
@@ -203,96 +237,95 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                 result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, )) for i in range(batches_)]
 
-                if batches_ >= cpus:
+                try:
+                    for r in result_async:
+                        progress = r.get()
+                        progress = round((progress / batches_) * 100,1)
+                        if progress < 10:
+                            iostat1 = psutil.net_io_counters(pernic=False)
+                            iostat1 = int(iostat1[0])
+                            time.sleep(1)
+                            delete_last()
+                            delete_last()
+                            delete_last()
+                            prGreen("Progress:\r")
+                            prYellow("  {}%\r".format(progress))
+                            iostat2 = psutil.net_io_counters(pernic=False)
+                            iostat2 = int(iostat2[0])
+                            speed_dn = iostat2 - iostat1
+                            speed_dn = bytes2human(speed_dn)
+                            print("Download Speed: {}/s".format(speed_dn))
+                        elif progress < 30:
+                            iostat1 = psutil.net_io_counters(pernic=False)
+                            iostat1 = int(iostat1[0])
+                            time.sleep(1)
+                            delete_last()
+                            delete_last()
+                            delete_last()
+                            prGreen("Progress:\r")
+                            prYellow(" {}%\r".format(progress))
+                            iostat2 = psutil.net_io_counters(pernic=False)
+                            iostat2 = int(iostat2[1])
+                            speed_dn = iostat2 - iostat1
+                            speed_dn = bytes2human(speed_dn)
+                            print("Download Speed: {}/s".format(speed_dn))
+                        elif progress < 60:
+                            iostat1 = psutil.net_io_counters(pernic=False)
+                            iostat1 = int(iostat1[0])
+                            time.sleep(1)
+                            delete_last()
+                            delete_last()
+                            delete_last()
+                            prGreen("Progress:\r")
+                            prLightPurple(" {}%\r".format(progress))
+                            iostat2 = psutil.net_io_counters(pernic=False)
+                            iostat2 = int(iostat2[1])
+                            speed_dn = iostat2 - iostat1
+                            speed_dn = bytes2human(speed_dn)
+                            print("Download Speed: {}/s".format(speed_dn))
+                        elif progress < 100:
+                            iostat1 = psutil.net_io_counters(pernic=False)
+                            iostat1 = int(iostat1[0])
+                            time.sleep(1)
+                            delete_last()
+                            delete_last()
+                            delete_last()
+                            prGreen("Progress:\r")
+                            prCyan(" {}%\r".format(progress))
+                            iostat2 = psutil.net_io_counters(pernic=False)
+                            iostat2 = int(iostat2[1])
+                            speed_dn = iostat2 - iostat1
+                            speed_dn = bytes2human(speed_dn)
+                            print("Download Speed: {}/s".format(speed_dn))
+                        time.sleep(0.25)
+                except:
+                    pass
+
+                pool.close()
+                pool.join()
+                delete_last()
+                prGreen(" 100%\r")
+                line_print()
+
+
+                payload = {'Action' : 'Process'}
+                payload = json.dumps(payload)
+
+                x = 0
+                while x != 1:
                     try:
-                        for r in result_async:
-                            progress = r.get()
-                            progress = round((progress / batches_) * 100,1)
-                            if progress < 10:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prYellow("  {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[0])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
-                            elif progress < 30:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prYellow(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
-                            elif progress < 60:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prLightPurple(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
-                            elif progress < 100:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prCyan(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
-                            time.sleep(0.25)
+                        resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+                        prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
+                        prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
+                        x += 1
+                        time.sleep(1)
                     except:
                         pass
 
-                    pool.close()
-                    pool.join()
-                    delete_last()
-                    prGreen(" 100%\r")
-                    line_print()
-
-
-                    payload = {'Action' : 'Process'}
-                    payload = json.dumps(payload)
-
-                    x = 0
-                    while x != 1:
-                        try:
-                            resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
-                            prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
-                            prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
-                            x += 1
-                            time.sleep(1)
-                        except:
-                            pass
-
-                    full_end = time.time()
-                    full_time = round((full_end-full_start),2)
-                    full_time = time.strftime("%H h : %M m : %S s", time.gmtime(full_time))
-                    prGreen("\r\n" + "Append Completed in {}s".format(full_time))
+                full_end = time.time()
+                full_time = round((full_end-full_start),2)
+                full_time = time.strftime("%H h : %M m : %S s", time.gmtime(full_time))
+                prGreen("\r\n" + "Append Completed in {}s".format(full_time))
 
     #Go back to parent folder:
     os.chdir("..")

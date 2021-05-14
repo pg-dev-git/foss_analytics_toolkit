@@ -29,8 +29,6 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
         if batches_mt > 0 and batches_mt <10:
             batch_count = 0
-            #prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_mt) + "\r\n")
-            _start = time.time()
 
             threads = list()
 
@@ -41,20 +39,21 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                 x.start()
                 thread_id += 1
                 batch_count += 1
-                time.sleep(0.5)
+                time.sleep(0.25)
 
             #prCyan("\r\n" + "Progress: " + "\r\n")
 
             for index, thread in enumerate(threads):
+                config = configparser.ConfigParser()
+                with open("p{}.ini".format(i), 'w') as configfile:
+                    config['DEFAULT'] = {'progress': '{}'.format(index)}
+                    config.write(configfile)
+                configfile.close()
                 thread.join()
-                time.sleep(0.5)
+                time.sleep(0.01)
 
-            _end = time.time()
-            total_time = round((_end - _start),2)
-            #prGreen("\r\n" + "Multithreaded extraction completed in {}s.".format(total_time))
-            #line_print()
-            time.sleep(0.1)
-            return batch_count
+
+
 
         if batches_mt > 9:
             batches_10 = math.ceil(batches_mt / 10)
@@ -64,7 +63,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
             rem_jobs = batches_mt
             job_count = 0
             #prCyan("\r\n" + "Starting extraction now... " + "\r\n")
-            time.sleep(0.1)
+            time.sleep(0.01)
             #prCyan("\r\n" + "Progress: " + "\r\n")
             while batch_10_count <= batches_10:
                 batch_10_count += 1
@@ -86,10 +85,17 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                     x.start()
                     batch_count += 1
                     thread_id += 1
-                    time.sleep(0.1)
+                    time.sleep(0.01)
 
                 for index, thread in enumerate(threads):
                     thread.join()
-                    time.sleep(0.1)
+                    config = configparser.ConfigParser()
+                    #print(index)
+                    with open("p{}.ini".format(i), 'w') as configfile:
+                        config['DEFAULT'] = {'progress': '{}'.format(index)}
+                        config.write(configfile)
+                    configfile.close()
+                    time.sleep(0.01)
 
-            return batch_count
+
+    return 0
