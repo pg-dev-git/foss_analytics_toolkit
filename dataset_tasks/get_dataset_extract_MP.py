@@ -10,11 +10,12 @@ import os
 import base64
 import multiprocessing as mp
 from dataset_tasks.dataset_extract_MP import *
-from dataset_tasks.mt_for_mp import *
 import time
 import sys
 import subprocess
 from line import *
+from dataset_tasks.MP_control import *
+from dataset_tasks.mt_for_mp import *
 
 def delete_last():
     sys.stdout.write('\x1b[1A')
@@ -152,17 +153,44 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         line_print()
         prGreen("\r\n" + "Progress:" + "\r\n")
         mts = math.ceil(batches_ / cpus)
-        pool_cycles_A = math.ceil(batches_ / mts)
-        pool_cycles_B = math.floor(batches_ / mts)
+        pool_cycles_A = math.ceil(batches_ / cpus)
+        pool_cycles_B = math.floor(batches_ / cpus)
         control_flag = mts
+        control = round(batches_ / 2)
+        thread_count = 0
+        thread_id = 0
+        yy = 1
+
+        for zz in range(cpus):
+            #print("yy {}".format(yy))
+            #print("cpus {}".format(cpus))
+            if zz != (cpus - 1):
+                batches_mt = pool_cycles_B
+                thread_count += batches_mt
+            else:
+                batches_mt = batches_ - thread_count
+
+            control_files(access_token,dataset_,server_id,zz,batches_mt,thread_id)
+
+            thread_id += batches_mt
+
+
+
         _start = time.time()
+
         #prRed("Calling MP Function now.")
-        result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
-                        range(batches_)]
+        #result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
+                        #range(batches_)]
+
+        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, )) for i in
+                        range(cpus)]
+
         try:
+            container = 0
             for r in result_async:
                 results = r.get()
-                progress = round((results / batches_) * 100,1)
+                container += results
+                progress = round((container / batches_) * 100,1)
                 if progress < 10:
                     delete_last()
                     prYellow("  {}%\r".format(progress))
@@ -176,7 +204,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                     delete_last()
                     prCyan(" {}%\r".format(progress))
                 time.sleep(0.5)
-        except ValueError:
+        except:
             pass
 
         #results = [r.get() for r in result_async]
@@ -237,11 +265,11 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
 
     #Folder Cleanup
-    del_ = 0
-    for del_ in range(batches_):
-        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,del_)):
-            os.remove('{}_{}_query_results.csv'.format(dataset_name,del_))
-            del_ += 1
+    #del_ = 0
+    #for del_ in range(batches_):
+    #    if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,del_)):
+    #        os.remove('{}_{}_query_results.csv'.format(dataset_name,del_))
+    #        del_ += 1
 
 
     #Go back to parent folder:

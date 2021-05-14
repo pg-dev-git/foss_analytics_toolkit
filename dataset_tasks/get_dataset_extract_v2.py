@@ -166,17 +166,6 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
         line_print()
         time.sleep(1)
 
-        #Folder check for existing files - start:
-        if os.path.exists("{}_dataset_extraction.csv".format(dataset_name)):
-            os.remove("{}_dataset_extraction.csv".format(dataset_name))
-
-        if os.path.exists('{}_{}_query_results.json'.format(dataset_name,i)):
-            os.remove('{}_{}_query_results.json'.format(dataset_name,i))
-
-        if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
-            os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
-        #Folder check for existing files - end.
-
         #Append all csv files from the batches - start:
 
         prGreen("\r\n" + "Compiling CSV.")
@@ -253,17 +242,6 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
             #prGreen("\r\n" + "Multithreaded extraction completed in {}s.".format(total_time))
             #line_print()
             time.sleep(0.1)
-
-            #Folder check for existing files - start:
-            if os.path.exists("{}_dataset_extraction.csv".format(dataset_name)):
-                os.remove("{}_dataset_extraction.csv".format(dataset_name))
-
-            if os.path.exists('{}_{}_query_results.json'.format(dataset_name,i)):
-                os.remove('{}_{}_query_results.json'.format(dataset_name,i))
-
-            if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,i)):
-                os.remove('{}_{}_query_results.csv'.format(dataset_name,i))
-            #Folder check for existing files - end.
 
             #Append all csv files from the batches - start:
 

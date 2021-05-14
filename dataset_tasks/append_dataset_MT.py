@@ -25,7 +25,7 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
 
 
     #prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))
-    time.sleep(0.15)
+    #time.sleep(0.15)
     ##_start = time.time()
     #Enconde csv to base64 for upload - start
     data = open("{}_dataset_split_{}.csv".format(dataset_name,batch_count), 'rb').read()

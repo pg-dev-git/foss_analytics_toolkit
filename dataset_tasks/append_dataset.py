@@ -14,6 +14,11 @@ from dataset_tasks.append_dataset_MT import *
 import threading
 import datetime
 import sys
+from line import *
+
+def delete_last():
+    sys.stdout.write('\x1b[1A')
+    sys.stdout.write('\x1b[2K')
 
 def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
 
@@ -173,6 +178,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             threads = list()
             line_print()
             prCyan("\r\n" + "Starting Upload Now...")
+            prCyan("\r\n" + "Progress:" + "\r\n")
             while batch_10_count <= batches_10:
                 batch_10_count += 1
                 delete_count += 10
@@ -199,18 +205,22 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                 progress = round((batch_10_count/batches_10)*100,1)
 
-                prCyan("\r\n" + "Progress:" + "\r\n")
 
                 if progress < 10:
-                    prYellow("  {}%".format(progress))
+                    delete_last()
+                    prYellow("  {}%\r".format(progress))
                 elif progress < 30:
-                    prYellow(" {}%".format(progress))
+                    delete_last()
+                    prYellow(" {}%\r".format(progress))
                 elif progress < 60:
-                    prLightPurple(" {}%".format(progress))
+                    delete_last()
+                    prLightPurple(" {}%\r".format(progress))
                 elif progress < 100:
-                    prCyan(" {}%".format(progress))
+                    delete_last()
+                    prCyan(" {}%\r".format(progress))
                 elif progress == 100:
-                    prGreen("{}%".format(progress))
+                    delete_last()
+                    prGreen("{}%\r".format(progress))
 
 
             payload = {'Action' : 'Process'}
