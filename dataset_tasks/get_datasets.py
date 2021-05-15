@@ -40,9 +40,24 @@ def get_datasets(access_token,server_id):
     for x in datasets_list:
         counter += 1
         if counter >= 1 and counter <= 9:
-            print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
+            try:
+                cvl = x["currentVersionUrl"]
+                rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
+                rows_json = json.loads(rows.text)
+                rows_json = rows_json.get('totalRows')
+                print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Rows: {}".format(rows_json)," - Label: ",x["label"])
+            except:
+                print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
+
         else:
-            print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
+            try:
+                cvl = x["currentVersionUrl"]
+                rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
+                rows_json = json.loads(rows.text)
+                rows_json = rows_json.get('totalRows')
+                print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Rows: {}".format(rows_json)," - Label: ",x["label"])
+            except:
+                print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
     print("\r\n")
 
     dataset_ = 999999999

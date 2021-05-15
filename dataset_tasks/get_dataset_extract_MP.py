@@ -152,7 +152,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     if batches_ > 0:
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
-        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
+        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n" + "\r\n")
         line_print()
         prCyan("\r\n")
         mts = math.ceil(batches_ / cpus)
@@ -163,12 +163,19 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         thread_count = 0
         thread_id = 0
         yy = 1
+        remain_jobs = batches_
+        cpu_control = 0
+        cpus_required = 0
 
-        for zz in range(cpus):
-            #print("yy {}".format(yy))
-            #print("cpus {}".format(cpus))
-            if zz != (cpus - 1):
-                batches_mt = pool_cycles_B
+        while cpu_control < batches_:
+            cpu_control += pool_cycles_A + 1
+            cpus_required += 1
+
+        for zz in range(cpus_required):
+            #print("zz {}".format(zz))
+            #print("cpus_required {}".format(cpus_required))
+            if thread_count < batches_ and (zz + 1) < cpus_required:
+                batches_mt = pool_cycles_A + 1
                 thread_count += batches_mt
             else:
                 batches_mt = batches_ - thread_count
@@ -177,7 +184,9 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
             thread_id += batches_mt
 
+            remain_jobs = batches_ - batches_mt
 
+            sum_control = batches_mt + thread_count
 
         _start = time.time()
 
@@ -186,26 +195,47 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                         #range(batches_)]
 
         result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, )) for i in
-                        range(cpus)]
+                        range(cpus_required)]
 
-        if batches_ >= cpus:
+        if batches_ >= cpus_required:
+            if cpus_required < cpus:
+                s_time = 0.1
+            else:
+                s_time = 0.5
             try:
                 yyy = 0
                 xxx = 0
+                zzz = 0
                 for r in result_async:
                     while yyy <= batches_:
                         xxx = 0
-                        for xxx in range(cpus):
+                        zzz = 0
+                        for xxx in range(cpus_required):
+                            #print("xxx for {}".format(xxx))
+                            #time.sleep(2)
                             try:
+
                                 if os.path.exists("p{}.ini".format(xxx)):
+                                    #print(xxx)
+                                    #print("p{}.ini".format(xxx))
                                     config = configparser.ConfigParser()
                                     config.read("p{}.ini".format(xxx))
-                                    yyy += int(config.get("DEFAULT", "progress"))
+
+                                    try:
+                                        #print((config.get("DEFAULT", "progress{}".format(zzz))))
+                                        yyy += int(round(int(config.get("DEFAULT", "progress")) / 1))
+                                    except:
+                                        yyy += cpus_required
+
                                     progress = round((yyy / batches_) * 100,1)
+
+                                    #zzz += 1
+
+                                    #print("yyy {}".format(yyy) + "progress {}".format(progress) + "\r\n" + "\r\n"+ "\r\n")
                                     if progress < 10:
                                         iostat1 = psutil.net_io_counters(pernic=False)
                                         iostat1 = int(iostat1[1])
-                                        time.sleep(1)
+                                        time.sleep(s_time)
                                         delete_last()
                                         delete_last()
                                         delete_last()
@@ -219,7 +249,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                     elif progress < 30:
                                         iostat1 = psutil.net_io_counters(pernic=False)
                                         iostat1 = int(iostat1[1])
-                                        time.sleep(1)
+                                        time.sleep(s_time)
                                         delete_last()
                                         delete_last()
                                         delete_last()
@@ -233,7 +263,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                     elif progress < 60:
                                         iostat1 = psutil.net_io_counters(pernic=False)
                                         iostat1 = int(iostat1[1])
-                                        time.sleep(1)
+                                        time.sleep(s_time)
                                         delete_last()
                                         delete_last()
                                         delete_last()
@@ -247,7 +277,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                     elif progress < 100:
                                         iostat1 = psutil.net_io_counters(pernic=False)
                                         iostat1 = int(iostat1[1])
-                                        time.sleep(1)
+                                        time.sleep(s_time)
                                         delete_last()
                                         delete_last()
                                         delete_last()
@@ -278,10 +308,13 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         prGreen(" 100%\r")
         line_print()
 
-
-
-
-
+    del_ = 0
+    for del_ in range(cpus_required):
+        if os.path.exists('mp{}.ini'.format(del_)):
+            os.remove('mp{}.ini'.format(del_))
+        if os.path.exists('p{}.ini'.format(del_)):
+            os.remove('p{}.ini'.format(del_))
+            del_ += 1
 
     if batches_ > 0:
         #Folder check for existing files - start:
@@ -308,10 +341,13 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
         combined_csv.fillna(0)
         combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, header=True, encoding='utf-8')
+
         #cmd = "Get-ChildItem -Filter *_results.csv | Select-Object -ExpandProperty FullName | Import-Csv | Export-Csv .\{}_extract.csv -NoTypeInformation".format(dataset_name)
         #completed = subprocess.run(["powershell", "-Command", cmd], capture_output=True)
+
         csv_end = time.time()
         total_csv = round((csv_end - csv_start),2)
+
         prCyan("\r\n" + "Dataset Succesfully Exported in {}".format(total_csv) + "\r\n")
         line_print()
         prGreen("\r\n" + "Data sample:" + "\r\n")
@@ -337,13 +373,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
             os.remove('{}_{}_query_results.csv'.format(dataset_name,del_))
             del_ += 1
 
-    del_ = 0
-    for del_ in range(cpus):
-        if os.path.exists('mp{}.ini'.format(del_)):
-            os.remove('mp{}.ini'.format(del_))
-        if os.path.exists('p{}.ini'.format(del_)):
-            os.remove('p{}.ini'.format(del_))
-            del_ += 1
+
 
 
     #Go back to parent folder:

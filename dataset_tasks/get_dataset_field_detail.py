@@ -31,7 +31,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
+    prGreen(formatted_response_str)
 
 
     dataset_current_version_url = formatted_response.get('currentVersionUrl')

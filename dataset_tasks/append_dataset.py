@@ -158,17 +158,20 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         prYellow("Status: Successful")
                         line_print()
                         x += 1
+                        p_flag = 1
                     else:
                         try:
                             prRed(errors)
                             x += 1
                             batches_ = 0
+                            p_flag = 0
                             time.sleep(0.5)
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
                         except:
                             prRed(message)
                             x += 1
                             batches_ = 0
+                            p_flag = 0
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
                         time.sleep(0.5)
                 except:
@@ -177,6 +180,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     prRed("\r\n" + "Cancelling Job..." + "\r\n")
                     time.sleep(2)
                     batches_ = 0
+                    p_flag = 0
 
             #i = 1
             #batches_10 = math.ceil(batches_ / 10)
@@ -186,12 +190,14 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             #rem_jobs = batches_
             #job_count = 0
 
-            if x != 1:
+            if p_flag == 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
                 prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n")
                 line_print()
                 prCyan("\r\n")
+                prGreen("Progress:\r")
+                prYellow("  0.0%\r")
                 mts = math.ceil(batches_ / cpus)
                 pool_cycles_A = math.ceil(batches_ / cpus)
                 pool_cycles_B = math.floor(batches_ / cpus)
@@ -199,15 +205,19 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 control = round(batches_ / 2)
                 thread_count = 0
                 thread_id = 0
+                progress = 0
+                ret = 0
                 #print(batches_)
 
                 result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, )) for i in range(batches_)]
 
-                if batches_ >= cpus:
+                if batches_ >= 1:
                     try:
                         for r in result_async:
-                            progress = r.get()
-                            progress = round((progress / batches_) * 100,1)
+                            print("loop {}".format(r))
+                            print(r.get())
+                            ret += r.get()
+                            progress = round((ret / batches_) * 100,1)
                             if progress < 10:
                                 iostat1 = psutil.net_io_counters(pernic=False)
                                 iostat1 = int(iostat1[0])
@@ -221,7 +231,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                                 iostat2 = int(iostat2[0])
                                 speed_dn = iostat2 - iostat1
                                 speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
+                                print("Upload Speed: {}/s".format(speed_dn))
                             elif progress < 30:
                                 iostat1 = psutil.net_io_counters(pernic=False)
                                 iostat1 = int(iostat1[0])
@@ -232,10 +242,10 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                                 prGreen("Progress:\r")
                                 prYellow(" {}%\r".format(progress))
                                 iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
+                                iostat2 = int(iostat2[0])
                                 speed_dn = iostat2 - iostat1
                                 speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
+                                print("Upload Speed: {}/s".format(speed_dn))
                             elif progress < 60:
                                 iostat1 = psutil.net_io_counters(pernic=False)
                                 iostat1 = int(iostat1[0])
@@ -246,10 +256,10 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                                 prGreen("Progress:\r")
                                 prLightPurple(" {}%\r".format(progress))
                                 iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
+                                iostat2 = int(iostat2[0])
                                 speed_dn = iostat2 - iostat1
                                 speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
+                                print("Upload Speed: {}/s".format(speed_dn))
                             elif progress < 100:
                                 iostat1 = psutil.net_io_counters(pernic=False)
                                 iostat1 = int(iostat1[0])
@@ -260,10 +270,10 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                                 prGreen("Progress:\r")
                                 prCyan(" {}%\r".format(progress))
                                 iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[1])
+                                iostat2 = int(iostat2[0])
                                 speed_dn = iostat2 - iostat1
                                 speed_dn = bytes2human(speed_dn)
-                                print("Download Speed: {}/s".format(speed_dn))
+                                print("Upload Speed: {}/s".format(speed_dn))
                             time.sleep(0.25)
                     except:
                         pass
