@@ -105,24 +105,24 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                     time.sleep(0.1)
 
         if batches_mt > 100:
-            batches_10 = math.ceil(batches_mt / 10)
+            batches_10 = math.ceil(batches_mt / 3)
             batch_count = 0
             batch_10_count = 0
             ii = 1
             rem_jobs = batches_mt
             job_count = 0
             #prCyan("\r\n" + "Starting extraction now... " + "\r\n")
-            time.sleep(0.01)
+            time.sleep(0.1)
             #prCyan("\r\n" + "Progress: " + "\r\n")
 
 
             while batch_10_count <= batches_10:
                 batch_10_count += 1
-                job_count = 10
+                job_count = 3
 
                 if job_count <= rem_jobs:
-                    rem_jobs = rem_jobs - 10
-                    t_count = 10
+                    rem_jobs = rem_jobs - 3
+                    t_count = 3
                 else:
                     t_count = rem_jobs
                     rem_jobs = 0
@@ -136,11 +136,11 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                     x.start()
                     batch_count += 1
                     thread_id += 1
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
                 for index, thread in enumerate(threads):
                     thread.join()
-                    progress += index * (t_count / batch_count)
+                    progress += 1
                     #print(progress)
                     config = configparser.ConfigParser()
                     with open("p{}.ini".format(i), 'w') as configfile:

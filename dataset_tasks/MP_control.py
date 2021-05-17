@@ -50,7 +50,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     if thread_id == 0:
         q_offset = 0
     else:
-        q_offset = 9999 * thread_id
+        q_offset = 30000 * thread_id
 
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}
@@ -86,8 +86,8 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
         except:
             xx += 1
             #prRed("\r\n" + "Error in process #{}. Trying again... {}".format(thread_id,xx) + "\r\n")
-            time.sleep(0.15)
-            if xx == 15:
+            time.sleep(5)
+            if xx == 150:
                 x = 1
                 prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(thread_id) + "The file won't contain all records." + "\r\n")
                 try:

@@ -4,8 +4,8 @@ from terminal_colors import *
 from sfdc_login import *
 import math
 import csv
-import pandas as pd
-#import modin.pandas as pd
+#import pandas as pd
+import modin.pandas as pd
 import glob
 import os
 import base64
@@ -21,6 +21,13 @@ import gc
 import psutil
 from b2h import *
 
+class Result():
+    def __init__(self):
+        self.val = 0
+
+    def update_result(self, val):
+        self.val += 1
+
 def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
@@ -31,7 +38,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         dataset_extraction_dir = "dataset_extraction"
         os.mkdir(dataset_extraction_dir)
     except OSError as error:
-            print(" ")
+            pass
 
     cd = os.getcwd()
     #print(cd)
@@ -144,7 +151,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     #print(total_fields)
 
     i = 0
-    q_limit = 9999
+    q_limit = 30000
     q_offset = 0
     dataset_extraction_dir = "dataset_extraction"
 
@@ -153,8 +160,9 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     if batches_ > 0:
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
-        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n" + "\r\n")
+        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
         line_print()
+        prCyan("\r\n")
         prCyan("\r\n")
         mts = math.ceil(batches_ / cpus)
         pool_cycles_A = math.ceil(batches_ / cpus)
@@ -167,6 +175,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         remain_jobs = batches_
         cpu_control = 0
         cpus_required = 0
+        result = Result()
 
         while cpu_control < batches_:
             cpu_control += pool_cycles_A + 1
@@ -196,7 +205,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         #result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
                         #range(batches_)]
 
-        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, )) for i in
+        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, ), callback=result.update_result) for i in
                         range(cpus_required)]
 
         if batches_ >= cpus_required:
@@ -225,11 +234,14 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
                                     try:
                                         #print((config.get("DEFAULT", "progress{}".format(zzz))))
-                                        yyy += int(round(int(config.get("DEFAULT", "progress")) / cpus_required))
+                                        if batches_ > 100:
+                                            yyy += int(round(int(config.get("DEFAULT", "progress")) / cpus_required))
+                                        else:
+                                            yyy += result.val
                                     except:
                                         yyy += cpus_required / 2
 
-                                    progress = round((yyy / batches_) * 100,1)
+                                    progress = round((yyy / (batches_ / cpus_required)) * 100,1)
 
                                     #zzz += 1
 
@@ -290,7 +302,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                         speed_dn = iostat2 - iostat1
                                         speed_dn = bytes2human(speed_dn)
                                         print("Download Speed: {}/s".format(speed_dn))
-                                    time.sleep(0.25)
+                                    #time.sleep(0.25)
                                 #print("xxx {}".format(xxx))
                                 #print("yyy {}".format(yyy))
                                 #print("batches_ {}".format(batches_))
@@ -373,6 +385,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     total_time = round((_end - _start),2)
     prGreen("\r\n" + "Extraction completed in {}s.".format(total_time))
     time.sleep(0.2)
+    line_print()
 
 
     #Folder Cleanup
