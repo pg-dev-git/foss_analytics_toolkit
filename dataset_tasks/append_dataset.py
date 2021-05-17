@@ -17,6 +17,14 @@ import sys
 from line import *
 import multiprocessing as mp
 import psutil
+from b2h import *
+
+class Result():
+    def __init__(self):
+        self.val = 0
+
+    def update_result(self, val):
+        self.val += 1
 
 def delete_last():
     sys.stdout.write('\x1b[1A')
@@ -89,7 +97,8 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             time.sleep(2)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
-        dataset_name = input("Enter your filename without the csv extension:")
+        dataset_name = input("\r\n" + "Enter your filename without the csv extension:")
+        line_print()
         time.sleep(2)
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
         time.sleep(0.5)
@@ -101,6 +110,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         _end = time.time()
         enc_time = round((_end-_start),2)
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
+        line_print()
         time.sleep(0.5)
 
         batches_ = math.ceil(user_input_3 / 50000)
@@ -207,79 +217,87 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 thread_id = 0
                 progress = 0
                 ret = 0
+                ind = 0
+                yyy = 0
+                result = Result()
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, )) for i in range(batches_)]
+                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, ), callback=result.update_result) for i in range(batches_)]
 
                 if batches_ >= 1:
                     try:
-                        for r in result_async:
-                            print("loop {}".format(r))
-                            print(r.get())
-                            ret += r.get()
-                            progress = round((ret / batches_) * 100,1)
-                            if progress < 10:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prYellow("  {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[0])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Upload Speed: {}/s".format(speed_dn))
-                            elif progress < 30:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prYellow(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[0])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Upload Speed: {}/s".format(speed_dn))
-                            elif progress < 60:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prLightPurple(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[0])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Upload Speed: {}/s".format(speed_dn))
-                            elif progress < 100:
-                                iostat1 = psutil.net_io_counters(pernic=False)
-                                iostat1 = int(iostat1[0])
-                                time.sleep(1)
-                                delete_last()
-                                delete_last()
-                                delete_last()
-                                prGreen("Progress:\r")
-                                prCyan(" {}%\r".format(progress))
-                                iostat2 = psutil.net_io_counters(pernic=False)
-                                iostat2 = int(iostat2[0])
-                                speed_dn = iostat2 - iostat1
-                                speed_dn = bytes2human(speed_dn)
-                                print("Upload Speed: {}/s".format(speed_dn))
-                            time.sleep(0.25)
+                        while yyy <= batches_:
+                            xxx = 0
+                            zzz = 0
+                            #print(result.val)
+                            #print("\r\n" + "\r\n" + "\r\n")
+                            for xxx in range(cpus):
+                                #print(ind)
+                                yyy += result.val
+                                progress = round((yyy / batches_) * 100,1)
+                                if progress < 10:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[0])
+                                    time.sleep(1)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prYellow("  {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[0])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Upload Speed: {}/s".format(speed_dn))
+                                elif progress < 30:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[0])
+                                    time.sleep(1)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prYellow(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[0])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Upload Speed: {}/s".format(speed_dn))
+                                elif progress < 60:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[0])
+                                    time.sleep(1)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prLightPurple(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[0])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Upload Speed: {}/s".format(speed_dn))
+                                elif progress < 100:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[0])
+                                    time.sleep(1)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prCyan(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[0])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Upload Speed: {}/s".format(speed_dn))
+                                time.sleep(0.25)
                     except:
                         pass
 
                     pool.close()
                     pool.join()
+                    delete_last()
                     delete_last()
                     prGreen(" 100%\r")
                     line_print()
@@ -292,7 +310,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     while x != 1:
                         try:
                             resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
-                            prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
+                            prGreen("\r\n" + "All {} batches uploaded.".format(batches_))
                             prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
                             x += 1
                             time.sleep(1)
@@ -302,7 +320,8 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     full_end = time.time()
                     full_time = round((full_end-full_start),2)
                     full_time = time.strftime("%H h : %M m : %S s", time.gmtime(full_time))
-                    prGreen("\r\n" + "Append Completed in {}s".format(full_time))
+                    prGreen("\r\n" + "Append Completed in {}".format(full_time))
+                    line_print()
 
     #Go back to parent folder:
     os.chdir("..")

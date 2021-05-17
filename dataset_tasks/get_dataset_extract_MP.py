@@ -5,6 +5,7 @@ from sfdc_login import *
 import math
 import csv
 import pandas as pd
+#import modin.pandas as pd
 import glob
 import os
 import base64
@@ -189,6 +190,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
             sum_control = batches_mt + thread_count
 
         _start = time.time()
+        down_start = time.time()
 
         #prRed("Calling MP Function now.")
         #result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
@@ -223,9 +225,9 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
                                     try:
                                         #print((config.get("DEFAULT", "progress{}".format(zzz))))
-                                        yyy += int(round(int(config.get("DEFAULT", "progress")) / 1))
+                                        yyy += int(round(int(config.get("DEFAULT", "progress")) / cpus_required))
                                     except:
-                                        yyy += cpus_required
+                                        yyy += cpus_required / 2
 
                                     progress = round((yyy / batches_) * 100,1)
 
@@ -306,6 +308,9 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         delete_last()
         delete_last()
         prGreen(" 100%\r")
+        down_end = time.time()
+        total_down = round((down_end - down_start),2)
+        prCyan("\r\n" + "Data downloaded in {}s".format(total_down) + "\r\n")
         line_print()
 
     del_ = 0
@@ -333,12 +338,16 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
         #Append all csv files from the batches - start:
 
-        prGreen("\r\n" + "Compiling CSV." + "\r\n")
+        prGreen("\r\n" + "Compiling CSV:" + "\r\n")
         extension = 'csv'
-        csv_start = time.time()
         csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
         #print(csv_files)
+        csv_con_start = time.time()
         combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
+        csv_con_end = time.time()
+        total_csv = round((csv_con_end - csv_con_start),2)
+        prCyan("\r\n" + "CSVs Appended in {}s".format(total_csv) + "\r\n")
+        csv_start = time.time()
         combined_csv.fillna(0)
         combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, header=True, encoding='utf-8')
 
@@ -348,7 +357,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         csv_end = time.time()
         total_csv = round((csv_end - csv_start),2)
 
-        prCyan("\r\n" + "Dataset Succesfully Exported in {}".format(total_csv) + "\r\n")
+        prCyan("\r\n" + "Final CSV Built in {}s".format(total_csv) + "\r\n")
         line_print()
         prGreen("\r\n" + "Data sample:" + "\r\n")
         print(combined_csv)

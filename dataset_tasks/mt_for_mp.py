@@ -5,6 +5,7 @@ from sfdc_login import *
 import math
 import csv
 import pandas as pd
+#import modin.pandas as pd
 import glob
 import os
 import base64
@@ -45,7 +46,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
             #prCyan("\r\n" + "Progress: " + "\r\n")
 
             for index, thread in enumerate(threads):
-                progress += index * batches_mt
+                progress += index / batches_mt
                 #print(progress)
                 config = configparser.ConfigParser()
                 with open("p{}.ini".format(i), 'w') as configfile:
@@ -94,7 +95,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
                 for index, thread in enumerate(threads):
                     thread.join()
-                    progress += index * t_count
+                    progress += index / t_count
                     #print(progress)
                     config = configparser.ConfigParser()
                     with open("p{}.ini".format(i), 'w') as configfile:
