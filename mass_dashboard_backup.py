@@ -10,6 +10,9 @@ from zipper import *
 from line import *
 import datetime
 import shutil
+import multiprocessing as mp
+from mp_dash_backup import *
+import os
 
 def remove(string):
     return string.replace(" ", "_")
@@ -91,71 +94,31 @@ def mass_dashboards(access_token,server_id):
 
     i = 0
 
+    #print(dashboards_list[i]["id"])
+
+
     if counter !=0:
-        for x in dashboards_list:
-            i += 1
-            print("{} - ".format(i) ,"Dashboard id: ",x["id"]," - Label: ",x["label"])
-            dashboard_ = x["id"]
-            dashboard_label = x["label"]
-            historiesUrl = x["historiesUrl"]
 
-            try:
-                os.remove('{}_backup.json'.format(dataflow_name_))
-            except:
-                pass
+        pool = mp.Pool((mp.cpu_count()))
+        cpus = int(mp.cpu_count())
+        pool_cycles_A = math.ceil(counter / cpus)
+        cpu_control = 0
+        cpus_required = 0
 
-            resp = requests.get('https://{}.salesforce.com/services/data/v50.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
-            #print(resp.text)
+        while cpu_control < counter:
+            cpu_control += pool_cycles_A + 1
+            cpus_required += 1
 
-            formatted_response = json.loads(resp.text)
-            #print(formatted_response)
-            formatted_response_str = json.dumps(formatted_response, indent=2)
-            #prGreen(formatted_response_str)
+        prCyan("\r\n" + "Starting backup using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
+        line_print()
 
-            state_ = formatted_response.get("state")
-            label_ = formatted_response.get("label")
-            mobileDisabled_ = formatted_response.get("mobileDisabled")
-            datasets_ = formatted_response.get("datasets")
+        result_async = [pool.apply_async(mp_dash_backup, args = (access_token,server_id,i,dashboards_list,headers, )) for i in
+                        range(counter)]
 
-            #print(state_)
+        pool.close()
+        pool.join()
+        line_print()
 
-            #prGreen(datasets_)
-
-            json_backup = {}
-
-            json_backup['label'] = label_
-            json_backup['mobileDisabled'] = mobileDisabled_
-            json_backup['state'] = state_
-            json_backup['datasets'] = datasets_
-
-            string = dashboard_label
-
-            try:
-                dash_name = remove(string)
-            except:
-                dash_name = dashboard_label
-
-            with open('{}_{}_backup.json'.format(dash_name,dashboard_), 'w') as outfile:
-                json.dump(json_backup, outfile)
-
-            os_running = get_platform()
-
-            if os_running == "Windows":
-
-                a_ = "(Get-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_) + ").Replace('&quot;','\\\"') | Set-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_)
-                b_ = "(Get-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_) + ").Replace('&#39;','''') | Set-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_)
-                c_ = "(Get-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_) + ").Replace('&gt;','>') | Set-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_)
-                d_ = "(Get-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_) + ").Replace('&lt;','<') | Set-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_)
-                e_ = "(Get-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_) + ").Replace('&amp;','&') | Set-Content " + '{}_{}_backup.json'.format(dash_name,dashboard_)
-                ps_1_dict = {"a": "{}".format(a_), "b": "{}".format(b_), "c": "{}".format(c_), "d": "{}".format(d_), "e": "{}".format(e_)}
-
-                for x in ps_1_dict.values():
-                    #print(x)
-                    completed = subprocess.run(["powershell", "-Command", x], capture_output=True)
-                    time.sleep(0.25)
-
-            prGreen("\r\n" + "Backup Successfull. ")
-            line_print()
     else:
         prRed("\r\n" + "There aren't Dashboards available to backup." + "\r\n")
         line_print()

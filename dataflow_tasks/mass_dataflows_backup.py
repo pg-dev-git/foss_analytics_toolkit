@@ -5,11 +5,13 @@ from sfdc_login import *
 import os
 from dataflow_tasks.start_stop_dataflow import *
 from dataflow_tasks.get_dataflow_history import *
-from dataflow_tasks.backup_current import *
+from dataflow_tasks.mp_df_backup import *
 from line import *
 import datetime
 from zipper import *
 import shutil
+import multiprocessing as mp
+
 
 def remove(string):
     return string.replace(" ", "_")
@@ -75,120 +77,39 @@ def mass_dataflows(access_token,server_id):
     prGreen("\r\n" + "{} Dataflows will be backed up now...".format(counter) + "\r\n")
     line_print()
 
-    counter = 0
-
     _start = time.time()
 
     i = 0
 
-    for x in dataflow_list:
-        i += 1
-        print("{} - ".format(i) ,"Dataflow id: ",x["id"]," - Label: ",x["label"])
-        dataflow_id_ = x["id"]
-        dataflow_name_ = x["name"]
-        dataflow_his_url = x["historiesUrl"]
+    if counter != 0:
+        
+        pool = mp.Pool((mp.cpu_count()))
+        cpus = int(mp.cpu_count())
+        pool_cycles_A = math.ceil(counter / cpus)
+        cpu_control = 0
+        cpus_required = 0
 
-        try:
-            os.remove('{}_dataflow_backup.json'.format(dataflow_name_))
-        except:
-            pass
+        while cpu_control < counter:
+            cpu_control += pool_cycles_A + 1
+            cpus_required += 1
 
-        headers = {
-            'Authorization': "Bearer {}".format(access_token),
-            'Content-Type': "application/json"
-            }
-        resp = requests.get('https://{}.salesforce.com{}'.format(server_id,dataflow_his_url), headers=headers)
+        prCyan("\r\n" + "Starting backup using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
+        line_print()
 
-        formatted_response = json.loads(resp.text)
-        formatted_response_str = json.dumps(formatted_response, indent=2)
-        #prGreen(formatted_response_str)
-        dataflow_his_list = formatted_response.get('histories')
+        result_async = [pool.apply_async(mp_df_backup, args = (access_token,server_id,i,dataflow_list,headers, )) for i in
+                        range(counter)]
 
-        #Check if there are available histories to backup - start:
+        pool.close()
+        pool.join()
+        line_print()
 
-        counter = 0
-
-        for x in dataflow_his_list:
-            counter += 1
-
-        #Check if there are available histories to backup - end.
-
-        if counter != 0:
-            counter = 0
-            for x in dataflow_his_list:
-                if counter == 0:
-                    dataflow_his_id_ = x["id"]
-                    #print(dataflow_his_id_)
-                    historyUrl = x["historyUrl"]
-                    #print(historyUrl)
-                    previewUrl = x["previewUrl"]
-                    #print(previewUrl)
-                    privatePreviewUrl = x["privatePreviewUrl"]
-                    counter += 1
+    else:
+        prRed("\r\n" + "There aren't Dashboards available to backup." + "\r\n")
+        line_print()
+        time.sleep(0.15)
 
 
-            resp = requests.get('https://{}.salesforce.com{}'.format(server_id,previewUrl), headers=headers)
 
-            #formatted_response = html.unescape(resp.text)
-            formatted_response = json.loads(resp.text)
-            formatted_response_str = json.dumps(formatted_response, indent=2)
-            dataflow_ = formatted_response.get('definition')
-            #print(formatted_response)
-
-            for x in dataflow_:
-                value = dataflow_[x]
-                #print('{} {}'.format(x,value))
-
-            with open('{}_dataflow_backup.json'.format(dataflow_name_), 'w') as outfile:
-                json.dump(dataflow_, outfile)
-
-            #quit()
-            os_running = get_platform()
-
-            try:
-                dataflow_name_ = remove(dataflow_name_)
-            except:
-                pass
-
-
-            if os_running == "Windows":
-
-                #bat_ = open("replace.bat", "w")
-                #a_ = "PowerShell -windowstyle hidden -NoProfile -ExecutionPolicy bypass -Command \"& {Start-Process PowerShell -windowstyle hidden -ArgumentList '-windowstyle hidden -NoProfile -ExecutionPolicy bypass -File \"\"replace.ps1\"\"'}\""
-                #bat_.write(a_)
-                #bat_.close()
-                #time.sleep(0.1)
-
-                a_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&quot;','\\\"') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-                b_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&#39;','''') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-                c_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&gt;','>') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-                d_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&lt;','<') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-                e_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&amp;','&') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-                ps_1_dict = {"a": "{}".format(a_), "b": "{}".format(b_), "c": "{}".format(c_), "d": "{}".format(d_), "e": "{}".format(e_)}
-
-                for x in ps_1_dict.values():
-                    #print(x)
-                    completed = subprocess.run(["powershell", "-Command", x], capture_output=True)
-                    time.sleep(0.15)
-
-                #os.remove("replace.bat")
-                #os.remove("replace.ps1")
-
-
-            prGreen("\r\n" + "Backup Successfull. ")
-            #prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
-            line_print()
-
-            #time.sleep(0.15)
-
-            #prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
-
-
-        else:
-            prRed("\r\n" + "There is no JSON available to backup." + "\r\n")
-            line_print()
-            time.sleep(0.15)
-            #prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
     _end = time.time()
 
