@@ -266,7 +266,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                             yyy += ( prog_ini_top / www )
 
 
-                                        progress = round((yyy),1)
+                                        progress = round((yyy / ( cpus_required / 2 ) ),1)
                                 else:
                                     progress += ( result.val ) * 10
                                     yyy = progress

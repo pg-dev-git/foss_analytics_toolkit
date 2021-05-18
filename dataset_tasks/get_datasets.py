@@ -20,7 +20,7 @@ import threading
 
 def get_datasets(access_token,server_id):
     prGreen("\r\n" + "Getting datasets list..." + "\r\n")
-    time.sleep(1)
+    line_print()
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
@@ -37,9 +37,6 @@ def get_datasets(access_token,server_id):
 
     counter = 0
     counterx = 0
-
-    prCyan("\r\n" + "Datasets:" + "\r\n")
-    time.sleep(1)
 
     for xx in datasets_list:
         counterx += 1
@@ -66,6 +63,8 @@ def get_datasets(access_token,server_id):
 
     while not que.empty():
         t_result.append(que.get())
+
+    prCyan("\r\n" + "Datasets:" + "\r\n")
 
     for x in range(counterx):
         counter += 1

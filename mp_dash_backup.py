@@ -54,7 +54,7 @@ def mp_dash_backup(access_token,server_id,i,dashboards_list,headers):
 
     #print("make request")
 
-    resp = requests.get('https://{}.salesforce.com/services/data/v50.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
     #print(resp.text)
 
     formatted_response = json.loads(resp.text)

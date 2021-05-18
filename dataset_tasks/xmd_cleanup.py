@@ -17,7 +17,6 @@ from line import *
 
 def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
-    line_print()
 
     try:
         dataset_extraction_dir = "xmd_backups"

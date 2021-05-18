@@ -18,7 +18,7 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000)
 
     export_csv = pd.concat(load_csv_split)
     export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,batch_count), index = None, header=True, encoding='utf-8-sig')
@@ -93,7 +93,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
     if i == 0:
         skiprows = 0
     else:
-        skiprows = 50000 * i
+        skiprows = 55000 * i
 
     ind = i + 1
 
@@ -102,7 +102,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000)
 
     export_csv = pd.concat(load_csv_split)
     export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')

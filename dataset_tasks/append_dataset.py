@@ -113,7 +113,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         line_print()
         time.sleep(0.5)
 
-        batches_ = math.ceil(user_input_3 / 50000)
+        batches_ = math.ceil(user_input_3 / 55000)
 
         batch_count = 0
 
@@ -233,7 +233,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                             #print("\r\n" + "\r\n" + "\r\n")
                             for xxx in range(cpus):
                                 #print(ind)
-                                yyy += result.val / batches_
+                                yyy += ( result.val / batches_ ) / cpus
                                 progress = round((yyy / batches_) * 100,1)
                                 if progress < 10:
                                     iostat1 = psutil.net_io_counters(pernic=False)

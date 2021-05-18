@@ -8,7 +8,7 @@ def get_EA_limits(access_token,server_id):
 
     time.sleep(0.5)
     prGreen("\r\n" + "Checking the instance..." + "\r\n")
-    time.sleep(1)
+    line_print()
     headers = {
         'Authorization': "Bearer {}".format(access_token,server_id)
         }
@@ -31,7 +31,7 @@ def get_EA_limits(access_token,server_id):
     print("\r\n" + "Total Rows Available: ")
     prCyan(max_)
 
-    time.sleep(1)
+    line_print()
 
     print("\r\n" + "Total Rows in Use: ")
     if used_ < 50:
@@ -51,5 +51,3 @@ def get_EA_limits(access_token,server_id):
         prRed("{} - {}%".format(current,used_))
         prYellow("You have used all rows available in your instance. You won't be able to create new datasets!")
         time.sleep(3)
-
-    time.sleep(1)

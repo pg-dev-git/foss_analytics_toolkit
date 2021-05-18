@@ -4,6 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 import os
 import time
+from line import *
 
 def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
 
@@ -18,7 +19,7 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/xmd_backups/"
+    d_ext = "{}".format(cd)+"\\xmd_backups\\"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -94,3 +95,4 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     #Go back to parent folder:
     os.chdir("..")
     prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))
+    line_print()

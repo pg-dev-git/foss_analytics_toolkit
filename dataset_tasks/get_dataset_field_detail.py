@@ -13,7 +13,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
         dataset_extraction_dir = "dataset_extraction"
         os.mkdir(dataset_extraction_dir)
     except OSError as error:
-            print(" ")
+            pass
 
     cd = os.getcwd()
     #print(cd)
@@ -31,7 +31,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prGreen(formatted_response_str)
+    #prGreen(formatted_response_str)
 
 
     dataset_current_version_url = formatted_response.get('currentVersionUrl')
@@ -69,7 +69,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     #prYellow(formatted_response_str)
 
     prGreen("\r\n" + "Getting fields...")
-    time.sleep(1)
+    line_print()
     fields = []
     print("\r\n")
 

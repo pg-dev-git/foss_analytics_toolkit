@@ -18,6 +18,7 @@ from line import *
 from dataflow_tasks.mass_dataflows_backup import *
 from mass_dashboard_backup import *
 import multiprocessing as mp
+from dataset_tasks.mass_user_xmd_backup import *
 
 if __name__ == "__main__":
 
@@ -79,9 +80,11 @@ if __name__ == "__main__":
         time.sleep(0.15)
         prLightPurple("7 - Mass Backup all Dashboards")
         time.sleep(0.15)
-        prYellow("8 - Check TCRM Limits")
+        prLightPurple("8 - Mass Backup all User XMDs")
         time.sleep(0.15)
-        prYellow("9 - Run Login Parameters Configuration")
+        prYellow("9 - Check TCRM Limits")
+        time.sleep(0.15)
+        prYellow("10 - Run Login Parameters Configuration")
         time.sleep(0.5)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
@@ -111,9 +114,12 @@ if __name__ == "__main__":
             mass_dashboards(access_token,server_id)
 
         if user_input == "8":
-            get_EA_limits(access_token,server_id)
+            mass_u_xmd_bkp(access_token,server_id)
 
         if user_input == "9":
+            get_EA_limits(access_token,server_id)
+
+        if user_input == "10":
             flag = "Y"
             sfdc_login.auth_check(flag)
             flag = "N"
