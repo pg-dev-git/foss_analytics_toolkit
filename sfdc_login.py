@@ -242,7 +242,7 @@ class sfdc_login():
         time.sleep(0.5)
         tprint("     Tool Kit     ")
         time.sleep(0.5)
-        prGreen("                                                                     v0.1.2-beta1" + "\r\n")
+        prGreen("                                                                     v0.1.2-beta3" + "\r\n")
         prCyan("                                                             Salesforce API v51.0")
         print("\r\n")
         time.sleep(0.5)
