@@ -14,6 +14,9 @@ from dataset_tasks.get_dataset_history import *
 from dataset_tasks.get_dataset_dependencies import *
 import time
 from line import *
+import queue
+import threading
+
 
 def get_datasets(access_token,server_id):
     prGreen("\r\n" + "Getting datasets list..." + "\r\n")
@@ -33,31 +36,46 @@ def get_datasets(access_token,server_id):
     datasets_list = formatted_response.get('datasets')
 
     counter = 0
+    counterx = 0
 
-    prCyan("\r\n" + "Datasets:")
+    prCyan("\r\n" + "Datasets:" + "\r\n")
     time.sleep(1)
 
-    for x in datasets_list:
+    for xx in datasets_list:
+        counterx += 1
+
+    i = 0
+
+    que = queue.Queue()
+    threads = list()
+
+    t_result = []
+
+    for index in range(counterx):
+        cvl = datasets_list[index]["currentVersionUrl"]
+        params = [server_id,access_token,cvl,i]
+        x = threading.Thread(target=lambda q, arg1: q.put(dataset_list_mt(arg1)), args=(que,params))
+        threads.append(x)
+        x.start()
+        time.sleep(0.15)
+
+
+    for index, thread in enumerate(threads):
+        thread.join()
+        time.sleep(0.1)
+
+    while not que.empty():
+        t_result.append(que.get())
+
+    for x in range(counterx):
         counter += 1
         if counter >= 1 and counter <= 9:
-            try:
-                cvl = x["currentVersionUrl"]
-                rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
-                rows_json = json.loads(rows.text)
-                rows_json = rows_json.get('totalRows')
-                print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Rows: {}".format(rows_json)," - Label: ",x["label"])
-            except:
-                print(" {} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
-
+            print("  {} - ".format(counter) ,"Dataset id: ",datasets_list[x]["id"]," - Rows: ",t_result[x]," - Label: ",datasets_list[x]["label"])
+        elif counter > 9 and counter <= 99:
+            print(" {} - ".format(counter) ,"Dataset id: ",datasets_list[x]["id"]," - Rows: ",t_result[x]," - Label: ",datasets_list[x]["label"])
         else:
-            try:
-                cvl = x["currentVersionUrl"]
-                rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
-                rows_json = json.loads(rows.text)
-                rows_json = rows_json.get('totalRows')
-                print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Rows: {}".format(rows_json)," - Label: ",x["label"])
-            except:
-                print("{} - ".format(counter) ,"Dataset id: ",x["id"]," - Label: ",x["label"])
+            print("{} - ".format(counter) ,"Dataset id: ",datasets_list[x]["id"]," - Rows: ",t_result[x]," - Label: ",datasets_list[x]["label"])
+
     print("\r\n")
 
     dataset_ = 999999999
@@ -147,3 +165,20 @@ def get_datasets(access_token,server_id):
     except:
         prYellow("\r\n" + "Going back to the previous menu.")
         time.sleep(2)
+
+def dataset_list_mt(params):
+
+    server_id = params[0]
+    access_token = params[1]
+    cvl = params[2]
+    i = params[3]
+
+
+    headers = {
+        'Authorization': "Bearer {}".format(access_token)
+        }
+    rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
+    rows_json = json.loads(rows.text)
+    rows_json = rows_json.get('totalRows')
+    rows_count = int(rows_json)
+    return rows_count

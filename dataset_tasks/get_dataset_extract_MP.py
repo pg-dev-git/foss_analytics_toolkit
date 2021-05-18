@@ -79,7 +79,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     count_rows = count_rows['records']
     count_rows = count_rows[0]
     count_rows = count_rows.get('count')
-    batches_ = math.ceil(count_rows / 9999)
+    batches_ = math.ceil(count_rows / 30000)
     #print(batches_)
 
     try:
@@ -158,6 +158,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     #print("start")
     #multicore & threads function to submit the queries
     if batches_ > 0:
+
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
         prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
@@ -180,6 +181,17 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         while cpu_control < batches_:
             cpu_control += pool_cycles_A + 1
             cpus_required += 1
+
+        try:
+            del_ = 0
+            for del_ in range(cpus):
+                if os.path.exists('mp{}.ini'.format(del_)):
+                    os.remove('mp{}.ini'.format(del_))
+                if os.path.exists('p{}.ini'.format(del_)):
+                    os.remove('p{}.ini'.format(del_))
+                    del_ += 1
+        except:
+            pass
 
         for zz in range(cpus_required):
             #print("zz {}".format(zz))
@@ -208,100 +220,130 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, ), callback=result.update_result) for i in
                         range(cpus_required)]
 
+        #results_proc = []
+
         if batches_ >= cpus_required:
             if cpus_required < cpus:
-                s_time = 0.1
+                s_time = 0.75
             else:
-                s_time = 0.5
+                s_time = 1
             try:
                 yyy = 0
                 xxx = 0
                 zzz = 0
+                www = 0
+                progress = 0
+                prog_ini_top = 0
                 for r in result_async:
-                    while yyy <= batches_:
+                    #results_proc.append(r.get())
+                    #print(results_proc)
+                    while yyy < batches_:
                         xxx = 0
                         zzz = 0
+                        www = 1
                         for xxx in range(cpus_required):
+
                             #print("xxx for {}".format(xxx))
                             #time.sleep(2)
                             try:
+                                if batches_ > 10:
+                                    if os.path.exists("p{}.ini".format(xxx)):
+                                        #print(xxx)
+                                        #print("p{}.ini".format(xxx))
+                                        config = configparser.ConfigParser()
+                                        config.read("p{}.ini".format(xxx))
+                                        #print(config.get("DEFAULT", "progress"))
+                                        prog_ini = int(config.get("DEFAULT", "progress"))
 
-                                if os.path.exists("p{}.ini".format(xxx)):
-                                    #print(xxx)
-                                    #print("p{}.ini".format(xxx))
-                                    config = configparser.ConfigParser()
-                                    config.read("p{}.ini".format(xxx))
 
-                                    try:
-                                        #print((config.get("DEFAULT", "progress{}".format(zzz))))
-                                        if batches_ > 100:
-                                            yyy += int(round(int(config.get("DEFAULT", "progress")) / cpus_required))
-                                        else:
-                                            yyy += result.val
-                                    except:
-                                        yyy += cpus_required / 2
+                                        if (prog_ini > prog_ini_top):
+                                            prog_ini_top = prog_ini
+                                            yyy += prog_ini_top
+                                        elif prog_ini <= prog_ini_top:
+                                            www += 1
 
-                                    progress = round((yyy / (batches_ / cpus_required)) * 100,1)
+                                        if www == cpus_required:
+                                            yyy += ( prog_ini_top / www )
+
+
+                                        progress = round((yyy),1)
+                                else:
+                                    progress += ( result.val ) * 10
+                                    yyy = progress
 
                                     #zzz += 1
 
-                                    #print("yyy {}".format(yyy) + "progress {}".format(progress) + "\r\n" + "\r\n"+ "\r\n")
-                                    if progress < 10:
-                                        iostat1 = psutil.net_io_counters(pernic=False)
-                                        iostat1 = int(iostat1[1])
-                                        time.sleep(s_time)
-                                        delete_last()
-                                        delete_last()
-                                        delete_last()
-                                        prGreen("Progress:\r")
-                                        prYellow("  {}%\r".format(progress))
-                                        iostat2 = psutil.net_io_counters(pernic=False)
-                                        iostat2 = int(iostat2[1])
-                                        speed_dn = iostat2 - iostat1
-                                        speed_dn = bytes2human(speed_dn)
-                                        print("Download Speed: {}/s".format(speed_dn))
-                                    elif progress < 30:
-                                        iostat1 = psutil.net_io_counters(pernic=False)
-                                        iostat1 = int(iostat1[1])
-                                        time.sleep(s_time)
-                                        delete_last()
-                                        delete_last()
-                                        delete_last()
-                                        prGreen("Progress:\r")
-                                        prYellow(" {}%\r".format(progress))
-                                        iostat2 = psutil.net_io_counters(pernic=False)
-                                        iostat2 = int(iostat2[1])
-                                        speed_dn = iostat2 - iostat1
-                                        speed_dn = bytes2human(speed_dn)
-                                        print("Download Speed: {}/s".format(speed_dn))
-                                    elif progress < 60:
-                                        iostat1 = psutil.net_io_counters(pernic=False)
-                                        iostat1 = int(iostat1[1])
-                                        time.sleep(s_time)
-                                        delete_last()
-                                        delete_last()
-                                        delete_last()
-                                        prGreen("Progress:\r")
-                                        prLightPurple(" {}%\r".format(progress))
-                                        iostat2 = psutil.net_io_counters(pernic=False)
-                                        iostat2 = int(iostat2[1])
-                                        speed_dn = iostat2 - iostat1
-                                        speed_dn = bytes2human(speed_dn)
-                                        print("Download Speed: {}/s".format(speed_dn))
-                                    elif progress < 100:
-                                        iostat1 = psutil.net_io_counters(pernic=False)
-                                        iostat1 = int(iostat1[1])
-                                        time.sleep(s_time)
-                                        delete_last()
-                                        delete_last()
-                                        delete_last()
-                                        prGreen("Progress:\r")
-                                        prCyan(" {}%\r".format(progress))
-                                        iostat2 = psutil.net_io_counters(pernic=False)
-                                        iostat2 = int(iostat2[1])
-                                        speed_dn = iostat2 - iostat1
-                                        speed_dn = bytes2human(speed_dn)
-                                        print("Download Speed: {}/s".format(speed_dn))
+                                #print("yyy {}".format(yyy) + " progress {}".format(progress) + " www {}".format(www) + " cpus_required {}".format(cpus_required) + "\r\n" + "\r\n"+ "\r\n")
+                                if progress < 10:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[1])
+                                    time.sleep(s_time)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prYellow("  {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[1])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Download Speed: {}/s".format(speed_dn))
+                                elif progress < 30:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[1])
+                                    time.sleep(s_time)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prYellow(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[1])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Download Speed: {}/s".format(speed_dn))
+                                elif progress < 60:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[1])
+                                    time.sleep(s_time)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prLightPurple(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[1])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Download Speed: {}/s".format(speed_dn))
+                                elif progress < 100:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[1])
+                                    time.sleep(s_time)
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    prGreen("Progress:\r")
+                                    prCyan(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[1])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Download Speed: {}/s".format(speed_dn))
+                                elif progress > 100:
+                                    iostat1 = psutil.net_io_counters(pernic=False)
+                                    iostat1 = int(iostat1[1])
+                                    time.sleep(s_time)
+                                    #delete_last()
+                                    #delete_last()
+                                    delete_last()
+                                    #prGreen("Progress:\r")
+                                    #prCyan(" {}%\r".format(progress))
+                                    iostat2 = psutil.net_io_counters(pernic=False)
+                                    iostat2 = int(iostat2[1])
+                                    speed_dn = iostat2 - iostat1
+                                    speed_dn = bytes2human(speed_dn)
+                                    print("Download Speed: {}/s".format(speed_dn))
                                     #time.sleep(0.25)
                                 #print("xxx {}".format(xxx))
                                 #print("yyy {}".format(yyy))
@@ -355,7 +397,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
         #print(csv_files)
         csv_con_start = time.time()
-        combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
+        combined_csv = pd.concat([pd.read_csv(csv_file, low_memory=False) for csv_file in csv_files])
         csv_con_end = time.time()
         total_csv = round((csv_con_end - csv_con_start),2)
         prCyan("\r\n" + "CSVs Appended in {}s".format(total_csv) + "\r\n")

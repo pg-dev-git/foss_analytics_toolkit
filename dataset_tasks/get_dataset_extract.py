@@ -173,7 +173,7 @@ def get_datasets_extract(access_token,dataset_,server_id):
         extension = 'csv'
         _start = time.time()
         csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
-        combined_csv = pd.concat([pd.read_csv(csv_file) for csv_file in csv_files])
+        combined_csv = pd.concat([pd.read_csv(csv_file,low_memory=False) for csv_file in csv_files])
         #print(combined_csv)
         combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, encoding='utf-8-sig')
         _end = time.time()

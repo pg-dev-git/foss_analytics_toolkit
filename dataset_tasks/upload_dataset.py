@@ -120,7 +120,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                 prCyan("\r\n" + "***  Starting batch #{}  ***".format(batch_count))
 
-                load_csv_split = pd.read_csv("{}.csv".format(dataset_name), header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
+                load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
                 #print(load_csv_split)
                 #load_csv_split.to_csv( "{}_dataset_split_{}.csv".format(dataset_name,batch_count), index=False, encoding='utf-8-sig')
                 export_csv = pd.concat(load_csv_split)

@@ -22,7 +22,7 @@ def csv_upload_json_meta(dataset_name_,dataset_name):
     json_fields = []
 
     #Load CSV and parse elements
-    load_csv = pd.read_csv("{}.csv".format(dataset_name), nrows=1)
+    load_csv = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, nrows=1)
     csv_headers_list = list(load_csv)
     csv_columns_list = load_csv.values.tolist()
 
