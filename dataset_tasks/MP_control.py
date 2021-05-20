@@ -50,7 +50,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     if thread_id == 0:
         q_offset = 0
     else:
-        q_offset = 30000 * thread_id
+        q_offset = 50000 * thread_id
 
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}

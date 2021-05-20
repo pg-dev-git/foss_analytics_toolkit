@@ -5,7 +5,6 @@ from sfdc_login import *
 import math
 import csv
 import pandas as pd
-#import modin.pandas as pd
 import glob
 import os
 import base64
@@ -16,7 +15,7 @@ import configparser
 from dataset_tasks.MP_control import *
 from line import *
 
-def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i):
+def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count):
 
     if os.path.exists("mp{}.ini".format(i)):
         config = configparser.ConfigParser()
@@ -60,7 +59,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
 
         if batches_mt > 9 and batches_mt < 100:
-            batches_10 = math.ceil(batches_mt / 3)
+            batches_10 = math.ceil(batches_mt / max_t_count)
             batch_count = 0
             batch_10_count = 0
             ii = 1
@@ -73,11 +72,11 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
             while batch_10_count <= batches_10:
                 batch_10_count += 1
-                job_count = 3
+                job_count = max_t_count
 
                 if job_count <= rem_jobs:
-                    rem_jobs = rem_jobs - 3
-                    t_count = 3
+                    rem_jobs = rem_jobs - max_t_count
+                    t_count = max_t_count
                 else:
                     t_count = rem_jobs
                     rem_jobs = 0
@@ -95,17 +94,19 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
                 for index, thread in enumerate(threads):
                     thread.join()
-                    progress = ((i + 1) * t_count) / batches_mt
-                    #print(progress)
+                    progress += len(threads) / batches_mt
+                    #print(i,t_count,batches_mt,progress)
+                    #print("\r\n")
                     config = configparser.ConfigParser()
                     with open("p{}.ini".format(i), 'w') as configfile:
-                        config['DEFAULT'] = {'progress': '{}'.format(batch_count)}
+                        config['DEFAULT'] = {'progress': '{}'.format(progress)}
                         config.write(configfile)
                         configfile.close()
                     time.sleep(0.1)
 
         if batches_mt > 100:
-            batches_10 = math.ceil(batches_mt / 4)
+            batches_10 = math.ceil(batches_mt / max_t_count)
+            print(batches_10)
             batch_count = 0
             batch_10_count = 0
             ii = 1
@@ -118,11 +119,11 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
             while batch_10_count <= batches_10:
                 batch_10_count += 1
-                job_count = 4
+                job_count = max_t_count
 
                 if job_count <= rem_jobs:
-                    rem_jobs = rem_jobs - 4
-                    t_count = 4
+                    rem_jobs = rem_jobs - max_t_count
+                    t_count = max_t_count
                 else:
                     t_count = rem_jobs
                     rem_jobs = 0
@@ -140,11 +141,12 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
                 for index, thread in enumerate(threads):
                     thread.join()
-                    progress = ((i + 1) * t_count) / batches_mt
-                    #print(progress)
+                    progress += len(threads) / batches_mt
+                    #print(i,t_count,batches_mt,progress)
+                    #print("\r\n")
                     config = configparser.ConfigParser()
                     with open("p{}.ini".format(i), 'w') as configfile:
-                        config['DEFAULT'] = {'progress': '{}'.format(batch_count)}
+                        config['DEFAULT'] = {'progress': '{}'.format(progress)}
                         config.write(configfile)
                         configfile.close()
                     time.sleep(0.1)

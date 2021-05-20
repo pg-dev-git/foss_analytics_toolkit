@@ -20,6 +20,7 @@ from dataset_tasks.mt_for_mp import *
 import gc
 import psutil
 from b2h import *
+from system_metrics import *
 
 class Result():
     def __init__(self):
@@ -32,7 +33,7 @@ def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
 
-def get_datasets_extract_mp(access_token,dataset_,server_id):
+def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
 
     try:
         dataset_extraction_dir = "dataset_extraction"
@@ -79,7 +80,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     count_rows = count_rows['records']
     count_rows = count_rows[0]
     count_rows = count_rows.get('count')
-    batches_ = math.ceil(count_rows / 30000)
+    batches_ = math.ceil(count_rows / 50000)
     #print(batches_)
 
     try:
@@ -151,7 +152,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     #print(total_fields)
 
     i = 0
-    q_limit = 30000
+    q_limit = 50000
     q_offset = 0
     dataset_extraction_dir = "dataset_extraction"
 
@@ -159,12 +160,48 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
     #multicore & threads function to submit the queries
     if batches_ > 0:
 
+
+        ram_av = round((( psutil.virtual_memory()[0] /  1024 ) / 1024) / 1024)
+        print(ram_av)
+
+        ram_req = round((0.00000029296875 * dataset_rows),2) + (round((0.00000029296875 * dataset_rows),2) * 0.1)
+        print(ram_req)
+        print(dataset_rows)
+
+        ram_rem = round((( psutil.virtual_memory()[1] /  1024 ) / 1024) / 1024)
+        print(ram_rem)
+
+        if ram_rem <= ram_req:
+            print("Warning:",end='')
+            prRed("There is not enough RAM available in the system to export this dataset as a single file.")
+            line_print()
+
+            prGreen("\r\n" + "What do you want to do?:")
+            time.sleep(0.2)
+            prYellow("(Choose a number from the list below)" + "\r\n")
+            time.sleep(0.3)
+            prCyan("1 - Export the dataset in multiple files.")
+            time.sleep(0.15)
+            prCyan("2 - Cancel the operation.")
+            time.sleep(0.15)
+
+            user_input = input("\r\n" + "Enter your selection: ")
+            line_print()
+
+            if user_input == "1":
+                multi_file_flag = True
+
+            if user_input == "2":
+                os.chdir("..")
+                prYellow("Cancelling extraction and going back to the previous menu.")
+                quit()
+
+        else:
+            multi_file_flag = False
+
+
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
-        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
-        line_print()
-        prCyan("\r\n")
-        prCyan("\r\n")
         mts = math.ceil(batches_ / cpus)
         pool_cycles_A = math.ceil(batches_ / cpus)
         pool_cycles_B = math.floor(batches_ / cpus)
@@ -177,10 +214,16 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         cpu_control = 0
         cpus_required = 0
         result = Result()
+        prCyan("\r\n" + "Starting extraction using all {} CPU Cores...".format(cpus) + "\r\n" + "\r\n")
+        line_print()
+        prCyan("\r\n" + "\r\n" + "\r\n" + "\r\n")
+
 
         while cpu_control < batches_:
             cpu_control += pool_cycles_A + 1
             cpus_required += 1
+
+        max_req = math.ceil(90 / cpus_required)
 
         try:
             del_ = 0
@@ -192,6 +235,23 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                     del_ += 1
         except:
             pass
+
+        try:
+            if cpus < 10 and ram_av >= 16:
+                max_t_count = int(cpus_required)
+            elif cpus < 10 and ram_av < 16:
+                max_t_count = int(cpus_required - 2)
+            elif cpus > 9 and ram_av >= 16:
+                max_t_count = int(max_req)
+            elif cpus > 9 and ram_av < 16:
+                if ( max_req - 1 ) == 0:
+                    max_t_count = 1
+                else:
+                    max_t_count = int(( max_req - 2 ))
+            else:
+                max_t_count = 4
+        except:
+            max_t_count = 4
 
         for zz in range(cpus_required):
             #print("zz {}".format(zz))
@@ -217,7 +277,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         #result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
                         #range(batches_)]
 
-        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i, ), callback=result.update_result) for i in
+        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count, ), callback=result.update_result) for i in
                         range(cpus_required)]
 
         #results_proc = []
@@ -253,7 +313,8 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                         config = configparser.ConfigParser()
                                         config.read("p{}.ini".format(xxx))
                                         #print(config.get("DEFAULT", "progress"))
-                                        prog_ini = int(config.get("DEFAULT", "progress"))
+                                        prog_ini = float(config.get("DEFAULT", "progress")) * cpus_required
+                                        #print(prog_ini)
 
 
                                         if (prog_ini > prog_ini_top):
@@ -262,88 +323,119 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
                                         elif prog_ini <= prog_ini_top:
                                             www += 1
 
-                                        if www == cpus_required:
-                                            yyy += ( prog_ini_top / www )
+                                        if www > cpus_required:
+                                            yyy += ( prog_ini_top )
 
 
-                                        progress = round((yyy / ( cpus_required / 2 ) ),1)
+                                        progress = round((yyy / ( batches_ ) ) * 100,1)
                                 else:
                                     progress += ( result.val ) * 10
                                     yyy = progress
 
                                     #zzz += 1
 
-                                #print("yyy {}".format(yyy) + " progress {}".format(progress) + " www {}".format(www) + " cpus_required {}".format(cpus_required) + "\r\n" + "\r\n"+ "\r\n")
+                                #print("yyy {}".format(yyy) + " progress {}".format(progress) + " www {}".format(www) + " cpus_required {}".format(cpus_required) + " batches: {}".format(batches_) + "\r\n" + "\r\n"+ "\r\n")
                                 if progress < 10:
-                                    iostat1 = psutil.net_io_counters(pernic=False)
-                                    iostat1 = int(iostat1[1])
-                                    time.sleep(s_time)
+                                    #iostat1 = psutil.net_io_counters(pernic=False)
+                                    #iostat1 = int(iostat1[1])
+                                    #cpu_usage = psutil.cpu_percent(1.3)
+                                    #ram_usage = psutil.virtual_memory()[2]
+                                    #time.sleep(s_time)
                                     delete_last()
                                     delete_last()
                                     delete_last()
-                                    prGreen("Progress:\r")
-                                    prYellow("  {}%\r".format(progress))
-                                    iostat2 = psutil.net_io_counters(pernic=False)
-                                    iostat2 = int(iostat2[1])
-                                    speed_dn = iostat2 - iostat1
-                                    speed_dn = bytes2human(speed_dn)
-                                    print("Download Speed: {}/s".format(speed_dn))
+                                    delete_last()
+                                    get_sys_metrics_dn()
+                                    print("Download Progress:", end='')
+                                    prYellow("{}%\r".format(progress))
+                                    #iostat2 = psutil.net_io_counters(pernic=False)
+                                    #iostat2 = int(iostat2[1])
+                                    #speed_dn = iostat2 - iostat1
+                                    #speed_dn = bytes2human(speed_dn)
+                                    #print("Download Speed: {}/s".format(speed_dn))
+                                    #print("CPU Usage: {}%".format(cpu_usage))
+                                    #print("Ram Usage: {}".format(ram_usage))
                                 elif progress < 30:
-                                    iostat1 = psutil.net_io_counters(pernic=False)
-                                    iostat1 = int(iostat1[1])
-                                    time.sleep(s_time)
+                                    #iostat1 = psutil.net_io_counters(pernic=False)
+                                    #iostat1 = int(iostat1[1])
+                                    #cpu_usage = psutil.cpu_percent(1.3)
+                                    #ram_usage = psutil.virtual_memory()[2]
+                                    #time.sleep(s_time)
                                     delete_last()
                                     delete_last()
                                     delete_last()
-                                    prGreen("Progress:\r")
-                                    prYellow(" {}%\r".format(progress))
-                                    iostat2 = psutil.net_io_counters(pernic=False)
-                                    iostat2 = int(iostat2[1])
-                                    speed_dn = iostat2 - iostat1
-                                    speed_dn = bytes2human(speed_dn)
-                                    print("Download Speed: {}/s".format(speed_dn))
+                                    delete_last()
+                                    get_sys_metrics_dn()
+                                    print("Download Progress:", end='')
+                                    prYellow("{}%\r".format(progress))
+                                    #iostat2 = psutil.net_io_counters(pernic=False)
+                                    #iostat2 = int(iostat2[1])
+                                    #speed_dn = iostat2 - iostat1
+                                    #speed_dn = bytes2human(speed_dn)
+                                    #print("Download Speed: {}/s".format(speed_dn))
+                                    #print("CPU Usage: {}%".format(cpu_usage))
+                                    #print("Ram Usage: {}".format(ram_usage))
                                 elif progress < 60:
-                                    iostat1 = psutil.net_io_counters(pernic=False)
-                                    iostat1 = int(iostat1[1])
-                                    time.sleep(s_time)
+                                    #iostat1 = psutil.net_io_counters(pernic=False)
+                                    #iostat1 = int(iostat1[1])
+                                    #cpu_usage = psutil.cpu_percent(1.3)
+                                    #ram_usage = psutil.virtual_memory()[2]
+                                    #time.sleep(s_time)
                                     delete_last()
                                     delete_last()
                                     delete_last()
-                                    prGreen("Progress:\r")
-                                    prLightPurple(" {}%\r".format(progress))
-                                    iostat2 = psutil.net_io_counters(pernic=False)
-                                    iostat2 = int(iostat2[1])
-                                    speed_dn = iostat2 - iostat1
-                                    speed_dn = bytes2human(speed_dn)
-                                    print("Download Speed: {}/s".format(speed_dn))
+                                    delete_last()
+                                    get_sys_metrics_dn()
+                                    print("Download Progress:", end='')
+                                    prLightPurple("{}%\r".format(progress))
+                                    #iostat2 = psutil.net_io_counters(pernic=False)
+                                    #iostat2 = int(iostat2[1])
+                                    #speed_dn = iostat2 - iostat1
+                                    #speed_dn = bytes2human(speed_dn)
+                                    #print("Download Speed: {}/s".format(speed_dn))
+                                    #print("CPU Usage: {}%".format(cpu_usage))
+                                    #print("Ram Usage: {}".format(ram_usage))
                                 elif progress < 100:
-                                    iostat1 = psutil.net_io_counters(pernic=False)
-                                    iostat1 = int(iostat1[1])
-                                    time.sleep(s_time)
+                                    #iostat1 = psutil.net_io_counters(pernic=False)
+                                    #iostat1 = int(iostat1[1])
+                                    #cpu_usage = psutil.cpu_percent(1.3)
+                                    #ram_usage = psutil.virtual_memory()[2]
+                                    #time.sleep(s_time)
                                     delete_last()
                                     delete_last()
                                     delete_last()
-                                    prGreen("Progress:\r")
-                                    prCyan(" {}%\r".format(progress))
-                                    iostat2 = psutil.net_io_counters(pernic=False)
-                                    iostat2 = int(iostat2[1])
-                                    speed_dn = iostat2 - iostat1
-                                    speed_dn = bytes2human(speed_dn)
-                                    print("Download Speed: {}/s".format(speed_dn))
+                                    delete_last()
+                                    get_sys_metrics_dn()
+                                    print("Download Progress:", end='')
+                                    prCyan("{}%\r".format(progress))
+                                    #iostat2 = psutil.net_io_counters(pernic=False)
+                                    #iostat2 = int(iostat2[1])
+                                    #speed_dn = iostat2 - iostat1
+                                    #speed_dn = bytes2human(speed_dn)
+                                    #print("Download Speed: {}/s".format(speed_dn))
+                                    #print("CPU Usage: {}%".format(cpu_usage))
+                                    #print("Ram Usage: {}".format(ram_usage))
                                 elif progress > 100:
-                                    iostat1 = psutil.net_io_counters(pernic=False)
-                                    iostat1 = int(iostat1[1])
-                                    time.sleep(s_time)
-                                    #delete_last()
-                                    #delete_last()
+                                    #iostat1 = psutil.net_io_counters(pernic=False)
+                                    #iostat1 = int(iostat1[1])
+                                    #cpu_usage = psutil.cpu_percent(1.3)
+                                    #ram_usage = psutil.virtual_memory()[2]
+                                    #time.sleep(s_time)
                                     delete_last()
-                                    #prGreen("Progress:\r")
-                                    #prCyan(" {}%\r".format(progress))
-                                    iostat2 = psutil.net_io_counters(pernic=False)
-                                    iostat2 = int(iostat2[1])
-                                    speed_dn = iostat2 - iostat1
-                                    speed_dn = bytes2human(speed_dn)
-                                    print("Download Speed: {}/s".format(speed_dn))
+                                    delete_last()
+                                    delete_last()
+                                    delete_last()
+                                    get_sys_metrics_dn()
+                                    print("Download Progress:", end='')
+                                    prCyan(" 99%\r")
+                                    #iostat2 = psutil.net_io_counters(pernic=False)
+                                    #iostat2 = int(iostat2[1])
+                                    #speed_dn = iostat2 - iostat1
+                                    #speed_dn = bytes2human(speed_dn)
+                                    #print("Download Speed: {}/s".format(speed_dn))
+                                    #print("CPU Usage: {}%".format(cpu_usage))
+                                    #print("Ram Usage: {}".format(ram_usage))
+
                                     #time.sleep(0.25)
                                 #print("xxx {}".format(xxx))
                                 #print("yyy {}".format(yyy))
@@ -360,8 +452,8 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
         pool.close()
         pool.join()
         delete_last()
-        delete_last()
-        prGreen(" 100%\r")
+        print("Download Progress:", end='')
+        prGreen("100%\r")
         down_end = time.time()
         total_down = round((down_end - down_start),2)
         prCyan("\r\n" + "Data downloaded in {}s".format(total_down) + "\r\n")
@@ -392,34 +484,71 @@ def get_datasets_extract_mp(access_token,dataset_,server_id):
 
         #Append all csv files from the batches - start:
 
-        prGreen("\r\n" + "Compiling CSV:" + "\r\n")
-        extension = 'csv'
-        csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
-        #print(csv_files)
-        csv_con_start = time.time()
-        combined_csv = pd.concat([pd.read_csv(csv_file, low_memory=False) for csv_file in csv_files])
-        csv_con_end = time.time()
-        total_csv = round((csv_con_end - csv_con_start),2)
-        prCyan("\r\n" + "CSVs Appended in {}s".format(total_csv) + "\r\n")
-        csv_start = time.time()
-        combined_csv.fillna(0)
-        combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, header=True, encoding='utf-8')
+        if multi_file_flag == False:
+            prGreen("\r\n" + "Compiling CSV:" + "\r\n")
+            extension = 'csv'
+            csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
+            #print('RAM memory total:', (((psutil.virtual_memory()[0] / 1024) / 1024 )/1024))
+            #print('RAM memory available:', (((psutil.virtual_memory()[1] / 1024) / 1024 )/1024))
+            #print('RAM memory % used:', psutil.virtual_memory()[2])
+            #print('RAM memory total used:', (((psutil.virtual_memory()[3] / 1024) / 1024 )/1024))
+            #print('RAM memory total free:', (((psutil.virtual_memory()[4] / 1024) / 1024 )/1024))
+            #print(csv_files)
+            csv_con_start = time.time()
+            combined_csv = pd.concat([pd.read_csv(csv_file, low_memory=False) for csv_file in csv_files])
+            csv_con_end = time.time()
+            total_csv = round((csv_con_end - csv_con_start),2)
+            prCyan("\r\n" + "CSVs Appended in {}s".format(total_csv) + "\r\n")
+            #print('RAM memory total:', (((psutil.virtual_memory()[0] / 1024) / 1024 )/1024))
+            #print('RAM memory available:', (((psutil.virtual_memory()[1] / 1024) / 1024 )/1024))
+            #print('RAM memory % used:', psutil.virtual_memory()[2])
+            #print('RAM memory total used:', (((psutil.virtual_memory()[3] / 1024) / 1024 )/1024))
+            #print('RAM memory total free:', (((psutil.virtual_memory()[4] / 1024) / 1024 )/1024))
+            csv_start = time.time()
+            combined_csv.fillna(0)
+            combined_csv.to_csv( "{}_dataset_extraction.csv".format(dataset_name), index=False, header=True, encoding='utf-8')
 
-        #cmd = "Get-ChildItem -Filter *_results.csv | Select-Object -ExpandProperty FullName | Import-Csv | Export-Csv .\{}_extract.csv -NoTypeInformation".format(dataset_name)
-        #completed = subprocess.run(["powershell", "-Command", cmd], capture_output=True)
+            #cmd = "Get-ChildItem -Filter *_results.csv | Select-Object -ExpandProperty FullName | Import-Csv | Export-Csv .\{}_extract.csv -NoTypeInformation".format(dataset_name)
+            #completed = subprocess.run(["powershell", "-Command", cmd], capture_output=True)
 
-        csv_end = time.time()
-        total_csv = round((csv_end - csv_start),2)
+            csv_end = time.time()
+            total_csv = round((csv_end - csv_start),2)
 
-        prCyan("\r\n" + "Final CSV Built in {}s".format(total_csv) + "\r\n")
-        line_print()
-        prGreen("\r\n" + "Data sample:" + "\r\n")
-        print(combined_csv)
-        line_print()
-        prCyan("\r\n" + "Find the file here: {}".format(d_ext) + "\r\n")
-        time.sleep(0.2)
-        del combined_csv
-        gc.collect()
+            prCyan("\r\n" + "Final CSV Built in {}s".format(total_csv) + "\r\n")
+            #print('RAM memory total:', (((psutil.virtual_memory()[0] / 1024) / 1024 )/1024))
+            #print('RAM memory available:', (((psutil.virtual_memory()[1] / 1024) / 1024 )/1024))
+            #print('RAM memory % used:', psutil.virtual_memory()[2])
+            #print('RAM memory total used:', (((psutil.virtual_memory()[3] / 1024) / 1024 )/1024))
+            #print('RAM memory total free:', (((psutil.virtual_memory()[4] / 1024) / 1024 )/1024))
+            line_print()
+            prGreen("\r\n" + "Data sample:" + "\r\n")
+            print(combined_csv)
+            line_print()
+            prCyan("\r\n" + "Find the file here: {}".format(d_ext) + "\r\n")
+            time.sleep(0.2)
+            del combined_csv
+            gc.collect()
+
+        else:
+            prGreen("\r\n" + "Compiling CSV:" + "\r\n")
+            extension = 'csv'
+            csv_files = glob.glob('{}_*.{}'.format(dataset_name,extension))
+            csv_con_start = time.time()
+            combined_csv = pd.concat([pd.read_csv(csv_file, low_memory=False) for csv_file in csv_files])
+            csv_con_end = time.time()
+            total_csv = round((csv_con_end - csv_con_start),2)
+            prCyan("\r\n" + "CSVs Appended in {}s".format(total_csv) + "\r\n")
+            csv_start = time.time()
+            combined_csv.fillna(0)
+            rem_rows_start = 0
+            rem_rows_end = 0
+            file_id = 1
+            while rem_rows > 0:
+                rem_rows_end += 1000000
+                combined_csv.iloc[rem_rows_start:rem_rows_end].to_csv("{}_extraction_split_{}.csv".format(dataset_name,file_id), index=False, header=True, encoding='utf-8')
+                rem_rows_start += 1000000
+                rem_rows = dataset_rows - 1000000
+                file_id += 1
 
         #Append all csv files from the batches - end.
 

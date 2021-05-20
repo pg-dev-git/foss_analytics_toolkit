@@ -88,6 +88,8 @@ def get_datasets(access_token,server_id):
         action_track = int(action_track)
         if type(action_track) == int and action_track > 0 and action_track <= counter:
 
+            dataset_rows = t_result[action_track-1]
+
             for x in datasets_list:
                 counter_2 += 1
                 if counter_2 == action_track:
@@ -129,7 +131,7 @@ def get_datasets(access_token,server_id):
 
                 if user_input == "2":
                     #get_datasets_extract(access_token,dataset_,server_id,dataset_name)
-                    get_datasets_extract_mp(access_token,dataset_,server_id)
+                    get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows)
 
                 if user_input == "3":
                     upload_csv_dataset(access_token,dataset_name,dataset_,server_id,dataset_name)
