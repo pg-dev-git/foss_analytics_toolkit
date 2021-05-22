@@ -204,18 +204,78 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
             user_input = input("\r\n" + "Enter your selection: ")
             line_print()
 
-            if user_input == "1":
-                multi_file_flag = True
+            ok_flag = 0
 
-            if user_input == "2":
-                os.chdir("..")
-                prYellow("Cancelling the extraction process...")
-                time.sleep(2)
-                quit()
+            while ok_flag != 1:
+
+                if user_input == "1":
+                    multi_file_flag = True
+                    ok_flag = 1
+
+                if user_input == "2":
+                    os.chdir("..")
+                    prYellow("Cancelling the extraction process...")
+                    time.sleep(2)
+                    ok_flag = 1
+                    quit()
+
+                if user_input != '1' and user_input != '2':
+                    print('Error:',end='')
+                    prRed('Enter a valid option. 1 or 2.')
+                    user_input = input("\r\n" + "Enter your selection: ")
+
+                    if user_input == "1":
+                        multi_file_flag = True
+                        ok_flag = 1
+
+                    if user_input == "2":
+                        os.chdir("..")
+                        prYellow("Cancelling the extraction process...")
+                        time.sleep(2)
+                        ok_flag = 1
+                        quit()
+
+                    line_print()
 
         else:
-            multi_file_flag = False
+            prGreen("\r\n" + "How do you want to export the dataset?:")
+            time.sleep(0.2)
+            prYellow("(Choose a number from the list below)" + "\r\n")
+            time.sleep(0.3)
+            prCyan("1 - As a single CSV file.")
+            time.sleep(0.15)
+            prCyan("2 - As multiple CSV files.")
+            time.sleep(0.15)
 
+            user_input = input("\r\n" + "Enter your selection: ")
+            line_print()
+
+            ok_flag = 0
+
+            while ok_flag != 1:
+
+                if user_input == "1":
+                    multi_file_flag = False
+                    ok_flag = 1
+
+                if user_input == "2":
+                    multi_file_flag = True
+                    ok_flag = 1
+
+                if user_input != '1' and user_input != '2':
+                    print('Error:',end='')
+                    prRed('Enter a valid option. 1 or 2.')
+                    user_input = input("\r\n" + "Enter your selection: ")
+
+                    if user_input == "1":
+                        multi_file_flag = False
+                        ok_flag = 1
+
+                    if user_input == "2":
+                        multi_file_flag = True
+                        ok_flag = 1
+
+                    line_print()
 
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
@@ -240,8 +300,8 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
             cpu_control += pool_cycles_A + 1
             cpus_required += 1
 
-        print(cpus,cpus_required)
-        prCyan("\r\n" + "\r\n" + "\r\n" + "\r\n")
+        #print(cpus,cpus_required)
+        #prCyan("\r\n" + "\r\n" + "\r\n" + "\r\n")
 
         smax_req = math.ceil(90 / cpus_required)
 
@@ -343,8 +403,8 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
                                         elif prog_ini <= prog_ini_top:
                                             www += 1
 
-                                        if www > cpus_required:
-                                            yyy += ( prog_ini_top )
+                                        if www == cpus_required:
+                                            yyy += ( prog_ini_top ) * 2
 
 
                                         progress = round((yyy / ( batches_ ) ) * 100,1)
@@ -432,11 +492,14 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
         if os.path.exists("{}_dataset_extraction.csv".format(dataset_name)):
             os.remove("{}_dataset_extraction.csv".format(dataset_name))
 
-        del_ = 0
-        for del_ in range(batches_):
-            if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,del_)):
-                os.remove('{}_{}_query_results.csv'.format(dataset_name,del_))
-            del_ += 1
+        try:
+            del_ = 0
+            for del_ in range(batches_):
+                if os.path.exists('{}_{}_query_results.csv'.format(dataset_name,del_)):
+                    os.remove('{}_{}_query_results.csv'.format(dataset_name,del_))
+                del_ += 1
+        except:
+            pass
         #Folder check for existing files - end.
 
         #Append all csv files from the batches - start:
@@ -494,7 +557,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
                     os.remove('{}_dataset_extraction_split{}.csv'.format(dataset_name,del_))
                     del_ += 1
 
-        else:
+        elif multi_file_flag:
             prCyan("\r\n" + "Find the files here: {}".format(d_ext) + "\r\n")
             #prGreen("\r\n" + "Compiling CSV:" + "\r\n")
             #extension = 'csv'

@@ -21,7 +21,6 @@ import gc
 def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_required,cpus):
 
     #print("\r\n" + "Generating control files...")
-    print(cpus,cpus_required)
     if os.path.exists("mp{}.ini".format(yy)) == False:
         if (yy + 1) == cpus_required and cpus_required != 1:
             last = 'Y'

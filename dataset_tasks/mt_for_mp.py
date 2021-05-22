@@ -177,12 +177,12 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                 if x >= file_id and x <= file_max:
                     csv_files.append('{}_{}_query_results.csv'.format(dataset_name,x))
                 x += 1
-            print("\r\n\r\n\r\n\r\n")
-            print('Process: ',i)
-            print(x,file_id,file_max)
-            print(csv_files)
-            print("\r\n\r\n\r\n\r\n")
-            time.sleep(5)
+            #print("\r\n\r\n\r\n\r\n")
+            #print('Process: ',i)
+            #print(x,file_id,file_max)
+            #print(csv_files)
+            #print("\r\n\r\n\r\n\r\n")
+            #time.sleep(1)
         except:
             pass
 
