@@ -157,7 +157,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
                 x = 1
         except:
             xx  += 1
-            time.sleep(0.15)
+            time.sleep(5)
             if xx == 100:
                 x = 1
                 prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(ind) + "The upload won't contain all records." + "\r\n")

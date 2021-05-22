@@ -18,12 +18,17 @@ from line import *
 import datetime
 import gc
 
-def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
+def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_required,cpus):
 
     #print("\r\n" + "Generating control files...")
+    print(cpus,cpus_required)
     if os.path.exists("mp{}.ini".format(yy)) == False:
+        if (yy + 1) == cpus_required and cpus_required != 1:
+            last = 'Y'
+        else:
+            last = 'N'
         config = configparser.ConfigParser()
-        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt)}
+        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt), 'last': '{}'.format(last)}
 
         with open("mp{}.ini".format(yy), 'w') as configfile:
             config.write(configfile)
@@ -32,8 +37,12 @@ def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
 
     elif os.path.exists("mp{}.ini".format(yy)):
         os.remove("mp{}.ini".format(yy))
+        if (yy + 1) == cpus_required:
+            last = 'Y'
+        else:
+            last = 'N'
         config = configparser.ConfigParser()
-        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt)}
+        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt), 'last': '{}'.format(last)}
 
         with open("mp{}.ini".format(yy), 'w') as configfile:
             config.write(configfile)
