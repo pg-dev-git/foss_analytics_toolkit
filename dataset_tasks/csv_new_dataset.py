@@ -71,23 +71,23 @@ def new_csv_dataset(access_token,server_id):
             time.sleep(2)
 
     #Input check for total # of rows
-    while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
-        user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-        time.sleep(2)
-        try:
-            user_input_3 = int(user_input_3)
-            if type(user_input_3) == int and user_input_3 > 0:
-                user_input_3_flag = 'y'
-                line_print()
-            elif type(user_input_3) == int and user_input_3 < 1:
-                prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-                time.sleep(2)
-            else:
-                prRed("\r\n" + "Please use an integer.")
-                time.sleep(2)
-        except ValueError:
-            prRed("\r\n" + "Please use an integer.")
-            time.sleep(2)
+    #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
+    #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
+    #    time.sleep(2)
+    #    try:
+    #        user_input_3 = int(user_input_3)
+    #        if type(user_input_3) == int and user_input_3 > 0:
+    #            user_input_3_flag = 'y'
+    #            line_print()
+    #        elif type(user_input_3) == int and user_input_3 < 1:
+    #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
+    #            time.sleep(2)
+    #        else:
+    #            prRed("\r\n" + "Please use an integer.")
+    #            time.sleep(2)
+    #    except ValueError:
+    #        prRed("\r\n" + "Please use an integer.")
+    #        time.sleep(2)
 
     #Input check for date format
     while user_input_4 != "y" and user_input_4 != "Y":
@@ -115,7 +115,7 @@ def new_csv_dataset(access_token,server_id):
             prRed("Wrong value. Try again.")
             time.sleep(2)
 
-    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y") and user_input_3_flag == 'y':
+    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y"):
         dataset_name = input("Enter your filename without the csv extension: ")
         time.sleep(2)
         print("\r\n")
@@ -137,7 +137,11 @@ def new_csv_dataset(access_token,server_id):
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
         line_print()
 
-        batches_ = math.ceil(user_input_3 / 50000)
+        num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        num_rows = num_rows.shape[0]
+
+        batches_ = math.ceil(num_rows / 55000)
 
         batch_count = 0
 
@@ -192,6 +196,7 @@ def new_csv_dataset(access_token,server_id):
                         prYellow("Status: Successful")
                         line_print()
                         x += 1
+                        mp_flag = 1
                     else:
                         try:
                             prRed(errors)
@@ -220,7 +225,7 @@ def new_csv_dataset(access_token,server_id):
             #rem_jobs = batches_
             #job_count = 0
 
-            if x != 1:
+            if mp_flag == 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
                 prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus) + "\r\n")
@@ -329,4 +334,4 @@ def new_csv_dataset(access_token,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
-    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))
+    #prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

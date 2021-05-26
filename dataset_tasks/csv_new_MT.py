@@ -29,7 +29,10 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
     load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
 
     export_csv = pd.concat(load_csv_split)
-    export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
+    if i == 0:
+        export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=Falses, encoding='utf-8-sig')
+    else:
+        export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=False, encoding='utf-8-sig')
 
 
     #prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))

@@ -55,7 +55,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(2)
         if user_input_1 == "Y" or user_input_1 == "y":
-            print("\r\n")
+            line_print()
         elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
             time.sleep(1)
@@ -68,7 +68,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(2)
         if user_input_2 == "Y" or user_input_2 == "y":
-            print("")
+            line_print()
             time.sleep(0.5)
         elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
@@ -78,23 +78,23 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             time.sleep(1)
 
     #Input check for total # of rows
-    while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
-        user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-        time.sleep(2)
-        try:
-            user_input_3 = int(user_input_3)
-            if type(user_input_3) == int and user_input_3 > 0:
-                print("")
-                time.sleep(0.5)
-            elif type(user_input_3) == int and user_input_3 < 1:
-                prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-                time.sleep(2)
-            else:
-                prRed("\r\n" + "Please use an integer.")
-                time.sleep(1)
-        except ValueError:
-            prRed("\r\n" + "Please use an integer.")
-            time.sleep(2)
+    #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
+    #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
+    #    time.sleep(2)
+    #    try:
+    #        user_input_3 = int(user_input_3)
+    #        if type(user_input_3) == int and user_input_3 > 0:
+    #            line_print()
+    #            time.sleep(0.5)
+    #        elif type(user_input_3) == int and user_input_3 < 1:
+    #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
+    #            time.sleep(2)
+    #        else:
+    #            prRed("\r\n" + "Please use an integer.")
+    #            time.sleep(1)
+    #    except ValueError:
+    #        prRed("\r\n" + "Please use an integer.")
+    #        time.sleep(2)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
         dataset_name = input("\r\n" + "Enter your filename without the csv extension:")
@@ -113,7 +113,11 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         line_print()
         time.sleep(0.5)
 
-        batches_ = math.ceil(user_input_3 / 55000)
+        num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        num_rows = num_rows.shape[0]
+
+        batches_ = math.ceil(num_rows / 55000)
 
         batch_count = 0
 
@@ -177,17 +181,20 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                             p_flag = 0
                             time.sleep(0.5)
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                            os.chdir("..")
                         except:
                             prRed(message)
                             x += 1
                             batches_ = 0
                             p_flag = 0
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                            os.chdir("..")
                         time.sleep(0.5)
                 except:
                     prRed(message)
                     x += 1
                     prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                    os.chdir("..")
                     time.sleep(2)
                     batches_ = 0
                     p_flag = 0

@@ -3,7 +3,7 @@ import requests
 from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_datasets import *
-from dataset_tasks.new_csv_dataset import *
+from dataset_tasks.csv_new_dataset import *
 from dataflow_tasks.get_dataflows import *
 from data_manager_tasks.get_dataflowjobs import *
 from art import *
@@ -105,7 +105,7 @@ if __name__ == "__main__":
             get_dataflowsJobs(access_token,server_id)
 
         if user_input == "5":
-            upload_new_csv_dataset(access_token,server_id)
+            new_csv_dataset(access_token,server_id)
 
         if user_input == "6":
             mass_dataflows(access_token,server_id)
