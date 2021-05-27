@@ -88,7 +88,7 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
                 time.sleep(1)
             pass
 
-def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
+def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols):
 
     if i == 0:
         skiprows = 0
@@ -102,10 +102,10 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000, header=None)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000, header=0, names = csv_cols)
 
     export_csv = pd.concat(load_csv_split)
-    export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=None, encoding='utf-8-sig')
+    export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
 
 
     #prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))

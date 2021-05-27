@@ -181,7 +181,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
         ram_req = round((0.00000029296875 * dataset_rows),2) + (round((0.00000029296875 * dataset_rows),2) * 0.1)
 
         ram_rem = round((( psutil.virtual_memory()[1] /  1024 ) / 1024) / 1024)
-s
+
         if ram_rem <= ram_req:
             print("Warning:",end='')
             prRed("There is not enough RAM available in the system to export this dataset as a single file.")

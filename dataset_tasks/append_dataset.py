@@ -52,6 +52,8 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
     #Input check for file placement
     while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N" or user_input_1 == "n":
+        prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
+        line_print()
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(2)
         if user_input_1 == "Y" or user_input_1 == "y":
@@ -114,6 +116,8 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         time.sleep(0.5)
 
         num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        csv_cols = (list(num_rows.columns.values))
 
         num_rows = num_rows.shape[0]
 
@@ -229,7 +233,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 result = Result()
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, ), callback=result.update_result) for i in range(batches_)]
+                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, ), callback=result.update_result) for i in range(batches_)]
 
                 if batches_ >= 1:
                     try:

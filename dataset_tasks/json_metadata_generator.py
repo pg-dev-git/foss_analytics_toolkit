@@ -38,6 +38,16 @@ def csv_upload_json_meta(dataset_name_,dataset_name):
         #time.sleep(0.1)
         try:
 
+            #Check if the field is a date in yyyy/MM/dd format only
+            if type(col_value) != int and type(col_value) != float and type(col_value) != bool and (re.match("{}".format(csv_date_match),col_value)) is not None:
+                data_type = "Date"
+                json_fields.append({"description": "",
+                                    "fullyQualifiedName": "{}".format(header),
+                                    "label": "{}".format(header),
+                                    "name": "{}".format(header),
+                                    "type": "{}".format(data_type),
+                                    "format": "yyyy/MM/dd"})
+
             #Check if the cell is empty and set it as text
             try:
                 if col_value in (None,"") or (math.isnan(col_value)) == True:
@@ -61,16 +71,6 @@ def csv_upload_json_meta(dataset_name_,dataset_name):
                                 "type": "{}".format(data_type),
                                 "precision": 10,
                                 "scale": 2})
-
-            #Check if the field is a date in yyyy/MM/dd format only
-            if type(col_value) != int and type(col_value) != float and type(col_value) != bool and (re.match("{}".format(csv_date_match),col_value)) is not None:
-                data_type = "Date"
-                json_fields.append({"description": "",
-                                    "fullyQualifiedName": "{}".format(header),
-                                    "label": "{}".format(header),
-                                    "name": "{}".format(header),
-                                    "type": "{}".format(data_type),
-                                    "format": "yyyy/MM/dd"})
 
             #Check if the field is a string
             if (type(col_value) == str and re.match("{}".format(csv_date_match),col_value) is None) or (type(col_value) == bool):

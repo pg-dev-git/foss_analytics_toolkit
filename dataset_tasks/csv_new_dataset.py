@@ -10,7 +10,7 @@ import os
 import base64
 from dataset_tasks.json_metadata_generator import *
 import math
-from dataset_tasks.append_dataset_MT import *
+from dataset_tasks.csv_new_MT import *
 import threading
 import datetime
 import sys
@@ -46,6 +46,8 @@ def new_csv_dataset(access_token,server_id):
 
     #Input check for file placement
     while user_input_1 != "y" and user_input_1 != "Y":
+        prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
+        line_print()
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
@@ -138,6 +140,8 @@ def new_csv_dataset(access_token,server_id):
         line_print()
 
         num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        csv_cols = (list(num_rows.columns.values))
 
         num_rows = num_rows.shape[0]
 
@@ -240,7 +244,7 @@ def new_csv_dataset(access_token,server_id):
                 thread_id = 0
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, )) for i in range(batches_)]
+                result_async = [pool.apply_async(new_csv_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, )) for i in range(batches_)]
 
                 try:
                     for r in result_async:
