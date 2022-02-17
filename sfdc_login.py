@@ -175,7 +175,7 @@ class sfdc_login():
             headers = {
                 'Authorization': "Bearer {}".format(access_token)
                 }
-            resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave'.format(server_id), headers=headers)
+            resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave'.format(server_id), headers=headers)
             formatted_response = json.loads(resp.text)
             formatted_response_str = json.dumps(formatted_response, indent=2)
 
@@ -242,7 +242,7 @@ class sfdc_login():
         time.sleep(0.5)
         tprint("     Tool Kit     ")
         time.sleep(0.5)
-        prGreen("                                                                     v0.1.2-beta1" + "\r\n")
-        prCyan("                                                             Salesforce API v51.0")
+        prGreen("                                                                     v0.1.2-beta3" + "\r\n")
+        prCyan("                                                             Salesforce API v53.0")
         print("\r\n")
         time.sleep(0.5)

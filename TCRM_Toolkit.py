@@ -1,23 +1,19 @@
-import json
-import requests
+import json, requests, os, configparser, datetime, time
 from terminal_colors import *
 from sfdc_login import *
-from dataset_tasks.get_datasets import *
-from dataset_tasks.new_csv_dataset import *
+from dataset_tasks.get_datasets  import *
+from dataset_tasks.csv_new_dataset import *
 from dataflow_tasks.get_dataflows import *
 from data_manager_tasks.get_dataflowjobs import *
 from art import *
-import os
 from initial_checks import *
-import configparser
-import datetime
-import time
 from dashboards_tasks.get_dashboards import *
 from get_ea_limits import *
 from line import *
 from dataflow_tasks.mass_dataflows_backup import *
 from mass_dashboard_backup import *
 import multiprocessing as mp
+from dataset_tasks.mass_user_xmd_backup import *
 
 if __name__ == "__main__":
 
@@ -29,14 +25,11 @@ if __name__ == "__main__":
 
     sfdc_login.intro()
 
-
-
-
     #Beta Lock - Start
     current_time = datetime.datetime.now()
 
     try:
-        if (current_time.year) == 2021 and (((current_time.month) == 4 and (current_time.day) <= 30) or ((current_time.month) == 5 and (current_time.day) <= 30)):
+        if (current_time.year) == 2022 and (((current_time.month) == 2 and (current_time.day) <= 30) or ((current_time.month) == 3 and (current_time.day) <= 30)):
             prGreen("\r\n" + "Welcome to the beta testing. Please try all the features and share your feedback!" + "\r\n")
             time.sleep(3)
         else:
@@ -56,8 +49,6 @@ if __name__ == "__main__":
     config.read("{}".format(config_file))
     server_id = config.get("DEFAULT", "server_id")
 
-
-
     run_token = True
     while run_token:
         line_print()
@@ -66,22 +57,24 @@ if __name__ == "__main__":
         prYellow("(Choose a number from the list below)" + "\r\n")
         time.sleep(0.5)
         prCyan("1 - List datasets")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prCyan("2 - List dashboards")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prCyan("3 - List dataflows")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prCyan("4 - List Data Manager jobs")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prCyan("5 - Create New Dataset from CSV")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prLightPurple("6 - Mass Backup all Dataflows")
-        time.sleep(0.15)
+        time.sleep(0.10)
         prLightPurple("7 - Mass Backup all Dashboards")
-        time.sleep(0.15)
-        prYellow("8 - Check TCRM Limits")
-        time.sleep(0.15)
-        prYellow("9 - Run Login Parameters Configuration")
+        time.sleep(0.10)
+        prLightPurple("8 - Mass Backup all User XMDs")
+        time.sleep(0.10)
+        prYellow("9 - Check TCRM Limits")
+        time.sleep(0.10)
+        prYellow("10 - Run Login Parameters Configuration")
         time.sleep(0.5)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
@@ -102,7 +95,7 @@ if __name__ == "__main__":
             get_dataflowsJobs(access_token,server_id)
 
         if user_input == "5":
-            upload_new_csv_dataset(access_token,server_id)
+            new_csv_dataset(access_token,server_id)
 
         if user_input == "6":
             mass_dataflows(access_token,server_id)
@@ -111,17 +104,16 @@ if __name__ == "__main__":
             mass_dashboards(access_token,server_id)
 
         if user_input == "8":
-            get_EA_limits(access_token,server_id)
+            mass_u_xmd_bkp(access_token,server_id)
 
         if user_input == "9":
+            get_EA_limits(access_token,server_id)
+
+        if user_input == "10":
             flag = "Y"
             sfdc_login.auth_check(flag)
             flag = "N"
 
-
-        print("\r\n")
-
-        #check_token = input("Do you want to do something else (Y) or exit the program (N)?" + "\r\n")
 
         check_token = "Y"
 
