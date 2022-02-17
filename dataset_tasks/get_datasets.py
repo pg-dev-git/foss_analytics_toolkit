@@ -1,9 +1,7 @@
-import json
-import requests
+import json, requests, time, queue, threading
 from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_dataset_field_detail import *
-from dataset_tasks.get_dataset_extract_v2 import *
 from dataset_tasks.get_dataset_extract_MP import *
 from dataset_tasks.upload_dataset import *
 from dataset_tasks.dataset_backup_user_xmd import *
@@ -12,34 +10,30 @@ from dataset_tasks.append_dataset import *
 from dataset_tasks.delete_dataset import *
 from dataset_tasks.get_dataset_history import *
 from dataset_tasks.get_dataset_dependencies import *
-import time
 from line import *
-import queue
-import threading
 
 
 def get_datasets(access_token,server_id):
-    prGreen("\r\n" + "Getting datasets list..." + "\r\n")
-    time.sleep(1)
+    prGreen("\r\nGetting datasets list...")
+    line_print()
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets'.format(server_id), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets'.format(server_id), headers=headers)
     #print(resp.json())
-    #Print PrettyJSON in Terminal
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
     #prGreen(formatted_response_str)
 
+
+
     datasets_list = formatted_response.get('datasets')
+    #prGreen(datasets_list)
 
     counter = 0
     counterx = 0
-
-    prCyan("\r\n" + "Datasets:" + "\r\n")
-    time.sleep(1)
 
     for xx in datasets_list:
         counterx += 1
@@ -52,12 +46,17 @@ def get_datasets(access_token,server_id):
     t_result = []
 
     for index in range(counterx):
-        cvl = datasets_list[index]["currentVersionUrl"]
-        params = [server_id,access_token,cvl,i]
-        x = threading.Thread(target=lambda q, arg1: q.put(dataset_list_mt(arg1)), args=(que,params))
-        threads.append(x)
-        x.start()
-        time.sleep(0.15)
+        try:
+            cvl = datasets_list[index]["currentVersionUrl"]
+            params = [server_id,access_token,cvl,i]
+            x = threading.Thread(target=lambda q, arg1: q.put(dataset_list_mt(arg1)), args=(que,params))
+            threads.append(x)
+            x.start()
+            time.sleep(0.15)
+        except:
+            time.sleep(0.05)
+            index -= 1
+            counterx -= 1
 
 
     for index, thread in enumerate(threads):
@@ -66,6 +65,8 @@ def get_datasets(access_token,server_id):
 
     while not que.empty():
         t_result.append(que.get())
+
+    prCyan("\r\n" + "Datasets:" + "\r\n")
 
     for x in range(counterx):
         counter += 1
@@ -88,6 +89,8 @@ def get_datasets(access_token,server_id):
     try:
         action_track = int(action_track)
         if type(action_track) == int and action_track > 0 and action_track <= counter:
+
+            dataset_rows = t_result[action_track-1]
 
             for x in datasets_list:
                 counter_2 += 1
@@ -130,7 +133,7 @@ def get_datasets(access_token,server_id):
 
                 if user_input == "2":
                     #get_datasets_extract(access_token,dataset_,server_id,dataset_name)
-                    get_datasets_extract_mp(access_token,dataset_,server_id)
+                    get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows)
 
                 if user_input == "3":
                     upload_csv_dataset(access_token,dataset_name,dataset_,server_id,dataset_name)
@@ -153,7 +156,9 @@ def get_datasets(access_token,server_id):
                 if user_input == "9":
                     delete_dataset(access_token,dataset_,server_id)
 
-                check_token = input("\r\n" + "Press \"Y\" to see the dataset actions or hit any key to go back" + "\r\n")
+                check_token = input("\r\nPress \"Y\" to see the dataset actions or hit any key to go back")
+
+                line_print()
 
                 if check_token == "Y" or check_token == "y":
                     run_token = True
@@ -179,6 +184,6 @@ def dataset_list_mt(params):
         }
     rows = requests.get('https://{}.salesforce.com'.format(server_id) + '{}'.format(cvl), headers=headers)
     rows_json = json.loads(rows.text)
-    rows_json = rows_json.get('totalRows')
+    rows_json = rows_json.get('totalRowCount')
     rows_count = int(rows_json)
     return rows_count

@@ -12,12 +12,12 @@ from dataset_tasks.json_metadata_generator import *
 import math
 import threading
 
-def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
+def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols):
 
     if i == 0:
         skiprows = 0
     else:
-        skiprows = 50000 * i
+        skiprows = 55000 * i
 
     ind = i + 1
 
@@ -26,10 +26,17 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000, header = 0, names = csv_cols)
 
     export_csv = pd.concat(load_csv_split)
-    export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
+    export_csv.fillna(0)
+    #print(export_csv)
+    #print("\r\n")
+
+    if i == 0:
+        export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
+    else:
+        export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
 
 
     #prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))
@@ -53,7 +60,7 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
         try:
             #prGreen("\r\n" + "Uploading file to TCRM")
             #_start = time.time()
-            resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+            resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
             #prYellow(formatted_response_str)

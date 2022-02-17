@@ -13,7 +13,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
         dataset_extraction_dir = "dataset_extraction"
         os.mkdir(dataset_extraction_dir)
     except OSError as error:
-            print(" ")
+            pass
 
     cd = os.getcwd()
     #print(cd)
@@ -26,12 +26,12 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    prGreen(formatted_response_str)
+    #prGreen(formatted_response_str)
 
 
     dataset_current_version_url = formatted_response.get('currentVersionUrl')
@@ -48,7 +48,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
                }
 
 
-    resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
     query_results = json.loads(resp.text)
     #query_results = json.loads(resp, indent=2)
     #prYellow(query_results)
@@ -69,7 +69,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     #prYellow(formatted_response_str)
 
     prGreen("\r\n" + "Getting fields...")
-    time.sleep(1)
+    line_print()
     fields = []
     print("\r\n")
 

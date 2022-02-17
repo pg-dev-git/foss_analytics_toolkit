@@ -1,9 +1,7 @@
-import json
-import requests
+import json, requests, os, time
 from terminal_colors import *
 from sfdc_login import *
-import os
-import time
+from line import *
 
 def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
 
@@ -18,7 +16,7 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/xmd_backups/"
+    d_ext = "{}".format(cd)+"\\xmd_backups\\"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -26,7 +24,7 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -86,9 +84,9 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
 
     time.sleep(0.5)
 
-    prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
+    prLightPurple("\r\n{}".format(d_ext))
 
-    time.sleep(2)
+    line_print()
 
 
     #Go back to parent folder:

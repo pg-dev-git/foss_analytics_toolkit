@@ -1,22 +1,11 @@
-import time
-import json
-import requests
+import time, json, requests, math, csv, os, base64, math, threading, datetime, sys, psutil
 from terminal_colors import *
 from sfdc_login import *
-import math
-import csv
 import pandas as pd
-import os
-import base64
 from dataset_tasks.json_metadata_generator import *
-import math
 from dataset_tasks.append_dataset_MT import *
-import threading
-import datetime
-import sys
 from line import *
 import multiprocessing as mp
-import psutil
 from b2h import *
 
 class Result():
@@ -52,10 +41,12 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
     #Input check for file placement
     while user_input_1 == "Xhhrydjanshtttx" or user_input_1 == "N" or user_input_1 == "n":
+        prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
+        line_print()
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(2)
         if user_input_1 == "Y" or user_input_1 == "y":
-            print("\r\n")
+            line_print()
         elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
             time.sleep(1)
@@ -68,7 +59,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(2)
         if user_input_2 == "Y" or user_input_2 == "y":
-            print("")
+            line_print()
             time.sleep(0.5)
         elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
@@ -78,23 +69,23 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             time.sleep(1)
 
     #Input check for total # of rows
-    while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
-        user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-        time.sleep(2)
-        try:
-            user_input_3 = int(user_input_3)
-            if type(user_input_3) == int and user_input_3 > 0:
-                print("")
-                time.sleep(0.5)
-            elif type(user_input_3) == int and user_input_3 < 1:
-                prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-                time.sleep(2)
-            else:
-                prRed("\r\n" + "Please use an integer.")
-                time.sleep(1)
-        except ValueError:
-            prRed("\r\n" + "Please use an integer.")
-            time.sleep(2)
+    #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
+    #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
+    #    time.sleep(2)
+    #    try:
+    #        user_input_3 = int(user_input_3)
+    #        if type(user_input_3) == int and user_input_3 > 0:
+    #            line_print()
+    #            time.sleep(0.5)
+    #        elif type(user_input_3) == int and user_input_3 < 1:
+    #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
+    #            time.sleep(2)
+    #        else:
+    #            prRed("\r\n" + "Please use an integer.")
+    #            time.sleep(1)
+    #    except ValueError:
+    #        prRed("\r\n" + "Please use an integer.")
+    #        time.sleep(2)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
         dataset_name = input("\r\n" + "Enter your filename without the csv extension:")
@@ -113,7 +104,13 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         line_print()
         time.sleep(0.5)
 
-        batches_ = math.ceil(user_input_3 / 50000)
+        num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        csv_cols = (list(num_rows.columns.values))
+
+        num_rows = num_rows.shape[0]
+
+        batches_ = math.ceil(num_rows / 55000)
 
         batch_count = 0
 
@@ -139,7 +136,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             xx = 5
             while x != 1:
                 try:
-                    resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+                    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
                     time.sleep(0.5)
                     resp_results = json.loads(resp.text)
                     formatted_response_str = json.dumps(resp_results, indent=2)
@@ -177,33 +174,28 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                             p_flag = 0
                             time.sleep(0.5)
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                            os.chdir("..")
                         except:
                             prRed(message)
                             x += 1
                             batches_ = 0
                             p_flag = 0
                             prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                            os.chdir("..")
                         time.sleep(0.5)
                 except:
                     prRed(message)
                     x += 1
                     prRed("\r\n" + "Cancelling Job..." + "\r\n")
+                    os.chdir("..")
                     time.sleep(2)
                     batches_ = 0
                     p_flag = 0
 
-            #i = 1
-            #batches_10 = math.ceil(batches_ / 10)
-            #batch_10_count = 0
-            #delete_count = 0
-            #ii = 1
-            #rem_jobs = batches_
-            #job_count = 0
-
             if p_flag == 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
-                prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus) + "\r\n")
+                prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus))
                 line_print()
                 prCyan("\r\n")
                 prGreen("Progress:\r")
@@ -222,7 +214,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 result = Result()
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, ), callback=result.update_result) for i in range(batches_)]
+                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, ), callback=result.update_result) for i in range(batches_)]
 
                 if batches_ >= 1:
                     try:
@@ -233,7 +225,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                             #print("\r\n" + "\r\n" + "\r\n")
                             for xxx in range(cpus):
                                 #print(ind)
-                                yyy += result.val / batches_
+                                yyy += ( result.val / batches_ ) / cpus
                                 progress = round((yyy / batches_) * 100,1)
                                 if progress < 10:
                                     iostat1 = psutil.net_io_counters(pernic=False)
@@ -309,7 +301,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     x = 0
                     while x != 1:
                         try:
-                            resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+                            resp = requests.patch('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
                             prGreen("\r\n" + "All {} batches uploaded.".format(batches_))
                             prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
                             x += 1

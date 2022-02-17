@@ -25,7 +25,7 @@ def data_extract_mp(dataset_,dataset_currentVersionId,query_fields_str,q_offset,
     x = 0
     xx = 0
     while x != 1:
-        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
         query_results = json.loads(resp.text)
         try:
             query_results = ((query_results.get("results").get("records")))
@@ -46,7 +46,7 @@ def data_extract_mp(dataset_,dataset_currentVersionId,query_fields_str,q_offset,
             xx += 1
             if xx == 5:
                 x = 1
-                prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(i) + "\r\n") 
+                prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(i) + "\r\n")
                 time.sleep(2)
             pass
 

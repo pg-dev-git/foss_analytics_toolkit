@@ -1,16 +1,8 @@
-import time
-import json
-import requests
+import time, json, requests, math, csv, os, base64, threading
 from terminal_colors import *
 from sfdc_login import *
-import math
-import csv
 import pandas as pd
-import os
-import base64
 from dataset_tasks.json_metadata_generator import *
-import math
-import threading
 
 def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access_token):
 
@@ -18,7 +10,7 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000)
 
     export_csv = pd.concat(load_csv_split)
     export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,batch_count), index = None, header=True, encoding='utf-8-sig')
@@ -45,7 +37,7 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
         try:
             #prGreen("\r\n" + "Uploading file to TCRM")
             #_start = time.time()
-            resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+            resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
             #prYellow(formatted_response_str)
@@ -88,12 +80,12 @@ def data_append_thread(dataset_name,batch_count,skiprows,job_id,server_id,access
                 time.sleep(1)
             pass
 
-def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
+def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols):
 
     if i == 0:
         skiprows = 0
     else:
-        skiprows = 50000 * i
+        skiprows = 55000 * i
 
     ind = i + 1
 
@@ -102,7 +94,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
 
     #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
 
-    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=50000, chunksize=50000)
+    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000, header=0, names = csv_cols)
 
     export_csv = pd.concat(load_csv_split)
     export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
@@ -129,7 +121,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
         try:
             #prGreen("\r\n" + "Uploading file to TCRM")
             #_start = time.time()
-            resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+            resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
             #prYellow(formatted_response_str)
@@ -157,7 +149,7 @@ def data_append_mp(dataset_name,skiprows,job_id,server_id,access_token,i):
                 x = 1
         except:
             xx  += 1
-            time.sleep(0.15)
+            time.sleep(5)
             if xx == 100:
                 x = 1
                 prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(ind) + "The upload won't contain all records." + "\r\n")

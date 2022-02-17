@@ -1,29 +1,20 @@
-import json
-import requests
+import json, requests, math, glob, os, time, sys, subprocess, configparser, threading, csv, base64, datetime, gc
 from terminal_colors import *
 from sfdc_login import *
-import math
-import glob
-import os
-import time
-import sys
-import subprocess
 from line import *
-import configparser
-import threading
-import csv
 import pandas as pd
-import base64
 from line import *
-import datetime
-import gc
 
-def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
+def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_required,cpus):
 
     #print("\r\n" + "Generating control files...")
     if os.path.exists("mp{}.ini".format(yy)) == False:
+        if (yy + 1) == cpus_required and cpus_required != 1:
+            last = 'Y'
+        else:
+            last = 'N'
         config = configparser.ConfigParser()
-        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt)}
+        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt), 'last': '{}'.format(last)}
 
         with open("mp{}.ini".format(yy), 'w') as configfile:
             config.write(configfile)
@@ -32,8 +23,12 @@ def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id):
 
     elif os.path.exists("mp{}.ini".format(yy)):
         os.remove("mp{}.ini".format(yy))
+        if (yy + 1) == cpus_required:
+            last = 'Y'
+        else:
+            last = 'N'
         config = configparser.ConfigParser()
-        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt)}
+        config['DEFAULT'] = {'thread_id': '{}'.format(thread_id),'batches_mt': '{}'.format(batches_mt), 'last': '{}'.format(last)}
 
         with open("mp{}.ini".format(yy), 'w') as configfile:
             config.write(configfile)
@@ -50,7 +45,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     if thread_id == 0:
         q_offset = 0
     else:
-        q_offset = 30000 * thread_id
+        q_offset = 50000 * thread_id
 
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}
@@ -63,7 +58,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     xx = 0
     while x != 1:
         #print(thread_id)
-        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
         resp_text = json.loads(resp.text)
         try:
             query_results = ((resp_text.get("results").get("records")))

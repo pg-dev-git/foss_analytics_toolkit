@@ -1,22 +1,11 @@
-import time
-import json
-import requests
+import time, json, requests, math, csv, os, base64, threading, datetime, sys, psutil
 from terminal_colors import *
 from sfdc_login import *
-import math
-import csv
 import pandas as pd
-import os
-import base64
 from dataset_tasks.json_metadata_generator import *
-import math
-from dataset_tasks.append_dataset_MT import *
-import threading
-import datetime
-import sys
+from dataset_tasks.csv_new_MT import *
 from line import *
 import multiprocessing as mp
-import psutil
 
 def delete_last():
     sys.stdout.write('\x1b[1A')
@@ -46,6 +35,8 @@ def new_csv_dataset(access_token,server_id):
 
     #Input check for file placement
     while user_input_1 != "y" and user_input_1 != "Y":
+        prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
+        line_print()
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
@@ -71,28 +62,28 @@ def new_csv_dataset(access_token,server_id):
             time.sleep(2)
 
     #Input check for total # of rows
-    while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
-        user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-        time.sleep(2)
-        try:
-            user_input_3 = int(user_input_3)
-            if type(user_input_3) == int and user_input_3 > 0:
-                user_input_3_flag = 'y'
-                line_print()
-            elif type(user_input_3) == int and user_input_3 < 1:
-                prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-                time.sleep(2)
-            else:
-                prRed("\r\n" + "Please use an integer.")
-                time.sleep(2)
-        except ValueError:
-            prRed("\r\n" + "Please use an integer.")
-            time.sleep(2)
+    #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
+    #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
+    #    time.sleep(2)
+    #    try:
+    #        user_input_3 = int(user_input_3)
+    #        if type(user_input_3) == int and user_input_3 > 0:
+    #            user_input_3_flag = 'y'
+    #            line_print()
+    #        elif type(user_input_3) == int and user_input_3 < 1:
+    #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
+    #            time.sleep(2)
+    #        else:
+    #            prRed("\r\n" + "Please use an integer.")
+    #            time.sleep(2)
+    #    except ValueError:
+    #        prRed("\r\n" + "Please use an integer.")
+    #        time.sleep(2)
 
     #Input check for date format
     while user_input_4 != "y" and user_input_4 != "Y":
         user_input_4 = input("\r\n" + "Are the dates formatted as \"yyyy/mm/dd\"? The job will fail if they aren't (Y/N): ")
-        time.sleep(1)
+        line_print()
         if user_input_4 == "Y" or user_input_4 == "y":
             line_print()
         elif user_input_4 == "N" or user_input_4 == "n":
@@ -105,7 +96,7 @@ def new_csv_dataset(access_token,server_id):
     #Input check for headers
     while user_input_5 != "y" and user_input_5 != "Y":
         user_input_5 = input("\r\n" + "Have you removed all spaces and dots from your column names? You can use underscores \"_\". The job will fail if there are spaces or dots. (Y/N): ")
-        time.sleep(1)
+        line_print()
         if user_input_5 == "Y" or user_input_5 == "y":
             line_print()
         elif user_input_5 == "N" or user_input_5 == "n":
@@ -115,17 +106,16 @@ def new_csv_dataset(access_token,server_id):
             prRed("Wrong value. Try again.")
             time.sleep(2)
 
-    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y") and user_input_3_flag == 'y':
+    if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y"):
         dataset_name = input("Enter your filename without the csv extension: ")
-        time.sleep(2)
-        print("\r\n")
-        dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores instead \"_\": ")
-
-        time.sleep(1)
         line_print()
 
-        prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
-        time.sleep(1)
+        dataset_name_ = input("Enter a name for your new dataset. No spaces. Use underscores instead \"_\": ")
+
+        line_print()
+
+        prGreen("\r\nLocally generating json metadata from the csv file and encoding it to base64.")
+        line_print()
         _start = time.time()
         csv_upload_json_meta(dataset_name_,dataset_name)
         meta_json_data = open("{}_CSV_upload_metadata.json".format(dataset_name), 'rb').read()
@@ -137,7 +127,13 @@ def new_csv_dataset(access_token,server_id):
         prGreen("\r\n" + "Task Finished in {}s".format(enc_time))
         line_print()
 
-        batches_ = math.ceil(user_input_3 / 50000)
+        num_rows = pd.read_csv("{}.csv".format(dataset_name))
+
+        csv_cols = (list(num_rows.columns.values))
+
+        num_rows = num_rows.shape[0]
+
+        batches_ = math.ceil(num_rows / 55000)
 
         batch_count = 0
 
@@ -157,7 +153,8 @@ def new_csv_dataset(access_token,server_id):
 
             payload = {'Format' : 'Csv','EdgemartAlias' : '{}'.format(dataset_name_),'Operation': '{}'.format(operation_flag),'Action': 'None','MetadataJson': "{}".format(meta_json_base64_encoded)}
             payload = json.dumps(payload)
-            prGreen("\r\n" + "Creating Workbench Job")
+            prGreen("\r\nCreating Workbench Job")
+            line_print()
 
             x = 0
             xx = 5
@@ -192,6 +189,7 @@ def new_csv_dataset(access_token,server_id):
                         prYellow("Status: Successful")
                         line_print()
                         x += 1
+                        mp_flag = 1
                     else:
                         try:
                             prRed(errors)
@@ -220,10 +218,10 @@ def new_csv_dataset(access_token,server_id):
             #rem_jobs = batches_
             #job_count = 0
 
-            if x != 1:
+            if mp_flag == 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
-                prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus) + "\r\n")
+                prCyan("\r\n" + "Starting upload using all {} CPU Cores...".format(cpus))
                 line_print()
                 prCyan("\r\n")
                 mts = math.ceil(batches_ / cpus)
@@ -235,7 +233,7 @@ def new_csv_dataset(access_token,server_id):
                 thread_id = 0
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i, )) for i in range(batches_)]
+                result_async = [pool.apply_async(new_csv_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, )) for i in range(batches_)]
 
                 try:
                     for r in result_async:
@@ -329,4 +327,4 @@ def new_csv_dataset(access_token,server_id):
 
     #Go back to parent folder:
     os.chdir("..")
-    prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))
+    #prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

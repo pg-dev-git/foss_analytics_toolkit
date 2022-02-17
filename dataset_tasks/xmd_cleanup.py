@@ -1,23 +1,14 @@
-import json
-import requests
+import json, requests, math, csv, glob, os, base64, threading, time
 from terminal_colors import *
 from sfdc_login import *
-import math
-import csv
 import pandas as pd
-import glob
-import os
-import base64
-import threading
 from dataset_tasks.dataset_extract_MT import *
-import time
 from line import *
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
 def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
-    line_print()
 
     try:
         dataset_extraction_dir = "xmd_backups"
@@ -36,7 +27,7 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -250,17 +241,17 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
 
     with open('{}_clean_user.xmd.json'.format(dataset_), 'w') as outfile:
         json.dump(formatted_response, outfile)
-    prGreen("\r\n" + "XMD Succesfully Cleaned Up. You can find it here:")
+    prGreen("\r\nXMD Succesfully Cleaned Up. You can find it here:")
     prLightPurple("\r\n" + "{}".format(d_ext))
     line_print()
 
-    time.sleep(2)
-
     user_input = input("\r\n" + "Do you want to push this new XMD to TCRM now? \"Y\" to confirm or hit any other key to cancel: ")
+    line_print()
 
     if user_input == "Y" or user_input == "y":
 
-        prCyan("\r\n" + "Updating TCRM XMD")
+        prCyan("\r\nUpdating TCRM XMD")
+        line_print()
         headers = {'Authorization': "Bearer {}".format(access_token),
                    'Content-Type': "application/json"}
         payload = {}
@@ -271,9 +262,7 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name):
         payload['derivedDimensions'] = formatted_response.get('derivedDimensions')
         payload = json.dumps(payload)
         resp = requests.put('https://{}.salesforce.com'.format(server_id) + '{}'.format(put_url), headers=headers,data=payload)
-        time.sleep(1)
-        prCyan("\r\n" + "XMD Updated")
-        time.sleep(1)
+        prCyan("\r\nXMD Updated")
         line_print()
     else:
         line_print()

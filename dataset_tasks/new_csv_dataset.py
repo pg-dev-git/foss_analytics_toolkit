@@ -146,8 +146,8 @@ def upload_new_csv_dataset(access_token,server_id):
 
             payload = {'Format' : 'Csv','EdgemartAlias' : '{}'.format(dataset_name_),'Operation': '{}'.format(operation_flag),'Action': 'None','MetadataJson': "{}".format(meta_json_base64_encoded)}
             payload = json.dumps(payload)
-            prGreen("\r\n" + "Creating Workbench Job #{} of {}".format(batch_count,batches_))
-            resp = requests.post('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+            prGreen("\r\n" + "Creating Workbench Job")
+            resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
             time.sleep(1)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
@@ -161,7 +161,10 @@ def upload_new_csv_dataset(access_token,server_id):
 
                 batch_count += 1
 
-                load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
+                if batch_count == 1:
+                    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
+                else:
+                    load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=None, skiprows=skiprows, nrows=50000, chunksize=50000)
                 #print(load_csv_split)
                 #load_csv_split.to_csv( "{}_dataset_split_{}.csv".format(dataset_name,batch_count), index=False, encoding='utf-8-sig')
                 export_csv = pd.concat(load_csv_split)
@@ -184,7 +187,7 @@ def upload_new_csv_dataset(access_token,server_id):
                 payload = json.dumps(payload)
                 prGreen("\r\n" + "Uploading file to TCRM")
                 _start = time.time()
-                resp = requests.post('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+                resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
                 resp_results = json.loads(resp.text)
                 formatted_response_str = json.dumps(resp_results, indent=2)
                 prYellow(formatted_response_str)
@@ -203,7 +206,7 @@ def upload_new_csv_dataset(access_token,server_id):
 
             payload = {'Action' : 'Process'}
             payload = json.dumps(payload)
-            resp = requests.patch('https://{}.salesforce.com/services/data/v47.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+            resp = requests.patch('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
             prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
             prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
             line_print()

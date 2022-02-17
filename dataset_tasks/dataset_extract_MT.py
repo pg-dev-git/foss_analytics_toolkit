@@ -18,7 +18,7 @@ def data_extract_thread(dataset_,dataset_currentVersionId,query_fields_str,q_off
                }
     x = 0
     while x != 1:
-        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
         query_results = json.loads(resp.text)
         formatted_response_str = json.dumps(query_results, indent=2)
         #prYellow(formatted_response_str)

@@ -1,10 +1,7 @@
-import json
-import requests
+import json, requests, os, time
 from terminal_colors import *
 from sfdc_login import *
-import os
-import time
-
+from line import *
 
 def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
     headers = {
@@ -15,7 +12,6 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
 
     dataset_his_list = formatted_response.get('versions')
 
@@ -34,15 +30,16 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
 
         counter = 0
 
-        prGreen("\r\n" + "Getting all versions available..." + "\r\n")
-        time.sleep(2)
+        prGreen("\r\nGetting all versions available...")
+        line_print()
 
         for x in dataset_his_list:
             counter += 1
-            print("{} -".format(counter),"Id:",x["id"],"- Rows:",x["totalRows"],"- Created On:",x["createdDate"],"- Last Modified On:",x["lastModifiedDate"])
+            print("{} -".format(counter),"Id:",x["id"],"- Rows:",x["totalRowCount"],"- Created On:",x["createdDate"],"- Last Modified On:",x["lastModifiedDate"])
 
-        time.sleep(2)
-        prYellow("\r\n" + "#1 is the latest version of the Dataset." + "\r\n")
+        line_print()
+        prYellow("\r\n#1 is the latest version of the Dataset.")
+        line_print()
 
         ####action_track = input("Choose a Dataflow History id between #2 and {} to replace the current version or hit any other key to go back:".format(counter))
 
@@ -50,6 +47,6 @@ def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
 
     else:
         prRed("\r\n" + "There are no history records available." + "\r\n")
-        time.sleep(2)
+        line_print()
 
     prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

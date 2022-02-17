@@ -1,19 +1,9 @@
-import json
-import requests
+import json, requests, math, csv, glob, os, base64, threading, time, subprocess, datetime
 from terminal_colors import *
 from sfdc_login import *
-import math
-import csv
 import pandas as pd
-import glob
-import os
-import base64
-import threading
 from dataset_tasks.dataset_extract_MT import *
-import time
-import subprocess
 from line import *
-import datetime
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")
 
@@ -36,7 +26,7 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -58,7 +48,7 @@ def get_datasets_extract(access_token,dataset_,server_id,dataset_name):
                'Content-Type': "application/json"
                }
 
-    resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
     query_results = json.loads(resp.text)
     count_rows = query_results.get('results')
     count_rows = count_rows['records']
