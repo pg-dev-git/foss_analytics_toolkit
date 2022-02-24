@@ -1,22 +1,17 @@
-import json
-import requests
+import json, requests, os, datetime, shutil, multiprocessing as mp
 from terminal_colors import *
 from sfdc_login import *
-import os
 from dataflow_tasks.start_stop_dataflow import *
 from dataflow_tasks.get_dataflow_history import *
 from dataflow_tasks.mp_df_backup import *
 from line import *
-import datetime
 from zipper import *
-import shutil
-import multiprocessing as mp
 
 
 def remove(string):
     return string.replace(" ", "_")
 
-def mass_dataflows(access_token,server_id):
+def mass_dataflows(access_token,server_id,server_domain):
 
     now = datetime.datetime.now()
 
@@ -32,7 +27,12 @@ def mass_dataflows(access_token,server_id):
 
     cd = os.getcwd()
 
-    d_ext = "{}".format(cd)+"\\dataflow_backup\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataflow_backup\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataflow_backup/"
 
     os.chdir(d_ext)
 
@@ -56,7 +56,7 @@ def mass_dataflows(access_token,server_id):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dataflows'.format(server_id), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v51.0/wave/dataflows'.format(server_domain), headers=headers)
     #print(resp.json())
 
     #Print PrettyJSON in Terminal
@@ -82,7 +82,7 @@ def mass_dataflows(access_token,server_id):
     i = 0
 
     if counter != 0:
-        
+
         pool = mp.Pool((mp.cpu_count()))
         cpus = int(mp.cpu_count())
         pool_cycles_A = math.ceil(counter / cpus)

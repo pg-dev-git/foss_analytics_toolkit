@@ -1,12 +1,6 @@
-import json
-import requests
+import json, os, requests, time, html, sys, subprocess
 from terminal_colors import *
 from sfdc_login import *
-import os
-import time
-import html
-import sys
-import subprocess
 from line import *
 
 def get_platform():
@@ -21,7 +15,7 @@ def get_platform():
 
     return platforms[sys.platform]
 
-def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id):
+def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id,server_domain):
 
     #os.chdir("..")
 
@@ -33,7 +27,12 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
 
     cd = os.getcwd()
 
-    d_ext = "{}".format(cd)+"\\dataflow_backup\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataflow_backup\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataflow_backup/"
 
     os.chdir(d_ext)
 
@@ -48,7 +47,7 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
         }
-    resp = requests.get('https://{}.salesforce.com{}'.format(server_id,dataflow_his_url), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,dataflow_his_url), headers=headers)
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -78,7 +77,7 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
                 counter += 1
 
 
-        resp = requests.get('https://{}.salesforce.com{}'.format(server_id,previewUrl), headers=headers)
+        resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,previewUrl), headers=headers)
 
         #formatted_response = html.unescape(resp.text)
         formatted_response = json.loads(resp.text)

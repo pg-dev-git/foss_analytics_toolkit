@@ -8,7 +8,7 @@ from line import *
 
 d_job_id = "ffghd234dffhd23"
 
-def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
+def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_,server_domain):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -19,7 +19,7 @@ def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
 
         payload = json.dumps(payload)
 
-        resp = requests.post('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs'.format(server_id), headers=headers, data=payload)
+        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs'.format(server_domain), headers=headers, data=payload)
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -35,7 +35,7 @@ def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
 
         prYellow("\r\n" + "Dataflow selected: {} - {}".format(dataflow_name_, dataflow_id_) + "\r\n")
 
-def stop_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
+def stop_dataflow(access_token,dataflow_id_,server_id,dataflow_name_,server_domain):
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
@@ -48,7 +48,7 @@ def stop_dataflow(access_token,dataflow_id_,server_id,dataflow_name_):
 
         print(d_job_id)
 
-        resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs/{}'.format(server_id,d_job_id), headers=headers, data=payload)
+        resp = requests.patch('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs/{}'.format(server_domain,d_job_id), headers=headers, data=payload)
 
         prGreen("\r\n" + "Dataflow stopped. Check the Data Manager for more details." + "\r\n")
 
