@@ -1,0 +1,4 @@
+art==5.2
+modin[ray]==0.13.2
+psutil==5.8.0
+requests==2.26.0

@@ -1,4 +1,4 @@
-import json, requests, os, configparser, datetime, time
+import json, requests, os, configparser, datetime, time, multiprocessing as mp
 from terminal_colors import *
 from sfdc_login import *
 from dataset_tasks.get_datasets  import *
@@ -12,7 +12,6 @@ from get_ea_limits import *
 from line import *
 from dataflow_tasks.mass_dataflows_backup import *
 from mass_dashboard_backup import *
-import multiprocessing as mp
 from dataset_tasks.mass_user_xmd_backup import *
 
 if __name__ == "__main__":
@@ -25,24 +24,9 @@ if __name__ == "__main__":
 
     sfdc_login.intro()
 
-    #Beta Lock - Start
-    current_time = datetime.datetime.now()
-
-    try:
-        if (current_time.year) == 2022 and (((current_time.month) == 2 and (current_time.day) <= 30) or ((current_time.month) == 3 and (current_time.day) <= 30)):
-            prGreen("\r\n" + "Welcome to the beta testing. Please try all the features and share your feedback!" + "\r\n")
-            time.sleep(3)
-        else:
-            print("\r\n" + "The beta test period has expired." + "\r\n")
-            quit()
-    except ValueError:
-        print("\r\n" + "The beta test period has expired." + "\r\n")
-        quit()
-    #Beta Lock - End
-
     flag = "N"
 
-    config_file,access_token = sfdc_login.auth_check(flag)
+    config_file,access_token,server_domain = sfdc_login.auth_check(flag)
 
 
     config = configparser.ConfigParser()
@@ -53,9 +37,9 @@ if __name__ == "__main__":
     while run_token:
         line_print()
         prGreen("What do you want to do?:")
-        time.sleep(0.3)
+        time.sleep(0.15)
         prYellow("(Choose a number from the list below)" + "\r\n")
-        time.sleep(0.5)
+        time.sleep(0.2)
         prCyan("1 - List datasets")
         time.sleep(0.10)
         prCyan("2 - List dashboards")
@@ -66,16 +50,16 @@ if __name__ == "__main__":
         time.sleep(0.10)
         prCyan("5 - Create New Dataset from CSV")
         time.sleep(0.10)
-        prLightPurple("6 - Mass Backup all Dataflows")
+        #prLightPurple("6 - Mass Backup all Dataflows")
+        #time.sleep(0.10)
+        #prLightPurple("7 - Mass Backup all Dashboards")
+        #time.sleep(0.10)
+        prLightPurple("6 - Mass Backup all User XMDs")
         time.sleep(0.10)
-        prLightPurple("7 - Mass Backup all Dashboards")
+        prYellow("7 - Check TCRM Limits")
         time.sleep(0.10)
-        prLightPurple("8 - Mass Backup all User XMDs")
-        time.sleep(0.10)
-        prYellow("9 - Check TCRM Limits")
-        time.sleep(0.10)
-        prYellow("10 - Run Login Parameters Configuration")
-        time.sleep(0.5)
+        prYellow("8 - Run Login Parameters Configuration")
+        time.sleep(0.15)
 
         #prCyan("5 - Upload a CSV Dataset - New/Override")
         print("\r\n")
@@ -83,33 +67,33 @@ if __name__ == "__main__":
         line_print()
 
         if user_input == "1":
-            get_datasets(access_token,server_id)
+            get_datasets(access_token,server_id,server_domain)
 
         if user_input == "2":
-            get_dashboards_main(access_token,server_id)
+            get_dashboards_main(access_token,server_id,server_domain)
 
         if user_input == "3":
-            get_dataflows(access_token,server_id)
+            get_dataflows(access_token,server_id,server_domain)
 
         if user_input == "4":
-            get_dataflowsJobs(access_token,server_id)
+            get_dataflowsJobs(access_token,server_id,server_domain)
 
         if user_input == "5":
-            new_csv_dataset(access_token,server_id)
+            new_csv_dataset(access_token,server_id,server_domain)
+
+        #if user_input == "6":
+        #    mass_dataflows(access_token,server_id,server_domain)
+
+        #if user_input == "7":
+        #    mass_dashboards(access_token,server_id)
 
         if user_input == "6":
-            mass_dataflows(access_token,server_id)
+            mass_u_xmd_bkp(access_token,server_id,server_domain)
 
         if user_input == "7":
-            mass_dashboards(access_token,server_id)
-
-        if user_input == "8":
-            mass_u_xmd_bkp(access_token,server_id)
-
-        if user_input == "9":
             get_EA_limits(access_token,server_id)
 
-        if user_input == "10":
+        if user_input == "8":
             flag = "Y"
             sfdc_login.auth_check(flag)
             flag = "N"
