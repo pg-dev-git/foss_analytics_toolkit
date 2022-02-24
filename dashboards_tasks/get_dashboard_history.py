@@ -6,14 +6,14 @@ import os
 import time
 
 
-def dashboard_history(access_token,dashboard_,server_id,historiesUrl):
+def dashboard_history(access_token,dashboard_,server_id,historiesUrl,server_domain):
     try:
 
         headers = {
             'Authorization': "Bearer {}".format(access_token),
             'Content-Type': "application/json"
             }
-        resp = requests.get('https://{}.salesforce.com{}'.format(server_id,historiesUrl), headers=headers)
+        resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,historiesUrl), headers=headers)
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
@@ -91,7 +91,7 @@ def dashboard_history(access_token,dashboard_,server_id,historiesUrl):
 
                                 payload = json.dumps(payload)
 
-                                resp = requests.put('https://{}.salesforce.com/services/data/v51.0/wave/dashboards/{}/bundle'.format(server_id,dashboard_), headers=headers, data=payload)
+                                resp = requests.put('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}/bundle'.format(server_domain,dashboard_), headers=headers, data=payload)
                                 #formatted_response = json.loads(resp.text)
                                 #formatted_response_str = json.dumps(formatted_response, indent=2)
                                 #prGreen(formatted_response_str)

@@ -4,7 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 import time
 
-def delete_dash(access_token,dashboard_,server_id):
+def delete_dash(access_token,dashboard_,server_id,server_domain):
 
     prRed("\r\n" + "This will permanently delete your Dashboard.")
     time.sleep(3)
@@ -16,7 +16,7 @@ def delete_dash(access_token,dashboard_,server_id):
                 headers = {
                     'Authorization': "Bearer {}".format(access_token)
                     }
-                resp = requests.delete('https://{}.salesforce.com/services/data/v51.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
+                resp = requests.delete('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}'.format(server_domain,dashboard_), headers=headers)
 
                 try:
                     formatted_response = json.loads(resp.text)

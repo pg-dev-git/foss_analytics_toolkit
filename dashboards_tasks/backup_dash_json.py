@@ -1,11 +1,7 @@
-import json
-import requests
+import json, requests, time, sys, subprocess
 from terminal_colors import *
 from sfdc_login import *
 from dashboards_tasks.get_dash_datasets import *
-import time
-import sys
-import subprocess
 from zipper import *
 
 def remove(string):
@@ -23,7 +19,7 @@ def get_platform():
 
     return platforms[sys.platform]
 
-def backup_dash_json(access_token,dashboard_,server_id,dashboard_label):
+def backup_dash_json(access_token,dashboard_,server_id,dashboard_label,server_domain):
 
     try:
         dataflow_extraction_dir = "dashboard_backup"
@@ -33,16 +29,21 @@ def backup_dash_json(access_token,dashboard_,server_id,dashboard_label):
 
     cd = os.getcwd()
 
-    d_ext = "{}".format(cd)+"\\dashboard_backup\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dashboard_backup\\"
+    else:
+        d_ext = "{}".format(cd)+"/dashboard_backup/"
 
     os.chdir(d_ext)
 
-    prGreen("\r\n" + "Getting Dashboard JSON Definition..." + "\r\n")
+    prGreen("\r\nRetrieving JSON Definition...")
     time.sleep(1)
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v50.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}'.format(server_domain,dashboard_), headers=headers)
     #print(resp.text)
 
     formatted_response = json.loads(resp.text)
@@ -94,17 +95,52 @@ def backup_dash_json(access_token,dashboard_,server_id,dashboard_label):
 
         #directory = './'
         #tcrm_zipper(directory)
-        prCyan("\r\n" + "Dashboard JSON definition succesfully backed up here: ")
-        prLightPurple("\r\n" + "{}".format(d_ext) + "\r\n")
+        prCyan("\r\nDashboard JSON definition succesfully backed up here: ")
+        prLightPurple("\r\n{}".format(d_ext))
         line_print()
-        time.sleep(2)
+        time.sleep(1)
 
-        prYellow("\r\n" + "Dashboard selected: {} - {}".format(dashboard_label,dashboard_) + "\r\n")
+        #prYellow("\r\n" + "Dashboard selected: {} - {}".format(dashboard_label,dashboard_) + "\r\n")
+
+        os.chdir("..")
+    elif os_running == 'Linux' or os_running == 'OS X' or os_running == 'linux':
+        a_ = "sed -i 's/&quot;/\\\"/g'" + '{}/{}_{}_backup.json'.format(d_ext,dash_name,dashboard_)
+        b_ = "'s/&#39;/''''/g'" + '{}_{}_backup.json'.format(dash_name,dashboard_)
+        c_ = "'s/&gt;/'>'/g'" + '{}_{}_backup.json'.format(dash_name,dashboard_)
+        d_ = "'s/&lt;/'<'/g'" + '{}_{}_backup.json'.format(dash_name,dashboard_)
+        e_ = "'s/&amp;/'&'/g'" + '{}_{}_backup.json'.format(dash_name,dashboard_)
+        ps_1_dict = {"a": "{}".format(a_), "b": "{}".format(b_), "c": "{}".format(c_), "d": "{}".format(d_), "e": "{}".format(e_)}
+
+        #print(a_)
+        #print(["sed", "-e", "s/&quot;/\\\"/g" + '{}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_)])
+        print(subprocess.call('sed -i \'s/\&quot;/\\\\"/g\' {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_), shell=True))
+        print(subprocess.call('sed -i "s/\&#39;/\'/g" {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_), shell=True))
+        print(subprocess.call('sed -i "s/\&gt;/>/g" {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_), shell=True))
+        print(subprocess.call('sed -i "s/\&lt;/</g" {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_), shell=True))
+        #print(subprocess.call("sed -e 's/\&#92;/\\\\/g' {}{}_{}_backup.json".format(d_ext,dash_name,dashboard_), shell=True))    
+        #print(subprocess.call(["sed", "-i", "s/&quot;/\\\"/g" + ' {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_)]))
+        #print(subprocess.call(["sed", "-i", "s/&#39;/''''/g" + ' {}{}_{}_backup.json'.format(d_ext,dash_name,dashboard_)]))
+        #subprocess.call(["sed -i -e 's/hello/helloworld/g' www.txt"], shell=True)
+
+        #for x in ps_1_dict.values():
+            #print(x)
+            #completed = subprocess.run(["sed", "-i", x], capture_output=True)
+        #    print(subprocess.run(["sed", "-i", x]))
+        #    time.sleep(0.5)
+
+        #directory = './'
+        #tcrm_zipper(directory)
+        prCyan("\r\nDashboard JSON definition succesfully backed up here: ")
+        prLightPurple("\r\n{}".format(d_ext))
+        line_print()
+        time.sleep(1)
+
+        #prYellow("\r\n" + "Dashboard selected: {} - {}".format(dashboard_label,dashboard_) + "\r\n")
 
         os.chdir("..")
     else:
-        prRed("\r\n" + "There is no JSON available to backup." + "\r\n")
+        prRed("\r\nThere is no JSON available to backup.\r\n")
         os.chdir("..")
         line_print()
-        time.sleep(2)
-        prYellow("\r\n" + "Dashboard selected: {} - {}".format(dashboard_label,dashboard_) + "\r\n")
+        time.sleep(1)
+        #prYellow("\r\n" + "Dashboard selected: {} - {}".format(dashboard_label,dashboard_) + "\r\n")

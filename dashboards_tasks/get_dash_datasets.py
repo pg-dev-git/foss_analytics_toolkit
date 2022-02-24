@@ -1,7 +1,7 @@
-import json
-import requests
+import json, requests, time
 from terminal_colors import *
 from sfdc_login import *
+from line import *
 from dataset_tasks.get_dataset_field_detail import *
 from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.get_dataset_extract_MP import *
@@ -11,17 +11,16 @@ from dataset_tasks.append_dataset import *
 from dataset_tasks.delete_dataset import *
 from dataset_tasks.get_dataset_history import *
 from dataset_tasks.get_dataset_dependencies import *
-import time
 
-def get_dash_datasets(access_token,dashboard_,server_id):
+def get_dash_datasets(access_token,dashboard_,server_id,server_domain):
 
     try:
-        prGreen("\r\n" + "Getting datasets list..." + "\r\n")
+        prGreen("\r\nRetrieving datasets...")
         time.sleep(1)
         headers = {
             'Authorization': "Bearer {}".format(access_token)
             }
-        resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dashboards/{}'.format(server_id,dashboard_), headers=headers)
+        resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}'.format(server_domain,dashboard_), headers=headers)
         #print(resp.json())
         #Print PrettyJSON in Terminal
 
@@ -63,7 +62,7 @@ def get_dash_datasets(access_token,dashboard_,server_id):
                         dataset_name = x["name"]
                         url = x["url"]
 
-                resp = requests.get('https://{}.salesforce.com{}'.format(server_id,url), headers=headers)
+                resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,url), headers=headers)
                 #print(resp.json())
                 #Print PrettyJSON in Terminal
 
@@ -108,28 +107,28 @@ def get_dash_datasets(access_token,dashboard_,server_id):
                     user_input = input("\r\n" + "Enter your selection: ")
 
                     if user_input == "1":
-                        get_datasets_field_details(access_token,dataset_,server_id)
+                        get_datasets_field_details(access_token,dataset_,server_id,server_domain)
 
                     if user_input == "2":
-                        get_datasets_extract_mp(access_token,dataset_,server_id)
+                        get_datasets_extract_mp(access_token,dataset_,server_id,server_domain)
 
                     if user_input == "3":
-                        upload_csv_dataset(access_token,dataset_name,dataset_,server_id)
+                        upload_csv_dataset(access_token,dataset_name,dataset_,server_id,server_domain)
 
                     if user_input == "4":
-                        append_csv_dataset(access_token,dataset_name,dataset_,server_id)
+                        append_csv_dataset(access_token,dataset_name,dataset_,server_id,server_domain)
 
                     if user_input == "5":
-                        backup_xmd_user(access_token,dataset_,server_id)
+                        backup_xmd_user(access_token,dataset_,server_id,server_domain)
 
                     if user_input == "6":
-                        dataset_history(access_token,dataset_,server_id,versionsUrl)
+                        dataset_history(access_token,dataset_,server_id,versionsUrl,server_domain)
 
                     if user_input == "7":
-                        dataset_dependencies(access_token,dataset_,server_id)
+                        dataset_dependencies(access_token,dataset_,server_id,server_domain)
 
                     if user_input == "8":
-                        delete_dataset(access_token,dataset_,server_id)
+                        delete_dataset(access_token,dataset_,server_id,server_domain)
 
                     prCyan("\r\n" + "Selected Dataset: {} - {}".format(dataset_, dataset_name))
                     check_token = input("Press \"Y\" to see this Dashboard or hit any key to go back" + "\r\n")
@@ -143,7 +142,7 @@ def get_dash_datasets(access_token,dashboard_,server_id):
 
         except:
             prYellow("\r\n" + "Going back to the previous menu.")
-            time.sleep(1)
+            line_print()
 
     except:
         prYellow("\r\n" + "There are no datasets available.")
