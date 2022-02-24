@@ -17,7 +17,13 @@ def get_datasets_extract(access_token,dataset_,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"/dataset_extraction/"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_extraction/"
+
     #print(d_ext)
 
     os.chdir(d_ext)

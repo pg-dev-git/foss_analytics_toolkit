@@ -6,7 +6,7 @@ from dataset_tasks.dataset_extract_MP import *
 from dataset_tasks.MP_control import *
 from line import *
 
-def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count,cpus_required):
+def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count,cpus_required,server_domain):
 
     if os.path.exists("mp{}.ini".format(i)):
         config = configparser.ConfigParser()
@@ -29,7 +29,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
 
             for index in range(batches_mt):
                 #print(thread_id)
-                x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,))
+                x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain,))
                 threads.append(x)
                 x.start()
                 thread_id += 1
@@ -79,7 +79,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                 #prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_) + "\r\n")
                 _start = time.time()
                 for index in range(t_count):
-                    x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,))
+                    x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain,))
                     threads.append(x)
                     x.start()
                     batch_count += 1
@@ -126,7 +126,7 @@ def mp_to_mt(access_token,dataset_,server_id,dataset_name,dataset_currentVersion
                 #prCyan("\r\n" + "Starting {} CPU threads to extract the dataset".format(batches_) + "\r\n")
                 _start = time.time()
                 for index in range(t_count):
-                    x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,))
+                    x = threading.Thread(target=mp_threads, args=(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain,))
                     threads.append(x)
                     x.start()
                     batch_count += 1

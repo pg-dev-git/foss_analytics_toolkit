@@ -17,11 +17,23 @@ class Result():
     def update_result(self, val):
         self.val += 1
 
+def get_platform():
+    platforms = {
+        'linux1' : 'Linux',
+        'linux2' : 'Linux',
+        'darwin' : 'OS X',
+        'win32' : 'Windows'
+    }
+    if sys.platform not in platforms:
+        return sys.platform
+
+    return platforms[sys.platform]
+
 def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
 
-def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
+def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows,server_domain):
 
     try:
         dataset_extraction_dir = "dataset_extraction"
@@ -32,7 +44,13 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    os_ = get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_extraction/"
+
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -40,7 +58,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_domain,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -61,8 +79,10 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\{}\\".format(dataset_name)
-    #print(d_ext)
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\{}\\".format(dataset_name)
+    else:
+        d_ext = "{}".format(cd)+"/{}/".format(dataset_name)
 
     os.chdir(d_ext)
 
@@ -77,7 +97,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
                'Content-Type': "application/json"
                }
 
-    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+    resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/query'.format(server_domain), headers=headers, data=saql_payload)
     query_results = json.loads(resp.text)
     count_rows = query_results.get('results')
     count_rows = count_rows['records']
@@ -100,7 +120,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
     except:
         pass
 
-    dataset_current_version_url = "https://{}.salesforce.com".format(server_id) + "{}".format(dataset_current_version_url) + "/xmds/main"
+    dataset_current_version_url = "https://{}.my.salesforce.com".format(server_domain) + "{}".format(dataset_current_version_url) + "/xmds/main"
 
     headers = {
         'Authorization': "Bearer {}".format(access_token)
@@ -340,7 +360,7 @@ def get_datasets_extract_mp(access_token,dataset_,server_id,dataset_rows):
         #result_async = [pool.apply_async(data_extract_mp, args = (dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields, )) for i in
                         #range(batches_)]
 
-        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count,cpus_required, ), callback=result.update_result) for i in
+        result_async = [pool.apply_async(mp_to_mt, args = (access_token,dataset_,server_id,dataset_name,dataset_currentVersionId,query_fields_str,q_limit,i,max_t_count,cpus_required,server_domain, ), callback=result.update_result) for i in
                         range(cpus_required)]
 
         #results_proc = []

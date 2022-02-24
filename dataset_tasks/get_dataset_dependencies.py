@@ -4,7 +4,7 @@ from terminal_colors import *
 from sfdc_login import *
 import time
 
-def dataset_dependencies(access_token,dataset_,server_id,dataset_name):
+def dataset_dependencies(access_token,dataset_,server_id,dataset_name,server_domain):
 
     prGreen("\r\n" + "Getting dependencies..." + "\r\n")
     time.sleep(2)
@@ -12,7 +12,7 @@ def dataset_dependencies(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dependencies/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dependencies/{}'.format(server_domain,dataset_), headers=headers)
     #print(resp.json())
     #Print PrettyJSON in Terminal
 

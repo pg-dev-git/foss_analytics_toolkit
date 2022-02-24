@@ -3,12 +3,12 @@ from terminal_colors import *
 from sfdc_login import *
 from line import *
 
-def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name):
+def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name,server_domain):
     headers = {
         'Authorization': "Bearer {}".format(access_token),
         'Content-Type': "application/json"
         }
-    resp = requests.get('https://{}.salesforce.com{}'.format(server_id,versionsUrl), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,versionsUrl), headers=headers)
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)

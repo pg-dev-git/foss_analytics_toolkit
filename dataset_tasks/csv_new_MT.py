@@ -12,7 +12,7 @@ from dataset_tasks.json_metadata_generator import *
 import math
 import threading
 
-def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols):
+def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,server_domain):
 
     if i == 0:
         skiprows = 0
@@ -60,7 +60,7 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols):
         try:
             #prGreen("\r\n" + "Uploading file to TCRM")
             #_start = time.time()
-            resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+            resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_domain), headers=headers, data=payload)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
             #prYellow(formatted_response_str)

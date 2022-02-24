@@ -11,7 +11,7 @@ def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
 
-def new_csv_dataset(access_token,server_id):
+def new_csv_dataset(access_token,server_id,server_domain):
 
     try:
         dataset_upload_dir = "dataset_upload"
@@ -22,7 +22,13 @@ def new_csv_dataset(access_token,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\dataset_upload\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_upload\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_upload/"
+
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -37,34 +43,34 @@ def new_csv_dataset(access_token,server_id):
     while user_input_1 != "y" and user_input_1 != "Y":
         prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
         line_print()
-        user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
+        user_input_1 = input("\r\nHave you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
         time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
             line_print()
         elif user_input_1 == "N" or user_input_1 == "n":
             prYellow("Please place the file and try again.")
-            time.sleep(2)
+            time.sleep(1)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(2)
+            time.sleep(1)
 
     #Input check for file encoding
     while user_input_2 != "y" and user_input_2 != "Y":
-        user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
+        user_input_2 = input("\r\nIs the CSV file comma separated and UTF-8 encoded? (Y/N): ")
         time.sleep(1)
         if user_input_2 == "Y" or user_input_2 == "y":
             line_print()
         elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
-            time.sleep(2)
+            time.sleep(1)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(2)
+            time.sleep(1)
 
     #Input check for total # of rows
     #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
     #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-    #    time.sleep(2)
+    #    time.sleep(1)
     #    try:
     #        user_input_3 = int(user_input_3)
     #        if type(user_input_3) == int and user_input_3 > 0:
@@ -72,39 +78,39 @@ def new_csv_dataset(access_token,server_id):
     #            line_print()
     #        elif type(user_input_3) == int and user_input_3 < 1:
     #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-    #            time.sleep(2)
+    #            time.sleep(1)
     #        else:
     #            prRed("\r\n" + "Please use an integer.")
-    #            time.sleep(2)
+    #            time.sleep(1)
     #    except ValueError:
     #        prRed("\r\n" + "Please use an integer.")
-    #        time.sleep(2)
+    #        time.sleep(1)
 
     #Input check for date format
     while user_input_4 != "y" and user_input_4 != "Y":
-        user_input_4 = input("\r\n" + "Are the dates formatted as \"yyyy/mm/dd\"? The job will fail if they aren't (Y/N): ")
+        user_input_4 = input("\r\nAre the dates formatted as \"yyyy/mm/dd\"? The job will fail if they aren't (Y/N): ")
         line_print()
         if user_input_4 == "Y" or user_input_4 == "y":
-            line_print()
+            pass
         elif user_input_4 == "N" or user_input_4 == "n":
             prYellow("Please format your date fields as \"yyyy/mm/dd\".")
-            time.sleep(2)
+            time.sleep(1)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(2)
+            time.sleep(1)
 
     #Input check for headers
     while user_input_5 != "y" and user_input_5 != "Y":
         user_input_5 = input("\r\n" + "Have you removed all spaces and dots from your column names? You can use underscores \"_\". The job will fail if there are spaces or dots. (Y/N): ")
         line_print()
         if user_input_5 == "Y" or user_input_5 == "y":
-            line_print()
+            pass
         elif user_input_5 == "N" or user_input_5 == "n":
             prYellow("Please remove all spaces and dots. You can use underscores \"_\".")
-            time.sleep(2)
+            time.sleep(1)
         else:
             prRed("Wrong value. Try again.")
-            time.sleep(2)
+            time.sleep(1)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y") and (user_input_4 == "Y" or user_input_4 == "y") and (user_input_5 == "Y" or user_input_5 == "y"):
         dataset_name = input("Enter your filename without the csv extension: ")
@@ -160,7 +166,7 @@ def new_csv_dataset(access_token,server_id):
             xx = 5
             while x != 1:
                 try:
-                    resp = requests.post('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+                    resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_domain), headers=headers, data=payload)
                     time.sleep(0.5)
                     resp_results = json.loads(resp.text)
                     formatted_response_str = json.dumps(resp_results, indent=2)
@@ -207,7 +213,7 @@ def new_csv_dataset(access_token,server_id):
                     prRed(message)
                     x += 1
                     prRed("\r\n" + "Cancelling Job..." + "\r\n")
-                    time.sleep(2)
+                    time.sleep(1)
                     batches_ = 0
 
             #i = 1
@@ -233,7 +239,7 @@ def new_csv_dataset(access_token,server_id):
                 thread_id = 0
                 #print(batches_)
 
-                result_async = [pool.apply_async(new_csv_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, )) for i in range(batches_)]
+                result_async = [pool.apply_async(new_csv_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,server_domain, )) for i in range(batches_)]
 
                 try:
                     for r in result_async:
@@ -312,9 +318,8 @@ def new_csv_dataset(access_token,server_id):
                 x = 0
                 while x != 1:
                     try:
-                        resp = requests.patch('https://{}.salesforce.com/services/data/v51.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
-                        prGreen("\r\n" + "Batch #{} completed.".format(batch_count))
-                        prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
+                        resp = requests.patch('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_domain,job_id), headers=headers, data=payload)
+                        prYellow("\r\nTCRM Data Manager Job triggered. Check the data manager for more details.")
                         x += 1
                         time.sleep(1)
                     except:
@@ -323,7 +328,7 @@ def new_csv_dataset(access_token,server_id):
                 full_end = time.time()
                 full_time = round((full_end-full_start),2)
                 full_time = time.strftime("%H h : %M m : %S s", time.gmtime(full_time))
-                prGreen("\r\n" + "Append Completed in {}s".format(full_time))
+                prGreen("\r\nProcess completed in {}s".format(full_time))
 
     #Go back to parent folder:
     os.chdir("..")

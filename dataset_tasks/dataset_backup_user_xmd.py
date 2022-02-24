@@ -3,7 +3,7 @@ from terminal_colors import *
 from sfdc_login import *
 from line import *
 
-def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
+def backup_xmd_user(access_token,dataset_,server_id,dataset_name,server_domain):
 
     #Backup folder creation - start:
     try:
@@ -16,7 +16,13 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\xmd_backups\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\xmd_backups\\"
+    else:
+        d_ext = "{}".format(cd)+"/xmd_backups/"
+
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -24,7 +30,7 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_domain,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -35,7 +41,7 @@ def backup_xmd_user(access_token,dataset_,server_id,dataset_name):
     dataset_currentVersionId = formatted_response.get('currentVersionId')
     dataset_currentNameId = formatted_response.get('name')
 
-    dataset_current_version_url = "https://{}.salesforce.com".format(server_id) + "{}".format(dataset_current_version_url) + "/xmds/user"
+    dataset_current_version_url = "https://{}.my.salesforce.com".format(server_domain) + "{}".format(dataset_current_version_url) + "/xmds/user"
 
     headers = {
         'Authorization': "Bearer {}".format(access_token)

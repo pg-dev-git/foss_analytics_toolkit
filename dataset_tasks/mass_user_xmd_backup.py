@@ -15,7 +15,7 @@ from line import *
 from zipper import *
 
 
-def mass_u_xmd_bkp(access_token,server_id):
+def mass_u_xmd_bkp(access_token,server_id,server_domain):
 
     now = datetime.datetime.now()
 
@@ -32,7 +32,13 @@ def mass_u_xmd_bkp(access_token,server_id):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\xmd_backups\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\xmd_backups\\"
+    else:
+        d_ext = "{}".format(cd)+"/xmd_backups/"
+
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -56,7 +62,7 @@ def mass_u_xmd_bkp(access_token,server_id):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets'.format(server_id), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/datasets'.format(server_domain), headers=headers)
     #print(resp.json())
     #Print PrettyJSON in Terminal
 
@@ -127,7 +133,7 @@ def xmd_bkp_mt(params):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    xmds_url = "https://{}.salesforce.com".format(server_id) + "{}".format(cvl) + "/xmds/user"
+    xmds_url = "https://{}.my.salesforce.com".format(server_domain) + "{}".format(cvl) + "/xmds/user"
     xmds_json = requests.get('{}'.format(xmds_url), headers=headers)
     xmds_json = json.loads(xmds_json.text)
 

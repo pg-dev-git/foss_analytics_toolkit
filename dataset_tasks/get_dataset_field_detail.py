@@ -7,7 +7,19 @@ import pandas as pd
 import csv
 from line import *
 
-def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
+def get_platform():
+    platforms = {
+        'linux1' : 'Linux',
+        'linux2' : 'Linux',
+        'darwin' : 'OS X',
+        'win32' : 'Windows'
+    }
+    if sys.platform not in platforms:
+        return sys.platform
+
+    return platforms[sys.platform]
+
+def get_datasets_field_details(access_token,dataset_,server_id,dataset_name,server_domain):
 
     try:
         dataset_extraction_dir = "dataset_extraction"
@@ -18,7 +30,12 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    os_ = get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_extraction\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_extraction/"
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -26,7 +43,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     headers = {
         'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_id,dataset_), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_domain,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
     #print(formatted_response)
@@ -48,7 +65,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
                }
 
 
-    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+    resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/query'.format(server_domain), headers=headers, data=saql_payload)
     query_results = json.loads(resp.text)
     #query_results = json.loads(resp, indent=2)
     #prYellow(query_results)
@@ -57,7 +74,7 @@ def get_datasets_field_details(access_token,dataset_,server_id,dataset_name):
     count_rows = count_rows[0]
     count_rows = count_rows.get('count')
 
-    dataset_current_version_url = "https://{}.salesforce.com".format(server_id) + "{}".format(dataset_current_version_url) + "/xmds/main"
+    dataset_current_version_url = "https://{}.my.salesforce.com".format(server_domain) + "{}".format(dataset_current_version_url) + "/xmds/main"
 
     headers = {
         'Authorization': "Bearer {}".format(access_token)

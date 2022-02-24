@@ -13,13 +13,13 @@ class Result():
         self.val = 0
 
     def update_result(self, val):
-        self.val += 1
+        self.val += 15
 
 def delete_last():
     sys.stdout.write('\x1b[1A')
     sys.stdout.write('\x1b[2K')
 
-def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
+def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name,server_domain):
 
     try:
         dataset_upload_dir = "dataset_upload"
@@ -30,7 +30,13 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     cd = os.getcwd()
     #print(cd)
 
-    d_ext = "{}".format(cd)+"\\dataset_upload\\"
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_upload\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_upload/"
+
     #print(d_ext)
 
     os.chdir(d_ext)
@@ -44,7 +50,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         prYellow("Tip: Make sure the first row of data in the CSV file contains values in all columns so the tool can generate the XMD with the correct formats. Missing values will be formatted as strings by default." + "\r\n")
         line_print()
         user_input_1 = input("\r\n" + "Have you placed the CSV file in the \'dataset_upload\' folder? (Y/N): ")
-        time.sleep(2)
+        time.sleep(1)
         if user_input_1 == "Y" or user_input_1 == "y":
             line_print()
         elif user_input_1 == "N" or user_input_1 == "n":
@@ -57,13 +63,13 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     #Input check for file encoding
     while user_input_2 == "xbyr5546shdnc" or user_input_2 == "N" or user_input_2 == "n":
         user_input_2 = input("\r\n" + "Is the CSV file comma separated and UTF-8 encoded? (Y/N): ")
-        time.sleep(2)
+        time.sleep(1)
         if user_input_2 == "Y" or user_input_2 == "y":
             line_print()
             time.sleep(0.5)
         elif user_input_2 == "N" or user_input_2 == "n":
             prYellow("Please save your file as comma separated (not tab or semicolon) and ensure it's UTF-8 encoded.")
-            time.sleep(2)
+            time.sleep(1)
         else:
             prRed("Wrong value. Try again.")
             time.sleep(1)
@@ -71,7 +77,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     #Input check for total # of rows
     #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
     #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-    #    time.sleep(2)
+    #    time.sleep(1)
     #    try:
     #        user_input_3 = int(user_input_3)
     #        if type(user_input_3) == int and user_input_3 > 0:
@@ -79,18 +85,18 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
     #            time.sleep(0.5)
     #        elif type(user_input_3) == int and user_input_3 < 1:
     #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-    #            time.sleep(2)
+    #            time.sleep(1)
     #        else:
     #            prRed("\r\n" + "Please use an integer.")
     #            time.sleep(1)
     #    except ValueError:
     #        prRed("\r\n" + "Please use an integer.")
-    #        time.sleep(2)
+    #        time.sleep(1)
 
     if (user_input_1 == "Y" or user_input_1 == "y") and (user_input_2 == "Y" or user_input_2 == "y"):
         dataset_name = input("\r\n" + "Enter your filename without the csv extension:")
         line_print()
-        time.sleep(2)
+        time.sleep(1)
         prGreen("\r\n" + "Locally generating json metadata from the csv file and encoding it to base64.")
         time.sleep(0.5)
         _start = time.time()
@@ -136,7 +142,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             xx = 5
             while x != 1:
                 try:
-                    resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+                    resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_domain), headers=headers, data=payload)
                     time.sleep(0.5)
                     resp_results = json.loads(resp.text)
                     formatted_response_str = json.dumps(resp_results, indent=2)
@@ -188,7 +194,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     x += 1
                     prRed("\r\n" + "Cancelling Job..." + "\r\n")
                     os.chdir("..")
-                    time.sleep(2)
+                    time.sleep(1)
                     batches_ = 0
                     p_flag = 0
 
@@ -214,7 +220,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 result = Result()
                 #print(batches_)
 
-                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols, ), callback=result.update_result) for i in range(batches_)]
+                result_async = [pool.apply_async(data_append_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,server_domain, ), callback=result.update_result) for i in range(batches_)]
 
                 if batches_ >= 1:
                     try:
@@ -301,7 +307,7 @@ def append_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                     x = 0
                     while x != 1:
                         try:
-                            resp = requests.patch('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+                            resp = requests.patch('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_domain,job_id), headers=headers, data=payload)
                             prGreen("\r\n" + "All {} batches uploaded.".format(batches_))
                             prYellow("TCRM Data Manager Job triggered. Check the data manager for more details." + "\r\n")
                             x += 1

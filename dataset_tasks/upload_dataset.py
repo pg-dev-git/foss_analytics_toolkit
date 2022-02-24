@@ -5,7 +5,7 @@ import pandas as pd
 from dataset_tasks.json_metadata_generator import *
 from dataflow_tasks.start_stop_dataflow import *
 
-def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name):
+def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_name,server_domain):
 
     try:
         dataset_upload_dir = "dataset_upload"
@@ -144,7 +144,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 x = 0
                 while x != 1:
                     try:
-                        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_id), headers=headers, data=payload)
+                        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_domain), headers=headers, data=payload)
                         time.sleep(1)
                         resp_results = json.loads(resp.text)
                         #print(resp_results)
@@ -172,7 +172,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 while x != 1:
                     try:
                         _start = time.time()
-                        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_id), headers=headers, data=payload)
+                        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_domain), headers=headers, data=payload)
                         resp_results = json.loads(resp.text)
                         success = resp_results.get('success')
                         errors = resp_results.get('errors')
@@ -197,7 +197,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 x = 0
                 while x != 1:
                     try:
-                        resp = requests.patch('https://{}.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_id,job_id), headers=headers, data=payload)
+                        resp = requests.patch('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData/{}'.format(server_domain,job_id), headers=headers, data=payload)
                         x += 1
                     except:
                         pass
@@ -226,7 +226,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             headers = {
                 'Authorization': "Bearer {}".format(access_token)
                 }
-            resp = requests.get('https://{}.salesforce.com/services/data/v53.0/wave/dependencies/{}'.format(server_id,dataset_), headers=headers)
+            resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dependencies/{}'.format(server_domain,dataset_), headers=headers)
             #print(resp.json())
             #Print PrettyJSON in Terminal
 
@@ -262,7 +262,7 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                         payload = json.dumps(payload)
 
-                        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/dataflowjobs'.format(server_id), headers=headers, data=payload)
+                        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs'.format(server_domain), headers=headers, data=payload)
 
                         formatted_response = json.loads(resp.text)
                         formatted_response_str = json.dumps(formatted_response, indent=2)

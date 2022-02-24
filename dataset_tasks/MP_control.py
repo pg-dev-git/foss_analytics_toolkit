@@ -38,7 +38,7 @@ def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_r
 
 
 
-def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count):
+def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain):
 
     time.sleep(0.01)
 
@@ -51,6 +51,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}
     saql_payload = json.dumps(saql_payload)
 
+
     headers = {'Authorization': "Bearer {}".format(access_token),
                'Content-Type': "application/json"
                }
@@ -58,8 +59,12 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     xx = 0
     while x != 1:
         #print(thread_id)
-        resp = requests.post('https://{}.salesforce.com/services/data/v53.0/wave/query'.format(server_id), headers=headers, data=saql_payload)
+        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/query'.format(server_domain), headers=headers, data=saql_payload)
         resp_text = json.loads(resp.text)
+        #with open('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count), 'w') as outfile:
+        #    json.dump(resp_text, outfile)
+        #outfile.close()
+
         try:
             query_results = ((resp_text.get("results").get("records")))
             query_results_json = json.dumps(query_results)
@@ -68,6 +73,7 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
             #    json.dump(query_results, outfile)
 
             #outfile.close()
+            #quit()
 
             #df = pd.read_json(r'{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count))
             df = pd.read_json(query_results_json)
