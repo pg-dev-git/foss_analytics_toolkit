@@ -5,13 +5,13 @@ import time
 from data_manager_tasks.get_dataflowjobs_list import *
 from line import *
 
-def get_dataflowsJobs(access_token,server_id):
-    prGreen("\r\n" + "Checking Data Manager Logs..." + "\r\n")
+def get_dataflowsJobs(access_token,server_id,server_domain):
+    prGreen("\r\nChecking Data Manager Logs...\r\n")
     time.sleep(1)
     headers = {
-        'Authorization': "Bearer {}".format(access_token,server_id)
+        'Authorization': "Bearer {}".format(access_token)
         }
-    resp = requests.get('https://{}.salesforce.com/services/data/v51.0/wave/dataflowjobs'.format(server_id), headers=headers)
+    resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs'.format(server_domain), headers=headers)
     #print(resp.json())
     #Print PrettyJSON in Terminal
 
@@ -27,7 +27,7 @@ def get_dataflowsJobs(access_token,server_id):
     try:
         while run_token:
             line_print()
-            prYellow("Choose an option from the list below:" + "\r\n")
+            prYellow("Choose an option from the list below:\r\n")
             prCyan("1 - List Dataflow Jobs by Status")
             prCyan("2 - List Datasync Jobs by Status")
             prCyan("3 - List All Jobs by Status")
@@ -45,12 +45,6 @@ def get_dataflowsJobs(access_token,server_id):
 
             if user_input == "3":
                 get_AllJobs_list(dataflowjobs_list)
-
-            if user_input == "4":
-                get_dataflowsJobs(access_token)
-
-            #if user_input == "5":
-            #    get_datasyncJobs(access_token)
 
             print("\r\n")
 
