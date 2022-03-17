@@ -1,10 +1,4 @@
-import json
-import requests
-import time
-import pandas as pd
-
-access_token = "00D0q0000009l1O!AQ8AQON0OKHHj.ZUACTn1E1oyFYCM46ZwP160_nbyV6CC4YojamJJNMREWX8GhkaS_iW0gjvtIDgT8ZtPIhj75m0RnXLBOPo"
-server_domain = "ciscosales--mon"
+import json, requests, time, pandas as pd
 
 def examine_dataflow(access_token,server_domain,flow_id):
 
@@ -17,7 +11,6 @@ def examine_dataflow(access_token,server_domain,flow_id):
     resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs/{}/nodes'.format(server_domain,flow_id), headers=headers)
 
     formatted_response = json.loads(resp.text)
-    #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
     nodes_list = formatted_response.get("nodes")
 

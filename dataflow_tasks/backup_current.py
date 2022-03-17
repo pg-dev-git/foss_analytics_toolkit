@@ -1,7 +1,7 @@
-import json, os, requests, time, html, sys, subprocess
-from terminal_colors import *
-from sfdc_login import *
-from line import *
+import json, os, requests, time, html, sys, subprocess, traceback, html, re
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 
 def get_platform():
     platforms = {
@@ -16,8 +16,6 @@ def get_platform():
     return platforms[sys.platform]
 
 def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_name_,server_id,server_domain):
-
-    #os.chdir("..")
 
     try:
         dataflow_extraction_dir = "dataflow_backup"
@@ -51,16 +49,13 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
 
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
     dataflow_his_list = formatted_response.get('histories')
 
     #Check if there are available histories to backup - start:
-
     counter = 0
 
     for x in dataflow_his_list:
         counter += 1
-
     #Check if there are available histories to backup - end.
 
     if counter != 0:
@@ -68,63 +63,41 @@ def backup_dataflow_current(access_token,dataflow_his_url,dataflow_id_,dataflow_
         for x in dataflow_his_list:
             if counter == 0:
                 dataflow_his_id_ = x["id"]
-                #print(dataflow_his_id_)
                 historyUrl = x["historyUrl"]
-                #print(historyUrl)
                 previewUrl = x["previewUrl"]
-                #print(previewUrl)
                 privatePreviewUrl = x["privatePreviewUrl"]
                 counter += 1
 
 
         resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,previewUrl), headers=headers)
 
-        #formatted_response = html.unescape(resp.text)
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
         dataflow_ = formatted_response.get('definition')
-        #print(formatted_response)
 
         for x in dataflow_:
             value = dataflow_[x]
-            #print('{} {}'.format(x,value))
 
         with open('{}_dataflow_backup.json'.format(dataflow_name_), 'w') as outfile:
             json.dump(dataflow_, outfile)
 
-        #quit()
-        os_running = get_platform()
+        try:
+            json_bkp_unscapped = open('{}_dataflow_backup.json'.format(dataflow_name_), 'r')
+            json_bkp_unscapped = (json_bkp_unscapped.read())
+            json_bkp_unscapped = json.loads(json_bkp_unscapped)
+            json_bkp_unscapped = json.dumps(json_bkp_unscapped)
+            json_bkp_unscapped = json_bkp_unscapped.replace('&quot;','\&quot;')
 
-        if os_running == "Windows":
+            regexp = "&.+?;"
+            _html = re.findall(regexp, json_bkp_unscapped)
+            for e in _html:
+                unescaped = html.unescape(e)
+                json_bkp_unscapped = json_bkp_unscapped.replace(e, unescaped)
 
-            #bat_ = open("replace.bat", "w")
-            #a_ = "PowerShell -windowstyle hidden -NoProfile -ExecutionPolicy bypass -Command \"& {Start-Process PowerShell -windowstyle hidden -ArgumentList '-windowstyle hidden -NoProfile -ExecutionPolicy bypass -File \"\"replace.ps1\"\"'}\""
-            #bat_.write(a_)
-            #bat_.close()
-            #time.sleep(0.1)
-
-            a_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&quot;','\\\"') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-            b_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&#39;','''') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-            c_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&gt;','>') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-            d_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&lt;','<') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-            e_ = "(Get-Content " + '{}_dataflow_backup.json'.format(dataflow_name_) + ").Replace('&amp;','&') | Set-Content " + '{}_dataflow_backup.json'.format(dataflow_name_)
-            ps_1_dict = {"a": "{}".format(a_), "b": "{}".format(b_), "c": "{}".format(c_), "d": "{}".format(d_), "e": "{}".format(e_)}
-
-            for x in ps_1_dict.values():
-                #print(x)
-                completed = subprocess.run(["powershell", "-Command", x], capture_output=True)
-                #ps1_ = open("replace.ps1", "w")
-                #time.sleep(0.1)
-                #ps1_.write(x)
-                #time.sleep(0.1)
-                #ps1_.close()
-                #time.sleep(0.1)
-                #replace_ = subprocess.run(["replace.bat"], stdout=subprocess.PIPE, text=True, shell=True)
-                #print(replace_.stdout)
-                time.sleep(0.5)
-
-            #os.remove("replace.bat")
-            #os.remove("replace.ps1")
+            with open('{}_dataflow_backup.json'.format(dataflow_name_), 'w') as outfile:
+                json.dump(json.loads(json_bkp_unscapped), outfile)
+        except:
+            traceback.print_exc()
 
 
         prCyan("\r\n" + "Dataflow JSON definition succesfully backed up here: ")

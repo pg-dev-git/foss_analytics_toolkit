@@ -1,11 +1,9 @@
-import time, json, requests, math, csv, os, base64, threading, datetime, sys, psutil
-from terminal_colors import *
-from sfdc_login import *
-import pandas as pd
+import time, json, requests, math, csv, os, base64, threading, datetime, sys, psutil, pandas as pd, multiprocessing as mp
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.json_metadata_generator import *
 from dataset_tasks.csv_new_MT import *
-from line import *
-import multiprocessing as mp
+from misc_tasks.line import *
 
 def delete_last():
     sys.stdout.write('\x1b[1A')
@@ -66,25 +64,6 @@ def new_csv_dataset(access_token,server_id,server_domain):
         else:
             prRed("Wrong value. Try again.")
             time.sleep(1)
-
-    #Input check for total # of rows
-    #while user_input_3 == 9567385638567265 or type(user_input_3) != int or user_input_3 < 1:
-    #    user_input_3 = input("\r\n" + "What's the total row count in your file? (integer): ")
-    #    time.sleep(1)
-    #    try:
-    #        user_input_3 = int(user_input_3)
-    #        if type(user_input_3) == int and user_input_3 > 0:
-    #            user_input_3_flag = 'y'
-    #            line_print()
-    #        elif type(user_input_3) == int and user_input_3 < 1:
-    #            prYellow("\r\n" + "Did you enter the right number of rows? Try again.")
-    #            time.sleep(1)
-    #        else:
-    #            prRed("\r\n" + "Please use an integer.")
-    #            time.sleep(1)
-    #    except ValueError:
-    #        prRed("\r\n" + "Please use an integer.")
-    #        time.sleep(1)
 
     #Input check for date format
     while user_input_4 != "y" and user_input_4 != "Y":
@@ -170,7 +149,6 @@ def new_csv_dataset(access_token,server_id,server_domain):
                     time.sleep(0.5)
                     resp_results = json.loads(resp.text)
                     formatted_response_str = json.dumps(resp_results, indent=2)
-                    #prYellow(formatted_response_str)
                     try:
                         success = resp_results.get('success')
                     except:
@@ -216,14 +194,6 @@ def new_csv_dataset(access_token,server_id,server_domain):
                     time.sleep(1)
                     batches_ = 0
 
-            #i = 1
-            #batches_10 = math.ceil(batches_ / 10)
-            #batch_10_count = 0
-            #delete_count = 0
-            #ii = 1
-            #rem_jobs = batches_
-            #job_count = 0
-
             if mp_flag == 1:
                 pool = mp.Pool((mp.cpu_count()))
                 cpus = int(mp.cpu_count())
@@ -237,7 +207,6 @@ def new_csv_dataset(access_token,server_id,server_domain):
                 control = round(batches_ / 2)
                 thread_count = 0
                 thread_id = 0
-                #print(batches_)
 
                 result_async = [pool.apply_async(new_csv_mp, args = (dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,server_domain, )) for i in range(batches_)]
 
@@ -332,4 +301,3 @@ def new_csv_dataset(access_token,server_id,server_domain):
 
     #Go back to parent folder:
     os.chdir("..")
-    #prCyan("\r\n" + "Dataset selected: {} - {}".format(dataset_name, dataset_))

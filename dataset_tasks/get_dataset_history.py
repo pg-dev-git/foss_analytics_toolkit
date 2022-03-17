@@ -1,7 +1,7 @@
 import json, requests, os, time
-from terminal_colors import *
-from sfdc_login import *
-from line import *
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 
 def dataset_history(access_token,dataset_,server_id,versionsUrl,dataset_name,server_domain):
     headers = {

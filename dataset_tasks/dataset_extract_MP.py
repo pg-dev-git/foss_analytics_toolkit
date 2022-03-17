@@ -1,10 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-import csv
-import pandas as pd
-import time
-import os
+import json, requests, csv, pandas as pd, time, os
+from misc_tasks.terminal_colors import *
+
 
 def data_extract_mp(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit,i,access_token,dataset_name,server_id,batches_,query_fields):
 

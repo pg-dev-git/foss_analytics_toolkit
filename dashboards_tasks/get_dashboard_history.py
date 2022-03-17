@@ -1,10 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import os
-import time
-
+import json, requests, time, os
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 
 def dashboard_history(access_token,dashboard_,server_id,historiesUrl,server_domain):
     try:
@@ -17,9 +13,8 @@ def dashboard_history(access_token,dashboard_,server_id,historiesUrl,server_doma
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
-        #prGreen(formatted_response_str)
-
         dash_his_list = formatted_response.get('histories')
+
 
         #Check if there are available histories to backup - start:
 
@@ -92,9 +87,6 @@ def dashboard_history(access_token,dashboard_,server_id,historiesUrl,server_doma
                                 payload = json.dumps(payload)
 
                                 resp = requests.put('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}/bundle'.format(server_domain,dashboard_), headers=headers, data=payload)
-                                #formatted_response = json.loads(resp.text)
-                                #formatted_response_str = json.dumps(formatted_response, indent=2)
-                                #prGreen(formatted_response_str)
 
                                 prYellow("\r\n" + "Dashboard version replaced." + "\r\n")
                                 time.sleep(2)

@@ -1,16 +1,8 @@
-import time
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import math
-import csv
-import pandas as pd
-import os
-import base64
+import time, json, requests, math, csv, pandas as pd, os, base64
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.json_metadata_generator import *
-import math
-from line import *
+from misc_tasks.line import *
 
 def upload_new_csv_dataset(access_token,server_id):
 
@@ -21,10 +13,8 @@ def upload_new_csv_dataset(access_token,server_id):
             print(" ")
 
     cd = os.getcwd()
-    #print(cd)
 
     d_ext = "{}".format(cd)+"\\dataset_upload\\"
-    #print(d_ext)
 
     os.chdir(d_ext)
 
@@ -120,7 +110,6 @@ def upload_new_csv_dataset(access_token,server_id):
         csv_upload_json_meta(dataset_name_,dataset_name)
         meta_json_data = open("{}_CSV_upload_metadata.json".format(dataset_name), 'rb').read()
         meta_json_base64_encoded = base64.b64encode(meta_json_data).decode('UTF-8')
-        #os.remove("{}_CSV_upload_metadata.json".format(dataset_name))
         _end = time.time()
         enc_time = round((_end-_start),2)
         time.sleep(1)
@@ -165,8 +154,6 @@ def upload_new_csv_dataset(access_token,server_id):
                     load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
                 else:
                     load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=None, skiprows=skiprows, nrows=50000, chunksize=50000)
-                #print(load_csv_split)
-                #load_csv_split.to_csv( "{}_dataset_split_{}.csv".format(dataset_name,batch_count), index=False, encoding='utf-8-sig')
                 export_csv = pd.concat(load_csv_split)
                 export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,batch_count), index = None, header=True, encoding='utf-8-sig')
                 skiprows += 50000

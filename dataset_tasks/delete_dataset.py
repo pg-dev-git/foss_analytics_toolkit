@@ -1,8 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import time
+import json, requests, time
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 
 def delete_dataset(access_token,dataset_,server_id,server_domain):
 

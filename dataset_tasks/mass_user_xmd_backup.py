@@ -1,6 +1,6 @@
 import json, requests, time, queue, threading, datetime, shutil
-from terminal_colors import *
-from sfdc_login import *
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 #from dataset_tasks.get_dataset_field_detail import *
 #from dataset_tasks.get_dataset_extract_v2 import *
 #from dataset_tasks.get_dataset_extract_MP import *
@@ -11,8 +11,8 @@ from sfdc_login import *
 #from dataset_tasks.delete_dataset import *
 #from dataset_tasks.get_dataset_history import *
 #from dataset_tasks.get_dataset_dependencies import *
-from line import *
-from zipper import *
+from misc_tasks.line import *
+from misc_tasks.zipper import *
 
 
 def mass_u_xmd_bkp(access_token,server_id,server_domain):
@@ -90,7 +90,7 @@ def mass_u_xmd_bkp(access_token,server_id,server_domain):
         try:
             cvl = datasets_list[index]["currentVersionUrl"]
             currentName = datasets_list[index]['name']
-            params = [server_id,access_token,cvl,i,currentName]
+            params = [server_id,access_token,cvl,i,currentName,server_domain]
             x = threading.Thread(target=lambda q, arg1: q.put(xmd_bkp_mt(arg1)), args=(que,params))
             threads.append(x)
             x.start()
@@ -128,6 +128,7 @@ def xmd_bkp_mt(params):
     cvl = params[2]
     i = params[3]
     currentName = params[4]
+    server_domain = params[5]
 
 
     headers = {
@@ -166,7 +167,7 @@ def xmd_bkp_mt(params):
     with open('{}_backup_user.xmd.json'.format(currentName), 'w') as outfile:
         json.dump(xmds_json, outfile)
 
-    print("\r\n" + "Done backing up:")
+    #print("\r\n" + "Done backing up:")
     prLightPurple("{} ".format(currentName))
 
     return i

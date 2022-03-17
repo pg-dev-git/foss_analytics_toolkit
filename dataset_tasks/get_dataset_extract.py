@@ -1,7 +1,6 @@
-import json, requests, math, csv, glob, os, base64, threading, time
-from terminal_colors import *
-from sfdc_login import *
-import pandas as pd
+import json, requests, math, csv, glob, os, base64, threading, time, pandas as pd
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.dataset_extract_MT import *
 
 #os.chdir("/Users/pgagliar/Desktop/api_test/")

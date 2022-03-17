@@ -1,10 +1,7 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import os
-import time
-from line import *
+import json, requests, os, time
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 
 d_job_id = "ffghd234dffhd23"
 
@@ -23,10 +20,8 @@ def start_dataflow(access_token,dataflow_id_,server_id,dataflow_name_,server_dom
 
         formatted_response = json.loads(resp.text)
         formatted_response_str = json.dumps(formatted_response, indent=2)
-        #prGreen(formatted_response_str)
         global d_job_id
         d_job_id = formatted_response.get("id")
-        #print(d_job_id)
 
         prGreen("\r\n" + "Dataflow started. Check the Data Manager for more details." + "\r\n")
         line_print()

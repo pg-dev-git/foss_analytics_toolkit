@@ -1,11 +1,8 @@
-import json, requests, math, csv, glob, os, base64, threading, time
-from terminal_colors import *
-from sfdc_login import *
-import pandas as pd
+import json, requests, math, csv, glob, os, base64, threading, time, pandas as pd
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.dataset_extract_MT import *
-from line import *
-
-#os.chdir("/Users/pgagliar/Desktop/api_test/")
+from misc_tasks.line import *
 
 def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
 
@@ -17,7 +14,6 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
             pass
 
     cd = os.getcwd()
-    #print(cd)
 
     os_ = sfdc_login.get_platform()
 
@@ -25,8 +21,6 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
         d_ext = "{}".format(cd)+"\\xmd_backups\\"
     else:
         d_ext = "{}".format(cd)+"/xmd_backups/"
-
-    #print(d_ext)
 
     os.chdir(d_ext)
 
@@ -36,10 +30,7 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
     resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/datasets/{}'.format(server_domain,dataset_), headers=headers)
 
     formatted_response = json.loads(resp.text)
-    #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
-
 
     dataset_current_version_url = formatted_response.get('currentVersionUrl')
     dataset_currentVersionId = formatted_response.get('currentVersionId')
@@ -54,11 +45,9 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
     resp = requests.get('{}'.format(dataset_current_version_url), headers=headers)
     formatted_response = json.loads(resp.text)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prYellow(formatted_response_str)
 
 #Cleanup Measures - Start:
     try:
-        #prCyan("\r\n" + "Cleaning Measures")
         fields = formatted_response.get('measures')
         fields_counter = 0
         for x in fields:
@@ -82,49 +71,40 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
                 x['label'] = y
         formatted_response.pop('measures')
         formatted_response['measures'] = fields
-        #time.sleep(1)
     except:
         pass
 #Cleanup Measures - End.
 
 #Cleanup Dimensions - multivalue - Start:
     try:
-        #prCyan("\r\n" + "Cleaning Dimensions")
         fields = formatted_response.get('dimensions')
         fields_counter = 0
         for x in fields:
             fields_counter += 1
-            #print(type(x['isMultiValue']))
             if x['isMultiValue'] == True or x['isMultiValue'] == False or type(x['isMultiValue']) == bool:
                 del x['isMultiValue']
-                #print("deleting multivalue {}".format(fields_counter))
         formatted_response.pop('dimensions')
         formatted_response['dimensions'] = fields
-        #time.sleep(0.5)
     except:
         pass
 #Cleanup Dimensions - multivalue - End.
 
 #Cleanup Dimensions - type - Start:
     try:
-        #prCyan("\r\n" + "Cleaning Dimensions")
         fields = formatted_response.get('dimensions')
         fields_counter = 0
         for x in fields:
             fields_counter += 1
             if x['type']:
                 del x['type']
-                #print("deleting type {}".format(fields_counter))
         formatted_response.pop('dimensions')
         formatted_response['dimensions'] = fields
-        #time.sleep(0.5)
     except:
         pass
 #Cleanup Dimensions - type - End.
 
 #Cleanup Dimensions - characters - Start:
     try:
-        #prCyan("\r\n" + "Cleaning Dimensions")
         fields = formatted_response.get('dimensions')
         fields_counter = 0
         for x in fields:
@@ -143,19 +123,16 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
                     y = y.replace('__c','')
                 except:
                     pass
-                #print(y)
                 del x['label']
                 x['label'] = y
         formatted_response.pop('dimensions')
         formatted_response['dimensions'] = fields
-        #time.sleep(0.5)
     except:
         pass
 #Cleanup Dimensions - characters - End.
 
 #Cleanup Dates - Start:
     try:
-        #prCyan("\r\n" + "Adjusting Dates")
         fields = formatted_response.get('dates')
         fields_counter = 0
         for x in fields:
@@ -174,7 +151,6 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
                     y = y.replace('__c','')
                 except:
                     pass
-                #print(y)
                 del x['alias']
                 x['alias'] = y
         formatted_response.pop('dates')
@@ -186,17 +162,14 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
 
 #Cleanup Dates - type - Start:
     try:
-        #prCyan("\r\n" + "Cleaning Dimensions")
         fields = formatted_response.get('dates')
         fields_counter = 0
         for x in fields:
             fields_counter += 1
             if x['type']:
                 del x['type']
-                #print("deleting type {}".format(fields_counter))
         formatted_response.pop('dates')
         formatted_response['dates'] = fields
-        #time.sleep(0.5)
     except:
         pass
 #Cleanup Dates - type - End.
@@ -226,7 +199,6 @@ def xmd_cleanup(access_token,dataset_,server_id,dataset_name,server_domain):
             fields_counter += 1
             if x['format']:
                 format_ = x['format']
-                #format_ = format.get('customFormat')
                 format_ = format_['customFormat']
                 new_form = format_.replace('&quot;','\"')
                 x['format']['customFormat'] = new_form

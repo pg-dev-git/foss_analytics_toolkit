@@ -1,13 +1,10 @@
-import json, requests, math, glob, os, time, sys, subprocess, configparser, threading, csv, base64, datetime, gc
-from terminal_colors import *
-from sfdc_login import *
-from line import *
-import pandas as pd
-from line import *
+import json, requests, math, glob, os, time, sys, subprocess, configparser, threading, csv, base64, datetime, gc, pandas as pd
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 
 def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_required,cpus):
 
-    #print("\r\n" + "Generating control files...")
     if os.path.exists("mp{}.ini".format(yy)) == False:
         if (yy + 1) == cpus_required and cpus_required != 1:
             last = 'Y'
@@ -34,18 +31,16 @@ def control_files(access_token,dataset_,server_id,yy,batches_mt,thread_id,cpus_r
             config.write(configfile)
 
         configfile.close()
-    #print("\r\n" + "Done generating control files...")
 
 
-
-def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain):
+def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_currentVersionId,query_fields_str,q_limit,batch_count,server_domain,work_rows):
 
     time.sleep(0.01)
 
     if thread_id == 0:
         q_offset = 0
     else:
-        q_offset = 50000 * thread_id
+        q_offset = work_rows * thread_id
 
     saql = "q = load \"{}/{}\";q = foreach q generate {};q = offset q {};q = limit q {};".format(dataset_,dataset_currentVersionId,query_fields_str,q_offset,q_limit)
     saql_payload = {"name": "get_rows","query": str(saql), "queryLanguage": "SAQL"}
@@ -58,36 +53,28 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
     x = 0
     xx = 0
     while x != 1:
-        #print(thread_id)
-        resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/query'.format(server_domain), headers=headers, data=saql_payload)
-        resp_text = json.loads(resp.text)
-        #with open('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count), 'w') as outfile:
-        #    json.dump(resp_text, outfile)
-        #outfile.close()
+
 
         try:
-            query_results = ((resp_text.get("results").get("records")))
-            query_results_json = json.dumps(query_results)
+            resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/wave/query'.format(server_domain), headers=headers, data=saql_payload)
+            resp_text = json.loads(resp.text)
+            try:
+                query_results = ((resp_text.get("results").get("records")))
+                query_results_json = json.dumps(query_results)
+                df = pd.read_json(query_results_json)
+                df.fillna(0)
+                export_csv = df.to_csv(r'{}_{}_query_results.csv'.format(dataset_name,thread_id), index = None, header=True, encoding='utf-8')
 
-            #with open('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count), 'w') as outfile:
-            #    json.dump(query_results, outfile)
+                del export_csv
+                gc.collect()
+                x = 1
+            except:
+                time.sleep(3)
 
-            #outfile.close()
-            #quit()
-
-            #df = pd.read_json(r'{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count))
-            df = pd.read_json(query_results_json)
-            df.fillna(0)
-            export_csv = df.to_csv(r'{}_{}_query_results.csv'.format(dataset_name,thread_id), index = None, header=True, encoding='utf-8')
-
-            #time.sleep(0.1)
-            del export_csv
-            gc.collect()
-            x = 1
         except:
             xx += 1
-            #prRed("\r\n" + "Error in process #{}. Trying again... {}".format(thread_id,xx) + "\r\n")
-            time.sleep(5)
+            time.sleep(15)
+            traceback.print_exc()
             if xx == 150:
                 x = 1
                 prRed("\r\n" + "Error in process #{}. Possible bad response from server.".format(thread_id) + "The file won't contain all records." + "\r\n")
@@ -101,11 +88,3 @@ def mp_threads(access_token,dataset_,server_id,dataset_name,thread_id,dataset_cu
                     pass
                 time.sleep(1)
             pass
-
-    #try:
-    #    if os.path.exists('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count)):
-    #        os.remove('{}_{}_query_results{}.json'.format(dataset_name,thread_id,batch_count))
-    #except:
-    #    pass
-
-    #print("success")

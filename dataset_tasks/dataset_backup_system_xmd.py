@@ -1,8 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import os
+import json, requests, os
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 
 def backup_xmd_system(access_token,dataset_):
 

@@ -1,11 +1,11 @@
 import json, requests, time
-from terminal_colors import *
-from sfdc_login import *
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dashboards_tasks.get_dash_datasets import *
 from dashboards_tasks.backup_dash_json import *
 from dashboards_tasks.get_dashboard_history import *
 from dashboards_tasks.delete_dashboard import *
-from line import *
+from misc_tasks.line import *
 
 def get_dashboards_main(access_token,server_id,server_domain):
     try:
@@ -32,14 +32,9 @@ def get_dashboards_main(access_token,server_id,server_domain):
                     'Authorization': "Bearer {}".format(access_token)
                     }
                 resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards?sort=Mru&pageSize=50'.format(server_domain), headers=headers)
-                #print(resp.json())
-                #Print PrettyJSON in Terminal
 
                 formatted_response = json.loads(resp.text)
-                #print(formatted_response)
                 formatted_response_str = json.dumps(formatted_response, indent=2)
-                #prGreen(formatted_response_str)
-
                 dashboards_list = formatted_response.get('dashboards')
 
                 counter = 0
@@ -83,8 +78,6 @@ def get_dashboards_main(access_token,server_id,server_domain):
                             time.sleep(0.15)
                             prCyan("2 - Show Version History / Restore")
                             time.sleep(0.15)
-                            #prCyan("3 - Backup JSON definition")
-                            #time.sleep(0.15)
                             prRed("3 - Delete Dashboard")
                             line_print()
 
@@ -109,8 +102,6 @@ def get_dashboards_main(access_token,server_id,server_domain):
                                 run_token = True
                             else:
                                 run_token = False
-                                #prYellow("\r\n" + "Going back to the previous menu.")
-                                #time.sleep(2)
 
                 except ValueError:
                     prYellow("\r\n" + "Going back to the previous menu.")
@@ -125,14 +116,9 @@ def get_dashboards_main(access_token,server_id,server_domain):
                     'Authorization': "Bearer {}".format(access_token)
                     }
                 resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards?q={}&sort=Mru&pageSize=200'.format(server_domain,q_string), headers=headers)
-                #print(resp.json())
-                #Print PrettyJSON in Terminal
 
                 formatted_response = json.loads(resp.text)
-                #print(formatted_response)
                 formatted_response_str = json.dumps(formatted_response, indent=2)
-                #prGreen(formatted_response_str)
-
                 dashboards_list = formatted_response.get('dashboards')
 
                 counter = 0
@@ -203,8 +189,7 @@ def get_dashboards_main(access_token,server_id,server_domain):
                                 run_token = True
                             else:
                                 run_token = False
-                                #prYellow("\r\n" + "Going back to the previous menu.")
-                                #time.sleep(2)
+
 
                 except ValueError:
                     prYellow("\r\n" + "Going back to the previous menu.")

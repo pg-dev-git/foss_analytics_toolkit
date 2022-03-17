@@ -1,9 +1,7 @@
-import json
-import requests
-from terminal_colors import *
-import time
+import json, requests, time
+from misc_tasks.terminal_colors import *
 from data_manager_tasks.get_dataflowjobs_list import *
-from line import *
+from misc_tasks.line import *
 
 def get_dataflowsJobs(access_token,server_id,server_domain):
     prGreen("\r\nChecking Data Manager Logs...\r\n")
@@ -12,14 +10,9 @@ def get_dataflowsJobs(access_token,server_id,server_domain):
         'Authorization': "Bearer {}".format(access_token)
         }
     resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dataflowjobs'.format(server_domain), headers=headers)
-    #print(resp.json())
-    #Print PrettyJSON in Terminal
 
     formatted_response = json.loads(resp.text)
-    #print(formatted_response)
     formatted_response_str = json.dumps(formatted_response, indent=2)
-    #prGreen(formatted_response_str)
-
     dataflowjobs_list = formatted_response.get('dataflowJobs')
 
     run_token = True
@@ -32,7 +25,6 @@ def get_dataflowsJobs(access_token,server_id,server_domain):
             prCyan("2 - List Datasync Jobs by Status")
             prCyan("3 - List All Jobs by Status")
 
-            #prCyan("5 - Upload a CSV Dataset - New/Override")
             print("\r\n")
             user_input = input("Enter your selection: ")
             line_print()

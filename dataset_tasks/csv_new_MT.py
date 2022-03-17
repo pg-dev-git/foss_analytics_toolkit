@@ -1,16 +1,8 @@
-import time
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import math
-import csv
-import pandas as pd
-import os
-import base64
+import time, json, requests, math, csv, pandas as pd, os, base64, threading
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.json_metadata_generator import *
-import math
-import threading
+
 
 def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,server_domain):
 
@@ -24,14 +16,10 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,se
 
     headers = {'Authorization': "Bearer {}".format(access_token),'Content-Type': "application/json"}
 
-    #prCyan("\r\n" + "*** Starting batch #{} ***".format(batch_count))
-
     load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, skiprows=skiprows, nrows=55000, chunksize=55000, header = 0, names = csv_cols)
 
     export_csv = pd.concat(load_csv_split)
     export_csv.fillna(0)
-    #print(export_csv)
-    #print("\r\n")
 
     if i == 0:
         export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
@@ -39,17 +27,10 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,se
         export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,ind), index = None, header=True, encoding='utf-8-sig')
 
 
-    #prGreen("\r\n" + "Locally encoding csv batch #{} to base64.".format(batch_count))
-    #time.sleep(0.15)
-    ##_start = time.time()
     #Enconde csv to base64 for upload - start
     data = open("{}_dataset_split_{}.csv".format(dataset_name,ind), 'rb').read()
     base64_encoded = base64.b64encode(data).decode('UTF-8')
     #Enconde csv to base64 for upload - end
-    #_end = time.time()
-    #enc_time = round((_end-_start),2)
-    #prGreen("\r\n" + "CSV encoded in {}s".format(enc_time))
-    #time.sleep(0.015)
 
     payload = {'DataFile' : '{}'.format(base64_encoded),'InsightsExternalDataId' : '{}'.format(job_id),'PartNumber': ind}
     payload = json.dumps(payload)
@@ -58,12 +39,9 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,se
     xx = 0
     while x != 1:
         try:
-            #prGreen("\r\n" + "Uploading file to TCRM")
-            #_start = time.time()
             resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalDataPart'.format(server_domain), headers=headers, data=payload)
             resp_results = json.loads(resp.text)
             formatted_response_str = json.dumps(resp_results, indent=2)
-            #prYellow(formatted_response_str)
             try:
                 success = resp_results.get('success')
             except:
@@ -73,17 +51,12 @@ def new_csv_mp(dataset_name,skiprows,job_id,server_id,access_token,i,csv_cols,se
                 errors = resp_results.get('errors')
             except:
                 pass
-            #_end = time.time()
-            #upl_time = round((_end-_start),2)
-            #prGreen("\r\n" + "CSV uploaded in {}s".format(upl_time))
             time.sleep(0.15)
             if success:
-                #prYellow("Status: Successful")
                 x += 1
                 if os.path.exists("{}_dataset_split_{}.csv".format(dataset_name,ind)):
                     os.remove("{}_dataset_split_{}.csv".format(dataset_name,ind))
             else:
-                #prRed(errors)
                 time.sleep(0.15)
                 x = 1
         except:

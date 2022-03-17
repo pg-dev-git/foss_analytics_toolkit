@@ -1,8 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-import time
-from line import *
+import json, requests, time
+from misc_tasks.terminal_colors import *
+from misc_tasks.line import *
 from data_manager_tasks.get_dataflowjob_id import *
 
 def get_dataflowsJobs_list(dataflowjobs_list):

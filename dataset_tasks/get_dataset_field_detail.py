@@ -1,11 +1,7 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import time
-import pandas as pd
-import csv
-from line import *
+import json, requests, time, pandas as pd, csv
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 
 def get_platform():
     platforms = {

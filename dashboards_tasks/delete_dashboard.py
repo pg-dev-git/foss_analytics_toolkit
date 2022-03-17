@@ -1,8 +1,6 @@
-import json
-import requests
-from terminal_colors import *
-from sfdc_login import *
-import time
+import json, requests, time
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 
 def delete_dash(access_token,dashboard_,server_id,server_domain):
 
@@ -20,9 +18,6 @@ def delete_dash(access_token,dashboard_,server_id,server_domain):
 
                 try:
                     formatted_response = json.loads(resp.text)
-                    #formatted_response_str = json.dumps(formatted_response, indent=2)
-                    #prGreen(formatted_response_str)
-                    #print(formatted_response)
                     message = formatted_response[0]['message']
                     prYellow("\r\n" + "{}".format(message))
                     time.sleep(2)

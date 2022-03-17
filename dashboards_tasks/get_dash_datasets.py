@@ -1,7 +1,7 @@
 import json, requests, time
-from terminal_colors import *
-from sfdc_login import *
-from line import *
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
+from misc_tasks.line import *
 from dataset_tasks.get_dataset_field_detail import *
 from dataset_tasks.get_dataset_extract import *
 from dataset_tasks.get_dataset_extract_MP import *
@@ -21,14 +21,9 @@ def get_dash_datasets(access_token,dashboard_,server_id,server_domain):
             'Authorization': "Bearer {}".format(access_token)
             }
         resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dashboards/{}'.format(server_domain,dashboard_), headers=headers)
-        #print(resp.json())
-        #Print PrettyJSON in Terminal
 
         formatted_response = json.loads(resp.text)
-        #print(formatted_response)
         formatted_response_str = json.dumps(formatted_response, indent=2)
-        #prGreen(formatted_response_str)
-
         datasets_list = formatted_response.get('datasets')
 
         counter = 0
@@ -63,14 +58,9 @@ def get_dash_datasets(access_token,dashboard_,server_id,server_domain):
                         url = x["url"]
 
                 resp = requests.get('https://{}.my.salesforce.com{}'.format(server_domain,url), headers=headers)
-                #print(resp.json())
-                #Print PrettyJSON in Terminal
 
                 formatted_response = json.loads(resp.text)
-                #print(formatted_response)
                 formatted_response_str = json.dumps(formatted_response, indent=2)
-                #prGreen(formatted_response_str)
-
                 datasets_list = formatted_response
 
                 for x in datasets_list:

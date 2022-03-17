@@ -1,7 +1,6 @@
-import time, json, requests, math, csv, os, base64, math
-from terminal_colors import *
-from sfdc_login import *
-import pandas as pd
+import time, json, requests, math, csv, os, base64, math, pandas as pd
+from misc_tasks.terminal_colors import *
+from misc_tasks.sfdc_login import *
 from dataset_tasks.json_metadata_generator import *
 from dataflow_tasks.start_stop_dataflow import *
 
@@ -14,10 +13,13 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
             print(" ")
 
     cd = os.getcwd()
-    #print(cd)
 
-    d_ext = "{}".format(cd)+"\\dataset_upload\\"
-    #print(d_ext)
+    os_ = sfdc_login.get_platform()
+
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\dataset_upload\\"
+    else:
+        d_ext = "{}".format(cd)+"/dataset_upload/"
 
     os.chdir(d_ext)
 
@@ -89,7 +91,6 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
         csv_upload_json_meta(dataset_name_,dataset_name)
         meta_json_data = open("{}_CSV_upload_metadata.json".format(dataset_name), 'rb').read()
         meta_json_base64_encoded = base64.b64encode(meta_json_data).decode('UTF-8')
-        #os.remove("{}_CSV_upload_metadata.json".format(dataset_name))
         _end = time.time()
         enc_time = round((_end-_start),2)
         prGreen("\r\nTask Finished in {}s".format(enc_time))
@@ -116,8 +117,6 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 line_print()
 
                 load_csv_split = pd.read_csv("{}.csv".format(dataset_name), low_memory=False, header=1, skiprows=skiprows, nrows=50000, chunksize=50000)
-                #print(load_csv_split)
-                #load_csv_split.to_csv( "{}_dataset_split_{}.csv".format(dataset_name,batch_count), index=False, encoding='utf-8-sig')
                 export_csv = pd.concat(load_csv_split)
                 export_csv = export_csv.to_csv(r"{}_dataset_split_{}.csv".format(dataset_name,batch_count), index = None, header=True, encoding='utf-8-sig')
                 skiprows += 50000
@@ -147,11 +146,9 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         resp = requests.post('https://{}.my.salesforce.com/services/data/v53.0/sobjects/InsightsExternalData'.format(server_domain), headers=headers, data=payload)
                         time.sleep(1)
                         resp_results = json.loads(resp.text)
-                        #print(resp_results)
                         success = resp_results.get('success')
                         errors = resp_results.get('errors')
                         formatted_response_str = json.dumps(resp_results, indent=2)
-                        #prYellow(formatted_response_str)
                         job_id = resp_results.get("id")
                         prGreen("\r\n" + "Workbench Job Id: {}".format(job_id))
                         if success:
@@ -177,7 +174,6 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                         success = resp_results.get('success')
                         errors = resp_results.get('errors')
                         formatted_response_str = json.dumps(resp_results, indent=2)
-                        #prYellow(formatted_response_str)
                         if success:
                             prYellow("Status: Successful")
                             line_print()
@@ -227,13 +223,9 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
                 'Authorization': "Bearer {}".format(access_token)
                 }
             resp = requests.get('https://{}.my.salesforce.com/services/data/v53.0/wave/dependencies/{}'.format(server_domain,dataset_), headers=headers)
-            #print(resp.json())
-            #Print PrettyJSON in Terminal
 
             formatted_response = json.loads(resp.text)
-            #print(formatted_response)
             formatted_response_str = json.dumps(formatted_response, indent=2)
-            #prGreen(formatted_response_str)
 
             try:
                 counter = 0
@@ -266,10 +258,8 @@ def upload_csv_dataset(access_token,dataset_name_,dataset_,server_id,dataset_nam
 
                         formatted_response = json.loads(resp.text)
                         formatted_response_str = json.dumps(formatted_response, indent=2)
-                        #prGreen(formatted_response_str)
                         global d_job_id
                         d_job_id = formatted_response.get("id")
-                        #print(d_job_id)
 
                         prGreen("\r\n" + "Dataflow started. Check the Data Manager for more details." + "\r\n")
                         line_print()
