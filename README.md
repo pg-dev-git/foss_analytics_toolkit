@@ -1,6 +1,6 @@
-# TCRM Toolkit
+### First things first: 
 
-### First things first: This is a beta product. It may contain bugs and unfinished features so use it at your own risk. It's provided as is and without any type of warranties.
+### This is a FOSS tool, not an official Salesforce or Tableau product.\r\n This toolkit hasn't been officially tested or documented by Salesforce or Tableau.\r\n Salesforce support is not available. Use at your own risk.\r\n It's provided as is and without any type of warranties.
 
 This toolkit has the purpose of expand the usabilty of TCRM. There are many tasks that are difficult to do using the UI like uploading CSVs or backing up data. The goal is to make those tasks easy to complete.
 
