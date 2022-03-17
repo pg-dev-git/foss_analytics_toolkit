@@ -338,7 +338,7 @@ class sfdc_login():
         print("\r\n")
         line_print_ext()
         time.sleep(0.1)
-        prCyan("                            Toolkit for Salesfoce\'s Analytics REST API ")
+        prCyan("                            FOSS Analytics Toolkit for Salesfoce REST API ")
         time.sleep(0.3)
         prGreen("                                                 v0.1")
         prCyan("                                       Salesforce API v53.0")
