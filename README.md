@@ -46,6 +46,12 @@ When you select this option on the console, enter your instance username and the
 
 #### ----------------------------------------------------------------------------------------------------------------
 
+## Security
+
+All config files will be encrypted with a password that you set up on the first run. If you forget the password, just delete the config files in the data folder and start from scratch.
+
+#### ----------------------------------------------------------------------------------------------------------------
+
 ## Data Extraction and Upload Performance
 
 When this tool is not targeted to execute massive "ETL" jobs, it can perform decent extractions/uploads. 
