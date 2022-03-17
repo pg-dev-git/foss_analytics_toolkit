@@ -54,6 +54,13 @@ All config files will be encrypted with a password that you set up on the first 
 
 #### ----------------------------------------------------------------------------------------------------------------
 
+## Contact
+
+You can reach out via LinkedIn: https://www.linkedin.com/in/pedro-gagliardi-a9b95638/
+Or submit a PR here on GitHub
+
+#### ----------------------------------------------------------------------------------------------------------------
+
 ## Data Extraction and Upload Performance
 
 When this tool is not targeted to execute massive "ETL" jobs, it can perform decent extractions/uploads. 
