@@ -30,13 +30,15 @@ When you select this option on the console, enter your instance username and the
 
 ### Instructions for Connected App: https://github.com/pg-dev-git/tcrm_toolkit/blob/main/conn_app.md
 
-## Data Extraction Performance
+## Data Extraction and Upload Performance
 
-When this tool is not targeted to execute massive "ETL" jobs, it can perform decent downloads. If you want to download big datasets, you will need a lot of ram.
-The following numbers were obtained on a limited virtual machine with 6 CPU Cores and 8GB of ram.
+When this tool is not targeted to execute massive "ETL" jobs, it can perform decent extractions/uploads. 
+If you want to download big datasets, you will need a lot of RAM.
+The following numbers were obtained on Windows Desktop with 16 cores and 32gb of RAM and a Ubuntu Desktop with 8 cores and 16gb of RAM.
+The tool will automatically try to use disk space in case you run out of RAM but it could also help if you manually increase the size of your SWAP.
 
 ![alt text](https://i.ibb.co/CMptHth/perf-table.jpg)
 
-https://ibb.co/MG02szW
-https://ibb.co/sgZ825v
+![alt text](https://i.ibb.co/vQnwHNg/16.jpg)
 
+![alt text](https://i.ibb.co/kGtNx3g/32.jpg)
