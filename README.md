@@ -5,25 +5,34 @@
 This toolkit has the purpose of expand the usabilty of TCRM. There are many tasks that are difficult to do using the UI like uploading CSVs or backing up data. The goal is to make those tasks easy to complete.
 
 #### ----------------------------------------------------------------------------------------------------------------
-#### Dependencies:
+
+### Dependencies:
 You need to have Salesforce CLI installed. Get it from here: https://developer.salesforce.com/tools/sfdxcli
 
-##### Notes for Win10: 
+#### Notes for Win10: 
 You need to install *Windows Terminal* from the Microsoft App Store. There are colors and functions in the app that won't work in command prompt. You can get it here: https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701
-
-Also, make sure you have the Visual C++ Redist installed. Get it from here: https://aka.ms/vs/16/release/vc_redist.x64.exe
-
-#### Python:
-The recommended version of Python is 3.9 but you can use 3.8 too. Python 3.10 won't work at the moment.
-
-You can run "python3.9 -m pip install -r requirements.txt" to install the required dependencies for the tool to run properly.
-#### ----------------------------------------------------------------------------------------------------------------
 
 After installing Windows Terminal, reboot and now you should have an option to open the terminal when you right click inside a directory.
 Navigate to the folder you extracted the tool, right click and launch Windows Terminal.
 Then just launch TCRM_toolkit.exe from it.
 
+Also, make sure you have the Visual C++ Redist installed. Get it from here: https://aka.ms/vs/16/release/vc_redist.x64.exe
+
+### Python:
+The recommended version of Python is 3.9 but you can use 3.8 too. Python 3.10 won't work at the moment.
+
+You can run "python3.9 -m pip install -r requirements.txt" to install the required dependencies for the tool to run properly.
+
+#### ----------------------------------------------------------------------------------------------------------------
+
+### Compatibility:
+This tool is able to run on Windows/Linux/MacOS without any issues. If you find a bug, please report it.
+
+#### ----------------------------------------------------------------------------------------------------------------
+
 ### At this time, the only date format supported when uploading CSV files is: yyyy/mm/dd. If another format is used, the field will be formatted as text.
+
+#### ----------------------------------------------------------------------------------------------------------------
 
 ## Login instructions
 
@@ -34,6 +43,8 @@ There are two ways how to authenticate. Web Login and via a Connected app. The W
 When you select this option on the console, enter your instance username and the server id. Your browser will open up the Salesforce login screen. Enter your credentials and you should be good to go. You can close the browser afterwards. *Make sure your user has a TCRM license and access to the Wave API*
 
 ### Instructions for Connected App: https://github.com/pg-dev-git/analytics_toolkit_source/blob/master/conn-app.md
+
+#### ----------------------------------------------------------------------------------------------------------------
 
 ## Data Extraction and Upload Performance
 
