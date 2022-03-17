@@ -35,7 +35,7 @@ When you select this option on the console, enter your instance username and the
 When this tool is not targeted to execute massive "ETL" jobs, it can perform decent downloads. If you want to download big datasets, you will need a lot of ram.
 The following numbers were obtained on a limited virtual machine with 6 CPU Cores and 8GB of ram.
 
-![alt text](https://ibb.co/2s06k6g)
+![alt text](https://i.ibb.co/vQnwHNg/16.jpg)
 
 https://ibb.co/MG02szW
 https://ibb.co/sgZ825v
