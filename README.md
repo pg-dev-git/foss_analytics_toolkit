@@ -38,6 +38,8 @@ This tool is able to run on Windows/Linux/MacOS without any issues. If you find 
 
 There are two ways how to authenticate. Web Login and via a Connected app. The Web Login is the easier and recommended way.
 
+You will need the server id from the Company Information section of your instance and also the domain name.
+
 ### Instructions for Web Login:
 
 When you select this option on the console, enter your instance username and the server id. Your browser will open up the Salesforce login screen. Enter your credentials and you should be good to go. You can close the browser afterwards. *Make sure your user has a TCRM license and access to the Wave API*
