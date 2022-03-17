@@ -12,6 +12,11 @@ You need to have Salesforce CLI installed. Get it from here: https://developer.s
 You need to install *Windows Terminal* from the Microsoft App Store. There are colors and functions in the app that won't work in command prompt. You can get it here: https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701
 
 Also, make sure you have the Visual C++ Redist installed. Get it from here: https://aka.ms/vs/16/release/vc_redist.x64.exe
+
+#### Python:
+The recommended version of Python is 3.9 but you can use 3.8 too. Python 3.10 won't work at the moment.
+
+You can run "python3.9 -m pip install -r requirements.txt" to install the required dependencies for the tool to run properly.
 #### ----------------------------------------------------------------------------------------------------------------
 
 After installing Windows Terminal, reboot and now you should have an option to open the terminal when you right click inside a directory.
