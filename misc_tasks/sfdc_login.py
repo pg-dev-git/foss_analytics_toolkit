@@ -342,7 +342,7 @@ class sfdc_login():
         time.sleep(0.3)
         prGreen("                                                 v0.1")
         prCyan("                                       Salesforce API v53.0")
-        prPurple("                    https://github.com/pg-dev-git/analytics_toolkit_source")
+        prPurple("                         https://github.com/pg-dev-git/foss_analytics_toolkit")
         time.sleep(0.5)
         line_print_ext()
         prLightPurple("This is a FOSS tool, not an official Salesforce or Tableau product.\r\n This toolkit hasn't been officially tested or documented by Salesforce or Tableau.\r\n Salesforce support is not available. Use at your own risk.\r\n")
