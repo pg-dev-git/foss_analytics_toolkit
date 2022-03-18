@@ -44,7 +44,7 @@ You will need the server id from the Company Information section of your instanc
 
 When you select this option on the console, enter your instance username and the server id. Your browser will open up the Salesforce login screen. Enter your credentials and you should be good to go. You can close the browser afterwards. *Make sure your user has a TCRM license and access to the Wave API*
 
-### Instructions for Connected App: https://github.com/pg-dev-git/analytics_toolkit_source/blob/master/conn-app.md
+### Instructions for Connected App: https://github.com/pg-dev-git/foss_analytics_toolkit/blob/master/conn-app.md
 
 #### ----------------------------------------------------------------------------------------------------------------
 
