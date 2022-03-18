@@ -15,7 +15,7 @@ def get_platform():
 
 def init_folders():
     try:
-        dir = "tcrm_toolkit_data"
+        dir = "toolkit_data"
         os.mkdir(dir)
     except OSError as error:
             print(" ")
@@ -25,8 +25,8 @@ def init_folders():
     os_ = get_platform()
 
     if os_ == "Windows":
-        d_ext = "{}".format(cd)+"\\tcrm_toolkit_data\\"
+        d_ext = "{}".format(cd)+"\\toolkit_data\\"
     else:
-        d_ext = "{}".format(cd)+"/tcrm_toolkit_data/"
+        d_ext = "{}".format(cd)+"/toolkit_data/"
 
     return d_ext
