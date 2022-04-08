@@ -53,7 +53,10 @@ def mass_dashboards(access_token,server_id,server_domain):
 
     cd = os.getcwd()
 
-    d_ext = "{}".format(cd)+"\\{}\\".format(dataflow_extraction_dir)
+    if os_ == "Windows":
+        d_ext = "{}".format(cd)+"\\{}\\".format(dataflow_extraction_dir)
+    else:
+        d_ext = "{}".format(cd)+"/{}/".format(dataflow_extraction_dir)
 
     os.chdir(d_ext)
 
@@ -127,5 +130,5 @@ def mass_dashboards(access_token,server_id,server_domain):
     cd = os.getcwd()
     prCyan("\r\n" + "Find the files here: ")
     prLightPurple("\r\n" + "{}".format(cd))
-    
+
     os.chdir("..")
