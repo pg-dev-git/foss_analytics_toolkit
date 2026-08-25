@@ -1,7 +1,8 @@
 """Unit tests for Salesforce client."""
 
+import base64
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 
@@ -15,27 +16,55 @@ from tcrm_toolkit.core.exceptions import (
 )
 
 
+@pytest.fixture
+def test_settings():
+    """Create test settings with valid keys."""
+    encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
+    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
+    # Use model_construct to bypass .env file loading and validation
+    return Settings.model_construct(
+        encryption_key=encryption_key,
+        jwt_secret_key=jwt_secret,
+        sf_api_version="v60.0",
+        sf_default_domain="test.salesforce.com",
+    )
+
+
+@pytest.fixture
+def client(test_settings):
+    """Create test client."""
+    return SalesforceClient(
+        access_token="test_token",
+        instance_url="https://test.salesforce.com",
+        settings=test_settings,
+    )
+
+
+@pytest.fixture
+def retry_test_settings():
+    """Create test settings with valid keys for retry tests."""
+    encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
+    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
+    # Use model_construct to bypass .env file loading and validation
+    return Settings.model_construct(
+        encryption_key=encryption_key,
+        jwt_secret_key=jwt_secret,
+        sf_api_version="v60.0",
+        sf_default_domain="test.salesforce.com",
+    )
+
+
+@pytest.fixture
+def retry_client(retry_test_settings):
+    return SalesforceClient(
+        access_token="test_token",
+        instance_url="https://test.salesforce.com",
+        settings=retry_test_settings,
+    )
+
+
 class TestSalesforceClient:
     """Tests for SalesforceClient."""
-
-    @pytest.fixture
-    def settings(self):
-        """Create test settings."""
-        return Settings(
-            encryption_key="dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==",
-            jwt_secret_key="test-jwt-secret-key-that-is-long-enough",
-            sf_api_version="v60.0",
-            sf_default_domain="test.salesforce.com",
-        )
-
-    @pytest.fixture
-    def client(self, settings):
-        """Create test client."""
-        return SalesforceClient(
-            access_token="test_token",
-            instance_url="https://test.salesforce.com",
-            settings=settings,
-        )
 
     def test_base_url(self, client):
         """Test base URL construction."""
@@ -92,10 +121,11 @@ class TestSalesforceClient:
         """Test handling 400 response with JSON error."""
         response = MagicMock(spec=httpx.Response)
         response.status_code = 400
-        response.json.return_value = {
+        # Salesforce returns errors as a list
+        response.json.return_value = [{
             "message": "Invalid query",
             "errorCode": "MALFORMED_QUERY",
-        }
+        }]
 
         with pytest.raises(SalesforceAPIError) as exc_info:
             client._handle_response(response)
@@ -129,26 +159,11 @@ class TestSalesforceClient:
 class TestSalesforceClientRetry:
     """Tests for retry logic."""
 
-    @pytest.fixture
-    def settings(self):
-        return Settings(
-            encryption_key="dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==",
-            jwt_secret_key="test-jwt-secret-key-that-is-long-enough",
-        )
-
-    @pytest.fixture
-    def client(self, settings):
-        return SalesforceClient(
-            access_token="test_token",
-            instance_url="https://test.salesforce.com",
-            settings=settings,
-        )
-
     @pytest.mark.asyncio
-    async def test_retry_on_timeout(self, client):
+    async def test_retry_on_timeout(self, retry_client):
         """Test retry on timeout."""
         mock_client = AsyncMock()
-        client._client = mock_client
+        retry_client._client = mock_client
 
         # First two calls timeout, third succeeds
         mock_client.request.side_effect = [
@@ -159,20 +174,20 @@ class TestSalesforceClientRetry:
 
         # This would test the retry logic, but it's complex to test fully
         # without more mocking. The key point is that tenacity is configured.
-        assert client.retry_client is not None
+        assert retry_client.retry_client is not None
 
     @pytest.mark.asyncio
-    async def test_no_retry_on_401(self, client):
+    async def test_no_retry_on_401(self, retry_client):
         """Test that 401 is not retried (handled as auth error)."""
         mock_client = AsyncMock()
-        client._client = mock_client
+        retry_client._client = mock_client
 
         response = MagicMock(spec=httpx.Response)
         response.status_code = 401
         mock_client.request.return_value = response
 
         with pytest.raises(SalesforceAuthError):
-            await client.get("/test")
+            await retry_client.get("/test")
 
         # Should only be called once (no retry on 401)
         assert mock_client.request.call_count == 1

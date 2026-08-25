@@ -4,37 +4,54 @@ import base64
 import pytest
 
 from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
+from tcrm_toolkit.core.config import Settings
+
+
+@pytest.fixture
+def test_settings():
+    """Create test settings with valid keys."""
+    encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
+    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
+    # Use model_construct to bypass .env file loading and validation
+    return Settings.model_construct(
+        encryption_key=encryption_key,
+        jwt_secret_key=jwt_secret,
+    )
+
+
+@pytest.fixture
+def crypto_manager(test_settings):
+    """Create a crypto manager for testing."""
+    return CryptoManager(test_settings.encryption_key)
 
 
 class TestCryptoManager:
     """Tests for CryptoManager."""
 
-    def test_encrypt_decrypt_roundtrip(self):
+    def test_encrypt_decrypt_roundtrip(self, crypto_manager):
         """Test that encrypt/decrypt works correctly."""
-        crypto = CryptoManager("dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==")
         plaintext = "test secret data"
 
-        encrypted = crypto.encrypt(plaintext)
-        decrypted = crypto.decrypt(encrypted)
+        encrypted = crypto_manager.encrypt(plaintext)
+        decrypted = crypto_manager.decrypt(encrypted)
 
         assert decrypted == plaintext
 
-    def test_encrypt_produces_different_ciphertext(self):
+    def test_encrypt_produces_different_ciphertext(self, crypto_manager):
         """Test that encrypting same plaintext twice produces different ciphertext."""
-        crypto = CryptoManager("dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==")
         plaintext = "test secret data"
 
-        encrypted1 = crypto.encrypt(plaintext)
-        encrypted2 = crypto.encrypt(plaintext)
+        encrypted1 = crypto_manager.encrypt(plaintext)
+        encrypted2 = crypto_manager.encrypt(plaintext)
 
         # Different salts should produce different ciphertext
         assert encrypted1.ciphertext != encrypted2.ciphertext
         assert encrypted1.salt != encrypted2.salt
 
-    def test_decrypt_with_wrong_key_fails(self):
+    def test_decrypt_with_wrong_key_fails(self, test_settings):
         """Test that decrypting with wrong key fails."""
-        crypto1 = CryptoManager("dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==")
-        crypto2 = CryptoManager("dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcg==")
+        crypto1 = CryptoManager(test_settings.encryption_key)
+        crypto2 = CryptoManager(base64.urlsafe_b64encode(b"z" * 32).decode())
 
         plaintext = "test secret data"
         encrypted = crypto1.encrypt(plaintext)
@@ -42,13 +59,12 @@ class TestCryptoManager:
         with pytest.raises(Exception):
             crypto2.decrypt(encrypted)
 
-    def test_encrypt_json_decrypt_json(self):
+    def test_encrypt_json_decrypt_json(self, crypto_manager):
         """Test JSON encryption/decryption."""
-        crypto = CryptoManager("dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==")
         data = {"key": "value", "number": 42, "nested": {"a": 1}}
 
-        encrypted = crypto.encrypt_json(data)
-        decrypted = crypto.decrypt_json(encrypted)
+        encrypted = crypto_manager.encrypt_json(data)
+        decrypted = crypto_manager.decrypt_json(encrypted)
 
         assert decrypted == data
 
