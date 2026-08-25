@@ -1,7 +1,7 @@
 """SF CLI-based authentication service."""
 
 import asyncio
-from typing import Optional
+from typing import Any, Optional
 
 import structlog
 
