@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Optional
 
 import httpx
 import structlog
@@ -429,7 +429,7 @@ async def create_client(
 async def create_client_from_sf_cli(
     alias: str = "default",
     settings: Settings | None = None,
-    crypto_manager: "CryptoManager" | None = None,
+    crypto_manager: Optional["CryptoManager"] = None,
 ) -> AsyncIterator[SalesforceClient]:
     """
     Context manager for creating a SalesforceClient using SF CLI authentication.
