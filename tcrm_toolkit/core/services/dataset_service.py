@@ -7,7 +7,7 @@ import math
 import structlog
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Callable
 
 import pandas as pd
 
@@ -164,7 +164,7 @@ class DatasetService:
         self,
         dataset_id: str,
         output_path: Path,
-        progress_callback: callable | None = None,
+        progress_callback: Callable | None = None,
     ) -> ExtractionJob:
         """Extract dataset to CSV file with progress tracking."""
         # Get dataset info
@@ -272,7 +272,7 @@ class DatasetService:
         self,
         dataset_id: str,
         output_path: Path,
-        progress_callback: callable | None = None,
+        progress_callback: Callable | None = None,
     ) -> AsyncIterator[ExtractionProgress]:
         """Extract dataset to CSV with streaming progress updates."""
         dataset = await self.get_dataset(dataset_id)
@@ -381,7 +381,7 @@ class DatasetService:
         dataset_name: str | None = None,
         operation: str = "Overwrite",
         chunk_size: int = 50000,
-        progress_callback: callable | None = None,
+        progress_callback: Callable | None = None,
     ) -> UploadJob:
         """Upload CSV file to dataset with chunked multipart upload."""
         if not file_path.exists():

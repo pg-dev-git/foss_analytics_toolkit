@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from rich.console import Console
 from rich.panel import Panel
@@ -140,7 +140,7 @@ def create_progress_bar() -> Progress:
 async def run_with_progress(
     coro,
     description: str,
-    progress_callback: callable | None = None,
+    progress_callback: Callable | None = None,
 ) -> Any:
     """Run an async coroutine with a progress bar."""
     with create_progress_bar() as progress:
