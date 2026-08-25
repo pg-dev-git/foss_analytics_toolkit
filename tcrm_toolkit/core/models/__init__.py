@@ -1,8 +1,30 @@
 """Pydantic models for TCRM Toolkit domain objects."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 from pydantic import BaseModel, Field, ConfigDict
+
+
+# Progress Models (used by UI)
+@dataclass
+class ExtractionProgress:
+    """Progress information for dataset extraction."""
+    total_rows: int
+    processed_rows: int
+    current_chunk: int
+    total_chunks: int
+    status: str
+
+
+@dataclass
+class UploadProgress:
+    """Progress information for CSV upload."""
+    total_rows: int
+    uploaded_rows: int
+    current_part: int
+    total_parts: int
+    status: str
 
 
 # Auth Models

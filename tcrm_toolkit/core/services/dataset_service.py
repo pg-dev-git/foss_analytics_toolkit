@@ -5,7 +5,6 @@ import base64
 import json
 import math
 import structlog
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable
 
@@ -20,29 +19,11 @@ from tcrm_toolkit.core.models import (
     DatasetXMD,
     ExtractionJob,
     UploadJob,
+    ExtractionProgress,
+    UploadProgress,
 )
 
 logger = structlog.get_logger(__name__)
-
-
-@dataclass
-class ExtractionProgress:
-    """Progress information for dataset extraction."""
-    total_rows: int
-    processed_rows: int
-    current_chunk: int
-    total_chunks: int
-    status: str
-
-
-@dataclass
-class UploadProgress:
-    """Progress information for CSV upload."""
-    total_rows: int
-    uploaded_rows: int
-    current_part: int
-    total_parts: int
-    status: str
 
 
 class DatasetService:
