@@ -49,8 +49,59 @@ class SFCLIManager:
 
     def is_available(self) -> bool:
         """Check if SF CLI is installed and available."""
-        self._cli_path = shutil.which(self.cli_command)
+        self._cli_path = self._find_cli_path()
         return self._cli_path is not None
+
+    def _find_cli_path(self) -> Optional[str]:
+        """Find SF CLI executable path, checking common locations."""
+        # First try standard PATH lookup
+        path = shutil.which(self.cli_command)
+        if path:
+            return path
+
+        # On Windows, check common installation locations
+        import os
+        import sys
+
+        if sys.platform == "win32":
+            # Common Windows locations for SF CLI
+            possible_paths = [
+                # npm global bin
+                os.path.expandvars(r"%APPDATA%\npm\sf.cmd"),
+                os.path.expandvars(r"%APPDATA%\npm\sfdx.cmd"),
+                # Local npm bin
+                os.path.expandvars(r"%LOCALAPPDATA%\npm\sf.cmd"),
+                os.path.expandvars(r"%LOCALAPPDATA%\npm\sfdx.cmd"),
+                # Program Files
+                os.path.expandvars(r"%PROGRAMFILES%\Salesforce CLI\bin\sf.cmd"),
+                os.path.expandvars(r"%PROGRAMFILES%\Salesforce CLI\bin\sfdx.cmd"),
+                os.path.expandvars(r"%PROGRAMFILES(X86)%\Salesforce CLI\bin\sf.cmd"),
+                os.path.expandvars(r"%PROGRAMFILES(X86)%\Salesforce CLI\bin\sfdx.cmd"),
+                # User profile
+                os.path.expandvars(r"%USERPROFILE%\AppData\Local\sf\bin\sf.cmd"),
+                os.path.expandvars(r"%USERPROFILE%\AppData\Local\sf\bin\sfdx.cmd"),
+            ]
+
+            for p in possible_paths:
+                if os.path.exists(p):
+                    return p
+
+        # On Unix-like systems, check common locations
+        else:
+            possible_paths = [
+                "/usr/local/bin/sf",
+                "/usr/local/bin/sfdx",
+                "/opt/sfdx/bin/sf",
+                "/opt/sfdx/bin/sfdx",
+                os.path.expanduser("~/.local/bin/sf"),
+                os.path.expanduser("~/.local/bin/sfdx"),
+            ]
+
+            for p in possible_paths:
+                if os.path.exists(p):
+                    return p
+
+        return None
 
     def _run_command(self, args: list[str], timeout: int = 120) -> subprocess.CompletedProcess:
         """
@@ -69,11 +120,11 @@ class SFCLIManager:
         """
         if not self.is_available():
             raise SFCLINotFoundError(
-                f"SF CLI ('{self.cli_command}') not found in PATH. "
+                f"SF CLI ('{self.cli_command}') not found. "
                 "Install from https://developer.salesforce.com/tools/sfdxcli"
             )
 
-        cmd = [self.cli_command] + args
+        cmd = [self._cli_path] + args
         logger.debug("running_sf_cli", command=cmd)
 
         try:
@@ -108,11 +159,11 @@ class SFCLIManager:
         """Run SF CLI command asynchronously."""
         if not self.is_available():
             raise SFCLINotFoundError(
-                f"SF CLI ('{self.cli_command}') not found in PATH. "
+                f"SF CLI ('{self.cli_command}') not found. "
                 "Install from https://developer.salesforce.com/tools/sfdxcli"
             )
 
-        cmd = [self.cli_command] + args
+        cmd = [self._cli_path] + args
         logger.debug("running_sf_cli_async", command=cmd)
 
         try:
