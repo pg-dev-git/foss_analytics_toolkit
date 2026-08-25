@@ -37,7 +37,7 @@ app.add_typer(jobs_app, name="jobs")
 async def _get_authenticated_client():
     """Get an authenticated Salesforce client."""
     settings = get_settings()
-    auth_service = AuthService(settings, CryptoManager())
+    auth_service = AuthService(settings, CryptoManager(settings.encryption_key))
 
     # Try to get stored tokens - this is a placeholder
     # In real implementation, we'd list available users and let them choose

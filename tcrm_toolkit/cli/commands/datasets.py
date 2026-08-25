@@ -32,7 +32,7 @@ app = typer.Typer(name="datasets", help="Dataset commands")
 def _get_dataset_service() -> tuple[DatasetService, SalesforceClient, AuthService]:
     """Get configured dataset service with client and auth."""
     settings = get_settings()
-    auth_service = AuthService(settings, CryptoManager())
+    auth_service = AuthService(settings, CryptoManager(settings.encryption_key))
     # We'll need to get the token from keyring
     # For now, this is a placeholder - in real usage, token would be retrieved
     raise NotImplementedError("Need to implement token retrieval from keyring")

@@ -30,7 +30,7 @@ app = typer.Typer(name="auth", help="Authentication commands")
 def _get_auth_service() -> AuthService:
     """Get configured auth service."""
     settings = get_settings()
-    crypto = CryptoManager()
+    crypto = CryptoManager(settings.encryption_key)
     return AuthService(settings, crypto)
 
 
