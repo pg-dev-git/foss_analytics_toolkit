@@ -429,7 +429,7 @@ async def create_client(
 async def create_client_from_sf_cli(
     alias: str = "default",
     settings: Settings | None = None,
-    crypto_manager: CryptoManager | None = None,
+    crypto_manager: "CryptoManager" | None = None,
 ) -> AsyncIterator[SalesforceClient]:
     """
     Context manager for creating a SalesforceClient using SF CLI authentication.
