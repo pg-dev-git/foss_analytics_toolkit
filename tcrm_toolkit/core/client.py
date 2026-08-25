@@ -97,7 +97,6 @@ class SalesforceClient:
                     httpx.NetworkError,
                     httpx.RemoteProtocolError,
                     SalesforceRateLimitError,
-                    SalesforceAPIError,  # Will be filtered by status code
                 )),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
                 after=after_log(logger, logging.INFO),
@@ -149,12 +148,22 @@ class SalesforceClient:
             # Try to parse error details from response
             try:
                 error_data = response.json()
-                error_msg = error_data.get("message", "Unknown error")
-                error_code = error_data.get("errorCode", "UNKNOWN_ERROR")
+                # Salesforce returns errors as a list
+                if isinstance(error_data, list) and error_data:
+                    error = error_data[0]
+                    error_msg = error.get("message", "Unknown error")
+                    error_code = error.get("errorCode", "UNKNOWN_ERROR")
+                else:
+                    error_msg = error_data.get("message", "Unknown error")
+                    error_code = error_data.get("errorCode", "UNKNOWN_ERROR")
                 raise SalesforceAPIError(
                     f"{error_code}: {error_msg}",
                     status_code=response.status_code,
+                    error_code=error_code,
                 )
+            except SalesforceAPIError:
+                # Re-raise SalesforceAPIError (e.g., from the raise above)
+                raise
             except Exception:
                 raise SalesforceAPIError(
                     f"Request failed: {response.status_code}",

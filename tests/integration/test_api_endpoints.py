@@ -36,9 +36,12 @@ class MockResponse:
 @pytest.fixture
 def settings():
     """Create test settings."""
+    import base64
+    encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
+    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     return Settings(
-        encryption_key="dGVzdC1tYXN0ZXJrZXktdGhhdC1pcy0zMi1ieXRlcw==",
-        jwt_secret_key="test-jwt-secret-key-that-is-long-enough",
+        encryption_key=encryption_key,
+        jwt_secret_key=jwt_secret_key,
         sf_api_version="v60.0",
         sf_default_domain="test.salesforce.com",
     )
@@ -211,9 +214,9 @@ class TestDatasetServiceIntegration:
     """Integration tests for DatasetService."""
 
     @pytest.mark.asyncio
-    async def test_extract_fields_from_xmd(self, mock_client):
+    async def test_extract_fields_from_xmd(self, mock_client, settings):
         """Test field extraction from XMD."""
-        service = DatasetService(mock_client)
+        service = DatasetService(mock_client, settings=settings)
 
         from tcrm_toolkit.core.models import DatasetXMD
         xmd = DatasetXMD(
@@ -242,15 +245,20 @@ class TestDashboardServiceIntegration:
     """Integration tests for DashboardService."""
 
     @pytest.mark.asyncio
-    async def test_backup_dashboard(self, mock_client):
+    async def test_backup_dashboard(self, mock_client, settings):
         """Test dashboard backup."""
-        service = DashboardService(mock_client)
+        service = DashboardService(mock_client, settings=settings)
 
+        from datetime import datetime
         mock_response = MockResponse({
             "id": "0FK000000000001",
             "name": "TestDashboard",
             "label": "Test Dashboard",
             "state": {"widgets": []},
+            "created_date": datetime.utcnow().isoformat(),
+            "created_by_id": "005000000000001",
+            "last_modified_date": datetime.utcnow().isoformat(),
+            "last_modified_by_id": "005000000000001",
         })
         mock_client._client.request.return_value = mock_response
 
@@ -258,16 +266,16 @@ class TestDashboardServiceIntegration:
 
         assert backup.dashboard_id == "0FK000000000001"
         assert backup.dashboard_name == "TestDashboard"
-        assert "widgets" in backup.json_definition
+        assert "widgets" in backup.json_definition.get("state", {})
 
 
 class TestDataflowServiceIntegration:
     """Integration tests for DataflowService."""
 
     @pytest.mark.asyncio
-    async def test_wait_for_dataflow_job(self, mock_client):
+    async def test_wait_for_dataflow_job(self, mock_client, settings):
         """Test waiting for dataflow job completion."""
-        service = DataflowService(mock_client)
+        service = DataflowService(mock_client, settings=settings)
 
         # Mock job status progression
         call_count = 0
@@ -279,8 +287,8 @@ class TestDataflowServiceIntegration:
                 return {
                     "dataflowjobs": [{
                         "id": "03D000000000001",
-                        "dataflowId": "03C000000000001",
-                        "dataflowName": "TestDataflow",
+                        "dataflow_id": "03C000000000001",
+                        "dataflow_name": "TestDataflow",
                         "command": "start",
                         "status": "Running",
                     }]
@@ -288,8 +296,8 @@ class TestDataflowServiceIntegration:
             return {
                 "dataflowjobs": [{
                     "id": "03D000000000001",
-                    "dataflowId": "03C000000000001",
-                    "dataflowName": "TestDataflow",
+                    "dataflow_id": "03C000000000001",
+                    "dataflow_name": "TestDataflow",
                     "command": "start",
                     "status": "Success",
                 }]

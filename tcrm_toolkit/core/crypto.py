@@ -11,8 +11,6 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from tcrm_toolkit.core.config import get_settings
-
 
 @dataclass
 class EncryptedData:
@@ -52,12 +50,9 @@ class CryptoManager:
     # PBKDF2 iterations (adjust based on security requirements)
     DEFAULT_ITERATIONS = 214322
 
-    def __init__(self, master_key: str | None = None):
-        """Initialize with master key from settings or parameter."""
-        settings = get_settings()
-        self._master_key = base64.urlsafe_b64decode(
-            (master_key or settings.encryption_key).encode()
-        )
+    def __init__(self, master_key: str):
+        """Initialize with master key (base64 encoded 32 bytes)."""
+        self._master_key = base64.urlsafe_b64decode(master_key.encode())
 
     def _derive_key(self, salt: bytes, iterations: int | None = None) -> bytes:
         """Derive encryption key from master key and salt."""
@@ -151,4 +146,6 @@ class CryptoManager:
 
 def create_crypto_manager() -> CryptoManager:
     """Factory function to create CryptoManager from settings."""
-    return CryptoManager()
+    from tcrm_toolkit.core.config import get_settings
+    settings = get_settings()
+    return CryptoManager(settings.encryption_key)
