@@ -423,3 +423,42 @@ async def create_client(
         yield client
     finally:
         await client.close()
+
+
+@asynccontextmanager
+async def create_client_from_sf_cli(
+    alias: str = "default",
+    settings: Settings | None = None,
+    crypto_manager: CryptoManager | None = None,
+) -> AsyncIterator[SalesforceClient]:
+    """
+    Context manager for creating a SalesforceClient using SF CLI authentication.
+
+    Args:
+        alias: SF CLI org alias
+        settings: Optional settings override
+        crypto_manager: Optional CryptoManager for token encryption
+
+    Yields:
+        Authenticated SalesforceClient
+
+    Example:
+        async with create_client_from_sf_cli("myorg") as client:
+            datasets = await client.list_datasets()
+    """
+    from tcrm_toolkit.core.auth.sf_cli_auth import SFCLIAuthService
+    from tcrm_toolkit.core.config import get_settings
+    from tcrm_toolkit.core.crypto import CryptoManager, create_crypto_manager
+
+    settings = settings or get_settings()
+    crypto = crypto_manager or create_crypto_manager()
+    auth_service = SFCLIAuthService(settings, crypto)
+
+    access_token = await auth_service.get_access_token(alias)
+    instance_url = await auth_service.get_instance_url(alias)
+
+    client = SalesforceClient(access_token, instance_url, settings)
+    try:
+        yield client
+    finally:
+        await client.close()
