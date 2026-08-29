@@ -1,22 +1,20 @@
 /* Light theme - self-contained stylesheet */
-:root {
-    --background: #ffffff;
-    --surface: #f8f8f8;
-    --surface-darken-1: #eeeeee;
-    --surface-darken-2: #e0e0e0;
-    --surface-lighten-1: #ffffff;
-    --surface-lighten-2: #f2f2f2;
-    --primary: #0066cc;
-    --primary-darken-2: #004c99;
-    --primary-darken-3: #003366;
-    --secondary: #006600;
-    --success: #006600;
-    --warning: #cc9900;
-    --error: #cc0000;
-    --text: #222222;
-    --text-muted: #666666;
-    --accent: #009900;
-}
+$background: #ffffff;
+$surface: #f8f8f8;
+$surface-darken-1: #eeeeee;
+$surface-darken-2: #e0e0e0;
+$surface-lighten-1: #ffffff;
+$surface-lighten-2: #f2f2f2;
+$primary: #0066cc;
+$primary-darken-2: #004c99;
+$primary-darken-3: #003366;
+$secondary: #006600;
+$success: #006600;
+$warning: #cc9900;
+$error: #cc0000;
+$text: #222222;
+$text-muted: #666666;
+$accent: #009900;
 
 Screen {
     background: $surface;
