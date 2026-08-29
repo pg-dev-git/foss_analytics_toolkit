@@ -224,3 +224,7 @@ class SFCLIAuthService:
         except Exception as e:
             logger.error("list_orgs_failed", error=str(e))
             return []
+
+    async def close(self) -> None:
+        """Cleanup resources."""
+        pass
