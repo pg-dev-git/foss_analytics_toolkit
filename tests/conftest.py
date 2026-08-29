@@ -62,3 +62,23 @@ def sample_dataflow():
         lastModifiedDate="2024-01-01T00:00:00.000Z",
         lastModifiedById="005000000000001",
     )
+
+
+@pytest.fixture(autouse=True)
+def _set_test_env(monkeypatch):
+    """Set default test environment variables for settings."""
+    import base64
+    test_enc_key = base64.urlsafe_b64encode(b"12345678901234567890123456789012").decode()
+    monkeypatch.setenv("ENCRYPTION_KEY", test_enc_key)
+    monkeypatch.setenv("JWT_SECRET_KEY", "super_secret_jwt_key_that_is_long_enough_12345")
+
+
+@pytest.fixture
+def settings():
+    """Return Settings instance configured for tests."""
+    import base64
+    from tcrm_toolkit.core.config import Settings
+    return Settings(
+        encryption_key=base64.urlsafe_b64encode(b"12345678901234567890123456789012").decode(),
+        jwt_secret_key="super_secret_jwt_key_that_is_long_enough_12345",
+    )
