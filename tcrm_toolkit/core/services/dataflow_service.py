@@ -1,7 +1,8 @@
 """Dataflow service for TCRM Toolkit."""
 
-import structlog
 from typing import Any
+
+import structlog
 
 from tcrm_toolkit.core.client import SalesforceClient
 from tcrm_toolkit.core.config import Settings, get_settings

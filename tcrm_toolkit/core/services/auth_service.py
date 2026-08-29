@@ -8,7 +8,6 @@ import time
 import urllib.parse
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import httpx

@@ -3,11 +3,12 @@
 import asyncio
 import os
 import uuid
+from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Optional
-from concurrent.futures import ProcessPoolExecutor
+from typing import Any
 
 import structlog
 from textual.message import Message
@@ -34,15 +35,15 @@ class TaskProgress:
     message: str = ""
     details: dict = field(default_factory=dict)
     started_at: datetime = field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = None
-    error: Optional[str] = None
-    
+    completed_at: datetime | None = None
+    error: str | None = None
+
     @property
     def percent(self) -> float:
         if self.total == 0:
             return 0.0
         return min(100.0, (self.current / self.total) * 100)
-    
+
     @property
     def is_finished(self) -> bool:
         return self.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
@@ -54,7 +55,7 @@ class TaskResult:
     task_id: str
     status: TaskStatus
     result: Any = None
-    error: Optional[str] = None
+    error: str | None = None
     started_at: datetime = field(default_factory=datetime.utcnow)
     completed_at: datetime = field(default_factory=datetime.utcnow)
     metadata: dict = field(default_factory=dict)
@@ -84,7 +85,7 @@ class TaskRunner(Widget):
     - Cancellation support
     - Max concurrent tasks limit
     """
-    
+
     def __init__(
         self,
         max_concurrent: int = 3,
@@ -95,20 +96,20 @@ class TaskRunner(Widget):
         self.max_concurrent = max_concurrent
         self.max_history = max_history
         self.process_pool_size = process_pool_size or min(4, (os.cpu_count() or 4))
-        
+
         self._tasks: dict[str, asyncio.Task] = {}
         self._progress: dict[str, TaskProgress] = {}
         self._history: list[TaskResult] = []
         self._process_pool: ProcessPoolExecutor | None = None
         self._semaphore = asyncio.Semaphore(max_concurrent)
-    
+
     @property
     def process_pool(self) -> ProcessPoolExecutor:
         """Lazy-initialize process pool."""
         if self._process_pool is None:
             self._process_pool = ProcessPoolExecutor(max_workers=self.process_pool_size)
         return self._process_pool
-    
+
     async def run_task(
         self,
         coro_factory: Callable[[], Any],
@@ -120,7 +121,7 @@ class TaskRunner(Widget):
         Run a coroutine as a background task.
         """
         task_id = task_id or str(uuid.uuid4())[:8]
-        
+
         async with self._semaphore:
             progress = TaskProgress(
                 task_id=task_id,
@@ -129,21 +130,21 @@ class TaskRunner(Widget):
             )
             self._progress[task_id] = progress
             self.post_message(TaskProgressMessage(progress))
-            
+
             if progress_callback:
                 progress_callback(progress)
-            
+
             task = asyncio.create_task(self._run_task_impl(
                 task_id, name, coro_factory, progress, progress_callback
             ))
             self._tasks[task_id] = task
-            
+
             try:
                 result = await task
                 return result
             finally:
                 self._tasks.pop(task_id, None)
-    
+
     async def _run_task_impl(
         self,
         task_id: str,
@@ -156,24 +157,24 @@ class TaskRunner(Widget):
         try:
             coro = coro_factory()
             result = await coro
-            
+
             progress.status = TaskStatus.COMPLETED
             progress.current = progress.total or progress.current
             progress.message = f"{name} completed"
             progress.completed_at = datetime.utcnow()
-            
+
             task_result = TaskResult(
                 task_id=task_id,
                 status=TaskStatus.COMPLETED,
                 result=result,
                 completed_at=progress.completed_at,
             )
-            
+
         except asyncio.CancelledError:
             progress.status = TaskStatus.CANCELLED
             progress.message = f"{name} cancelled"
             progress.completed_at = datetime.utcnow()
-            
+
             task_result = TaskResult(
                 task_id=task_id,
                 status=TaskStatus.CANCELLED,
@@ -181,51 +182,51 @@ class TaskRunner(Widget):
                 completed_at=progress.completed_at,
             )
             raise
-            
+
         except Exception as e:
             logger.error("task_failed", task_id=task_id, name=name, error=str(e))
             progress.status = TaskStatus.FAILED
             progress.message = f"{name} failed: {e}"
             progress.error = str(e)
             progress.completed_at = datetime.utcnow()
-            
+
             task_result = TaskResult(
                 task_id=task_id,
                 status=TaskStatus.FAILED,
                 error=str(e),
                 completed_at=progress.completed_at,
             )
-        
+
         self.post_message(TaskProgressMessage(progress))
         if progress_callback:
             progress_callback(progress)
-        
+
         self._add_to_history(task_result)
         self.post_message(TaskCompletedMessage(task_result))
-        
+
         return task_result
-    
+
     def _add_to_history(self, result: TaskResult) -> None:
         self._history.append(result)
         if len(self._history) > self.max_history:
             self._history = self._history[-self.max_history:]
-    
+
     def get_progress(self, task_id: str) -> TaskProgress | None:
         return self._progress.get(task_id)
-    
+
     def get_all_progress(self) -> list[TaskProgress]:
         return list(self._progress.values())
-    
+
     def get_history(self) -> list[TaskResult]:
         return list(self._history)
-    
+
     async def cancel_task(self, task_id: str) -> bool:
         task = self._tasks.get(task_id)
         if task and not task.done():
             task.cancel()
             return True
         return False
-    
+
     async def cancel_all(self) -> int:
         count = 0
         for task in self._tasks.values():
@@ -233,11 +234,11 @@ class TaskRunner(Widget):
                 task.cancel()
                 count += 1
         return count
-    
+
     async def run_in_process_pool(self, func: Callable, *args, **kwargs) -> Any:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(self.process_pool, func, *args, **kwargs)
-    
+
     async def close(self) -> None:
         await self.cancel_all()
         if self._tasks:
@@ -272,8 +273,9 @@ def merge_csv_chunks(chunk_paths: list[str], output_path: str) -> dict:
 
 def process_csv_chunk(args: tuple) -> dict:
     """Process a single CSV chunk for upload."""
-    import pandas as pd
     import base64
+
+    import pandas as pd
 
     chunk_data, chunk_index, total_chunks = args
     df = pd.read_csv(chunk_data)

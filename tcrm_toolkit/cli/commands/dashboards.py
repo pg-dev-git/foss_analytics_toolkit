@@ -6,17 +6,11 @@ from pathlib import Path
 import typer
 
 from tcrm_toolkit.cli.ui import (
-    console,
     print_header,
-    print_success,
-    print_error,
     print_info,
     print_warning,
     prompt_confirm,
-    create_dashboard_table,
-    print_dashboard_details,
 )
-from tcrm_toolkit.core import get_settings
 
 app = typer.Typer(name="dashboards", help="Dashboard commands")
 

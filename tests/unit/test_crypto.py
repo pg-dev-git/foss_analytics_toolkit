@@ -1,10 +1,11 @@
 """Unit tests for crypto module."""
 
 import base64
+
 import pytest
 
-from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
 from tcrm_toolkit.core.config import Settings
+from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
 
 
 @pytest.fixture

@@ -3,21 +3,16 @@
 import asyncio
 import json
 import os
-import platform
-import subprocess
-import socket
 from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Literal
-from urllib.parse import urlparse
 
 import httpx
 import structlog
 
 from tcrm_toolkit.core.config import Settings, get_settings
-from tcrm_toolkit.core.platform import is_windows, is_linux, is_macos
+from tcrm_toolkit.core.platform import is_windows
 
 logger = structlog.get_logger(__name__)
 
@@ -51,7 +46,7 @@ class SafetyResult:
     risk_level: RiskLevel = RiskLevel.SAFE
     details: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    
+
     def __post_init__(self):
         # Determine overall risk level
         if any(c.risk_level == RiskLevel.CRITICAL for c in self.checks.values()):
@@ -63,7 +58,7 @@ class SafetyResult:
         else:
             self.risk_level = RiskLevel.SAFE
             self.is_safe = True
-        
+
         # Build details string
         failed = [c for c in self.checks.values() if not c.passed]
         if failed:
@@ -82,23 +77,23 @@ class SafetyMonitor:
     Salesforce now IMMEDIATELY disables users detected on VPN/Proxy.
     This monitor runs on startup and periodically in background.
     """
-    
+
     VPN_INTERFACE_PREFIXES = (
-        "tun", "tap", "wg", "vpn", "wireguard", 
+        "tun", "tap", "wg", "vpn", "wireguard",
         "ppp", "ipsec", "sslvpn", "openvpn",
         "nordlynx", "proton", "mullvad", "expressvpn",
     )
-    
+
     IP_API_URL = "https://ipapi.co/json/"
     IP_API_TIMEOUT = 10.0
-    
+
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or get_settings()
         self._cache: SafetyResult | None = None
         self._cache_expires: datetime | None = None
         self._monitor_task: asyncio.Task | None = None
         self._http_client: httpx.AsyncClient | None = None
-    
+
     @property
     def http_client(self) -> httpx.AsyncClient:
         if self._http_client is None:
@@ -107,7 +102,7 @@ class SafetyMonitor:
                 follow_redirects=True,
             )
         return self._http_client
-    
+
     async def close(self) -> None:
         if self._http_client:
             await self._http_client.aclose()
@@ -116,19 +111,19 @@ class SafetyMonitor:
             self._monitor_task.cancel()
             with suppress(asyncio.CancelledError):
                 await self._monitor_task
-    
+
     def _is_cache_valid(self) -> bool:
         if not self._cache or not self._cache_expires:
             return False
         return datetime.utcnow() < self._cache_expires
-    
+
     async def check_connection_safety(self, force: bool = False) -> SafetyResult:
         """Run all safety checks and return combined result."""
         if not force and self._is_cache_valid():
             return self._cache
-        
+
         logger.info("running_safety_checks")
-        
+
         results = await asyncio.gather(
             self._check_ip_reputation(),
             self._check_vpn_interfaces(),
@@ -136,7 +131,7 @@ class SafetyMonitor:
             self._check_dns_leak(),
             return_exceptions=True,
         )
-        
+
         checks = {}
         for i, result in enumerate(results):
             check_name = list(CheckName)[i]
@@ -150,22 +145,22 @@ class SafetyMonitor:
                 )
             else:
                 checks[check_name] = result
-        
+
         safety_result = SafetyResult(checks=checks)
         self._cache = safety_result
         self._cache_expires = datetime.utcnow() + timedelta(
             seconds=self.settings.safety_check_interval
         )
-        
+
         logger.info(
             "safety_check_complete",
             is_safe=safety_result.is_safe,
             risk_level=safety_result.risk_level.value,
             details=safety_result.details,
         )
-        
+
         return safety_result
-    
+
     async def _check_ip_reputation(self) -> CheckResult:
         if self.settings.safety_allowlist_ips:
             try:
@@ -178,22 +173,22 @@ class SafetyMonitor:
                     )
             except Exception:
                 pass
-        
+
         try:
             response = await self.http_client.get(self.IP_API_URL)
             response.raise_for_status()
             data = response.json()
-            
+
             security = data.get("security", {})
             is_vpn = security.get("vpn", False)
             is_proxy = security.get("proxy", False)
             is_tor = security.get("tor", False)
             is_hosting = security.get("hosting", False)
             is_relay = security.get("relay", False)
-            
+
             ip = data.get("ip", "unknown")
             country = data.get("country_name", "unknown")
-            
+
             if is_vpn or is_proxy or is_tor:
                 return CheckResult(
                     name=CheckName.IP_REPUTATION,
@@ -202,7 +197,7 @@ class SafetyMonitor:
                     remediation="Disconnect VPN/Proxy and retry.",
                     risk_level=RiskLevel.CRITICAL,
                 )
-            
+
             if is_hosting or is_relay:
                 return CheckResult(
                     name=CheckName.IP_REPUTATION,
@@ -211,7 +206,7 @@ class SafetyMonitor:
                     remediation="Consider using residential IP.",
                     risk_level=RiskLevel.WARNING,
                 )
-            
+
             return CheckResult(
                 name=CheckName.IP_REPUTATION,
                 passed=True,
@@ -231,7 +226,7 @@ class SafetyMonitor:
                 details=f"IP reputation check failed: {e}",
                 risk_level=RiskLevel.SAFE,
             )
-    
+
     async def _get_current_ip(self) -> str:
         try:
             response = await self.http_client.get("https://api.ipify.org?format=json")
@@ -239,7 +234,7 @@ class SafetyMonitor:
             return response.json().get("ip", "unknown")
         except Exception:
             return "unknown"
-    
+
     async def _check_vpn_interfaces(self) -> CheckResult:
         vpn_interfaces = []
         try:
@@ -268,7 +263,7 @@ class SafetyMonitor:
                             vpn_interfaces.append(iface.name)
         except Exception as e:
             logger.debug("vpn_interface_scan_failed", error=str(e))
-        
+
         if vpn_interfaces:
             return CheckResult(
                 name=CheckName.VPN_INTERFACES,
@@ -282,7 +277,7 @@ class SafetyMonitor:
             passed=True,
             details="No VPN interfaces detected",
         )
-    
+
     async def _check_system_proxy(self) -> CheckResult:
         proxy_vars = ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]
         set_proxies = {var: os.environ.get(var) for var in proxy_vars if os.environ.get(var)}
@@ -299,17 +294,17 @@ class SafetyMonitor:
             passed=True,
             details="No system proxy detected",
         )
-    
+
     async def _check_dns_leak(self) -> CheckResult:
         return CheckResult(
             name=CheckName.DNS_LEAK,
             passed=True,
             details="DNS check passed",
         )
-    
+
     def start_monitoring(self, callback=None, interval: int | None = None) -> None:
         interval = interval or self.settings.safety_check_interval
-        
+
         async def monitor_loop():
             while True:
                 try:
@@ -321,13 +316,13 @@ class SafetyMonitor:
                     break
                 except Exception as e:
                     logger.error("safety_monitor_error", error=str(e))
-        
+
         try:
             loop = asyncio.get_running_loop()
             self._monitor_task = loop.create_task(monitor_loop())
         except RuntimeError:
             pass
-    
+
     def stop_monitoring(self) -> None:
         if self._monitor_task:
             self._monitor_task.cancel()

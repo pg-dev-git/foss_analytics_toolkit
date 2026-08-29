@@ -6,25 +6,15 @@ from pathlib import Path
 import typer
 
 from tcrm_toolkit.cli.ui import (
-    console,
     print_header,
-    print_success,
-    print_error,
     print_info,
     print_warning,
     prompt_confirm,
-    prompt_text,
-    prompt_select,
-    create_dataset_table,
-    print_dataset_details,
-    print_extraction_progress,
-    print_upload_progress,
-    run_with_progress,
 )
-from tcrm_toolkit.core import get_settings, SalesforceClient, create_client
-from tcrm_toolkit.core.services.dataset_service import DatasetService
+from tcrm_toolkit.core import SalesforceClient, get_settings
 from tcrm_toolkit.core.crypto import CryptoManager
 from tcrm_toolkit.core.services.auth_service import AuthService
+from tcrm_toolkit.core.services.dataset_service import DatasetService
 
 app = typer.Typer(name="datasets", help="Dataset commands")
 

@@ -1,7 +1,6 @@
 """Cross-platform utilities for OS detection and paths."""
 
 import os
-import sys
 import platform
 from pathlib import Path
 from typing import Literal
@@ -22,14 +21,14 @@ def get_os() -> OSType:
 def get_config_dir(app_name: str = "tcrm") -> Path:
     """Get platform-appropriate config directory."""
     os_type = get_os()
-    
+
     if os_type == "windows":
         base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
     elif os_type == "darwin":
         base = Path.home() / "Library" / "Application Support"
     else:  # Linux/Unix
         base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    
+
     path = base / app_name
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -38,14 +37,14 @@ def get_config_dir(app_name: str = "tcrm") -> Path:
 def get_data_dir(app_name: str = "tcrm") -> Path:
     """Get platform-appropriate data directory."""
     os_type = get_os()
-    
+
     if os_type == "windows":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
     elif os_type == "darwin":
         base = Path.home() / "Library" / "Application Support"
     else:  # Linux/Unix
         base = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    
+
     path = base / app_name
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -54,14 +53,14 @@ def get_data_dir(app_name: str = "tcrm") -> Path:
 def get_cache_dir(app_name: str = "tcrm") -> Path:
     """Get platform-appropriate cache directory."""
     os_type = get_os()
-    
+
     if os_type == "windows":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Cache"
     elif os_type == "darwin":
         base = Path.home() / "Library" / "Caches"
     else:  # Linux/Unix
         base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    
+
     path = base / app_name
     path.mkdir(parents=True, exist_ok=True)
     return path

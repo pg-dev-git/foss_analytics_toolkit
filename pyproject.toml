@@ -86,10 +86,12 @@ strict_optional = true
 show_error_codes = true
 pretty = true
 explicit_package_bases = true
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+exclude = ["_legacy", ".venv", "build", "dist"]
 select = [
     "E",
     "W",

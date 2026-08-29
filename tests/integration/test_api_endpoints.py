@@ -1,16 +1,15 @@
 """Integration tests for API endpoints with mocked responses."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
+import pytest
 
 from tcrm_toolkit.core.client import SalesforceClient
 from tcrm_toolkit.core.config import Settings
-from tcrm_toolkit.core.services.dataset_service import DatasetService
 from tcrm_toolkit.core.services.dashboard_service import DashboardService
 from tcrm_toolkit.core.services.dataflow_service import DataflowService
-from tcrm_toolkit.core.models import Dataset, Dashboard, Dataflow
+from tcrm_toolkit.core.services.dataset_service import DatasetService
 
 
 class MockResponse:

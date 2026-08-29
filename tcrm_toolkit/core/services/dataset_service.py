@@ -1,14 +1,14 @@
 """Dataset service for TCRM Toolkit."""
 
-import asyncio
 import base64
 import json
 import math
-import structlog
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 
 import pandas as pd
+import structlog
 
 from tcrm_toolkit.core.client import SalesforceClient
 from tcrm_toolkit.core.config import Settings, get_settings
@@ -18,8 +18,8 @@ from tcrm_toolkit.core.models import (
     DatasetListResponse,
     DatasetXMD,
     ExtractionJob,
-    UploadJob,
     ExtractionProgress,
+    UploadJob,
     UploadProgress,
 )
 
@@ -556,4 +556,4 @@ class DatasetService:
         return params.get("pageToken", [None])[0]
 
 
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse

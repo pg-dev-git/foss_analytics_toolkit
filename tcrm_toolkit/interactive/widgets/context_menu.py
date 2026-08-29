@@ -9,13 +9,13 @@ from textual.widgets import Button
 
 class ContextMenu(ModalScreen[str]):
     """Context menu for row actions."""
-    
+
     def __init__(self, actions: list[tuple[str, str]], x: int, y: int):
         super().__init__()
         self.actions = actions  # List of (label, action_id)
         self._x = x
         self._y = y
-    
+
     def compose(self) -> ComposeResult:
         yield Container(
             Container(
@@ -24,7 +24,7 @@ class ContextMenu(ModalScreen[str]):
             ),
             id="context-menu"
         )
-    
+
     def on_mount(self) -> None:
         # Position menu at cursor
         try:
@@ -32,7 +32,7 @@ class ContextMenu(ModalScreen[str]):
             menu.styles.offset = (self._x, self._y)
         except Exception:
             pass
-    
+
     @on(Button.Pressed)
     def on_action_selected(self, event: Button.Pressed) -> None:
         if event.button.id and event.button.id.startswith("action-"):
@@ -43,7 +43,7 @@ class ContextMenu(ModalScreen[str]):
                     self.dismiss(action_id)
             except Exception:
                 self.dismiss(None)
-    
+
     def on_click(self, event) -> None:
         # Click outside closes menu
         self.dismiss(None)

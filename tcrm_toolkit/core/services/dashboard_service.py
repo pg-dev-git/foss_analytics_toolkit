@@ -1,13 +1,12 @@
 """Dashboard service for TCRM Toolkit."""
 
 import json
-import structlog
 from pathlib import Path
-from typing import Any
+
+import structlog
 
 from tcrm_toolkit.core.client import SalesforceClient
 from tcrm_toolkit.core.config import Settings, get_settings
-from tcrm_toolkit.core.exceptions import DashboardError
 from tcrm_toolkit.core.models import (
     Dashboard,
     DashboardBackup,
@@ -133,7 +132,7 @@ class DashboardService:
 
     def _extract_page_token(self, url: str) -> str | None:
         """Extract page token from next page URL."""
-        from urllib.parse import urlparse, parse_qs
+        from urllib.parse import parse_qs, urlparse
         parsed = urlparse(url)
         params = parse_qs(parsed.query)
         return params.get("pageToken", [None])[0]

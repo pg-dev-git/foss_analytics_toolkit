@@ -1,14 +1,12 @@
 """Unit tests for auth schemas."""
 
-import pytest
-from pydantic import ValidationError
 
 from tcrm_toolkit.core.models import (
-    OAuthToken,
     ConnectedAppConfig,
-    WebOAuthConfig,
-    DeviceFlowConfig,
     DeviceAuthorizationResponse,
+    DeviceFlowConfig,
+    OAuthToken,
+    WebOAuthConfig,
 )
 
 

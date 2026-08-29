@@ -1,11 +1,11 @@
 """Secure token storage with encryption and keyring integration."""
 
 import json
-import keyring
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
+import keyring
 import structlog
 
 from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
@@ -18,10 +18,10 @@ class StoredToken:
     """Stored token data with metadata."""
     access_token: str
     instance_url: str
-    refresh_token: Optional[str] = None
-    expires_at: Optional[str] = None  # ISO format string
+    refresh_token: str | None = None
+    expires_at: str | None = None  # ISO format string
     alias: str = "default"
-    username: Optional[str] = None
+    username: str | None = None
     created_at: str = ""  # ISO format string
     updated_at: str = ""  # ISO format string
 
@@ -98,7 +98,7 @@ class TokenStore:
 
         logger.info("token_saved", alias=token.alias, username=token.username)
 
-    async def load_token(self, alias: str = "default") -> Optional[StoredToken]:
+    async def load_token(self, alias: str = "default") -> StoredToken | None:
         """
         Load and decrypt token from keyring.
 
@@ -145,7 +145,7 @@ class TokenStore:
         alias: str,
         sf_cli_manager: "SFCLIManager",
         auto_refresh: bool = True,
-    ) -> Optional[StoredToken]:
+    ) -> StoredToken | None:
         """
         Get valid token, auto-refresh if needed.
 

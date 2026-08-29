@@ -17,12 +17,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 
 COPY pyproject.toml uv.lock* ./
-
-RUN uv sync --extra interactive --extra dev --frozen || uv sync --extra interactive --extra dev
-
 COPY . .
 
-RUN uv pip install -e .
+RUN uv pip install --system -e .[interactive,dev]
 
 # ---- Runtime Stage ----
 FROM python:3.12-slim AS runtime
@@ -31,18 +28,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     procps \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://developer.salesforce.com/media/salesforce-cli/salesforce-cli-linux-x64.tar.xz | tar -xJ -C /usr/local/bin --strip-components=1
+RUN npm install -g @salesforce/cli
 
 RUN useradd -m -s /bin/bash tcrm && \
     mkdir -p /home/tcrm/.config /home/tcrm/.local/share && \
     chown -R tcrm:tcrm /home/tcrm
 
 COPY --from=builder /app /app
-COPY --from=builder /root/.local /home/tcrm/.local
+RUN chown -R tcrm:tcrm /app
+WORKDIR /app
+RUN pip install -e .
 
-ENV PATH="/home/tcrm/.local/bin:${PATH}"
 ENV HOME="/home/tcrm"
 ENV USER="tcrm"
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """Verify cross-platform compatibility of the codebase."""
 
-import sys
 import platform
 import subprocess
+import sys
 from pathlib import Path
+
 
 def check_python_version():
     """Check Python version >= 3.11."""
@@ -27,7 +28,7 @@ def check_imports():
         ("tenacity", "tenacity"),
         ("typer", "typer"),
     ]
-    
+
     for name, module in imports:
         try:
             __import__(module)
@@ -44,17 +45,17 @@ def check_sf_cli():
         if result.returncode == 0:
             print(f"✅ SF CLI: {result.stdout.strip()}")
         else:
-            print(f"⚠️  SF CLI not found (install from https://developer.salesforce.com/tools/sfdxcli)")
+            print("⚠️  SF CLI not found (install from https://developer.salesforce.com/tools/sfdxcli)")
     except FileNotFoundError:
-        print(f"⚠️  SF CLI not found (install from https://developer.salesforce.com/tools/sfdxcli)")
+        print("⚠️  SF CLI not found (install from https://developer.salesforce.com/tools/sfdxcli)")
     except Exception as e:
         print(f"⚠️  SF CLI check failed: {e}")
 
 def check_platform_utils():
     """Test platform utilities."""
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from tcrm_toolkit.core.platform import get_os, get_config_dir, get_data_dir
-    
+    from tcrm_toolkit.core.platform import get_config_dir, get_data_dir, get_os
+
     os_type = get_os()
     print(f"✅ OS detected: {os_type}")
     print(f"✅ Config dir: {get_config_dir()}")
@@ -63,7 +64,7 @@ def check_platform_utils():
 def main():
     print(f"🔍 Cross-platform verification for {platform.system()} {platform.machine()}")
     print("=" * 60)
-    
+
     check_python_version()
     print()
     check_imports()

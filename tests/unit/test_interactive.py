@@ -1,11 +1,19 @@
 """Unit tests for Phase 1 Interactive TUI components (SafetyMonitor, SessionManager)."""
 
 import base64
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timedelta
+
 from tcrm_toolkit.core.config import Settings
-from tcrm_toolkit.interactive.safety import SafetyMonitor, SafetyResult, CheckResult, CheckName, RiskLevel
-from tcrm_toolkit.interactive.session import SessionManager, OrgSession
+from tcrm_toolkit.interactive.safety import (
+    CheckName,
+    CheckResult,
+    RiskLevel,
+    SafetyMonitor,
+    SafetyResult,
+)
+from tcrm_toolkit.interactive.session import SessionManager
 
 
 @pytest.fixture
@@ -42,7 +50,7 @@ async def test_safety_monitor_allowlist(settings):
     monitor = SafetyMonitor(settings)
     # Mock _get_current_ip to return allowlisted IP
     monitor._get_current_ip = async_return_value("192.168.1.1")
-    
+
     result = await monitor._check_ip_reputation()
     assert result.passed is True
     assert "allowlist" in result.details
@@ -66,11 +74,10 @@ async def test_session_manager_init(settings):
 
 
 def test_data_browser_and_context_menu():
-    from tcrm_toolkit.interactive.widgets.data_table import ColumnConfig, DataBrowser
-    from tcrm_toolkit.interactive.widgets.context_menu import ContextMenu
-    from tcrm_toolkit.interactive.widgets.detail_panel import DetailPanel
     from tcrm_toolkit.core.models import DataflowJob
-    from datetime import datetime
+    from tcrm_toolkit.interactive.widgets.context_menu import ContextMenu
+    from tcrm_toolkit.interactive.widgets.data_table import ColumnConfig, DataBrowser
+    from tcrm_toolkit.interactive.widgets.detail_panel import DetailPanel
 
     cols = [ColumnConfig(key="id", title="ID"), ColumnConfig(key="name", title="Name")]
     async def dummy_load(offset, limit, search, sort):
@@ -103,14 +110,16 @@ def test_data_browser_and_context_menu():
 
 @pytest.mark.asyncio
 async def test_task_runner():
-    from tcrm_toolkit.interactive.tasks import TaskRunner, TaskStatus, merge_csv_chunks
-    import tempfile
     import asyncio
+    import tempfile
     from pathlib import Path
+
     import pandas as pd
 
+    from tcrm_toolkit.interactive.tasks import TaskRunner, TaskStatus, merge_csv_chunks
+
     runner = TaskRunner(max_concurrent=2)
-    
+
     async def dummy_coro():
         await asyncio.sleep(0.01)
         return "success"

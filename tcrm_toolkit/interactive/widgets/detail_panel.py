@@ -1,30 +1,30 @@
 """Detail panel widget for showing entity details."""
 
-from textual.containers import Vertical
-from textual.widgets import Static, DataTable, Label
-from textual.widget import Widget
 from textual.app import ComposeResult
+from textual.containers import Vertical
+from textual.widget import Widget
+from textual.widgets import Label, Static
 
 
 class DetailPanel(Widget):
     """Right-side detail panel for showing selected item details."""
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._content = Static("Select an item to view details", id="detail-content")
-    
+
     def compose(self) -> ComposeResult:
         yield Vertical(
             Label("Details", id="detail-title"),
             self._content,
             id="detail-container"
         )
-    
+
     def show_dataset(self, dataset) -> None:
         from tcrm_toolkit.core.models import Dataset
         if not isinstance(dataset, Dataset):
             return
-        
+
         row_count_str = f"{dataset.row_count:,}" if dataset.row_count is not None else 'N/A'
         created_str = dataset.created_date.strftime('%Y-%m-%d %H:%M') if dataset.created_date else 'N/A'
         modified_str = dataset.last_modified_date.strftime('%Y-%m-%d %H:%M') if dataset.last_modified_date else 'N/A'
@@ -43,12 +43,12 @@ class DetailPanel(Widget):
 [cyan]Current Version:[/cyan] {dataset.current_version_id or 'N/A'}
 """
         self._content.update(content)
-    
+
     def show_dashboard(self, dashboard) -> None:
         from tcrm_toolkit.core.models import Dashboard
         if not isinstance(dashboard, Dashboard):
             return
-        
+
         created_str = dashboard.created_date.strftime('%Y-%m-%d %H:%M') if dashboard.created_date else 'N/A'
         modified_str = dashboard.last_modified_date.strftime('%Y-%m-%d %H:%M') if dashboard.last_modified_date else 'N/A'
 
@@ -63,12 +63,12 @@ class DetailPanel(Widget):
 [cyan]Last Modified:[/cyan] {modified_str}
 """
         self._content.update(content)
-    
+
     def show_dataflow(self, dataflow) -> None:
         from tcrm_toolkit.core.models import Dataflow
         if not isinstance(dataflow, Dataflow):
             return
-        
+
         created_str = dataflow.created_date.strftime('%Y-%m-%d %H:%M') if dataflow.created_date else 'N/A'
         modified_str = dataflow.last_modified_date.strftime('%Y-%m-%d %H:%M') if dataflow.last_modified_date else 'N/A'
 
@@ -89,7 +89,7 @@ class DetailPanel(Widget):
         from tcrm_toolkit.core.models import DataflowJob
         if not isinstance(job, DataflowJob):
             return
-        
+
         content = f"""[bold]Dataflow Job Details[/bold]
 
 [cyan]Job ID:[/cyan] {job.id}
@@ -109,7 +109,7 @@ class DetailPanel(Widget):
         hours = delta.seconds // 3600
         minutes = (delta.seconds % 3600) // 60
         return f"{hours}h {minutes}m"
-    
+
     def clear(self) -> None:
         self._content.update("Select an item to view details")
 

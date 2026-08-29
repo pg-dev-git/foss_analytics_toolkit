@@ -1,27 +1,27 @@
 """Async HTTP client for Salesforce API with retry logic and circuit breaker."""
 
-import asyncio
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Optional
+from typing import Any, Optional
 
 import httpx
 import structlog
 from tenacity import (
     AsyncRetrying,
+    after_log,
+    before_sleep_log,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential_jitter,
-    before_sleep_log,
-    after_log,
 )
 
 from tcrm_toolkit.core.config import Settings, get_settings
 from tcrm_toolkit.core.exceptions import (
     SalesforceAPIError,
     SalesforceAuthError,
-    SalesforceRateLimitError,
     SalesforceNotFoundError,
+    SalesforceRateLimitError,
 )
 
 logger = structlog.get_logger(__name__)
@@ -448,7 +448,7 @@ async def create_client_from_sf_cli(
     """
     from tcrm_toolkit.core.auth.sf_cli_auth import SFCLIAuthService
     from tcrm_toolkit.core.config import get_settings
-    from tcrm_toolkit.core.crypto import CryptoManager, create_crypto_manager
+    from tcrm_toolkit.core.crypto import create_crypto_manager
 
     settings = settings or get_settings()
     crypto = crypto_manager or create_crypto_manager()

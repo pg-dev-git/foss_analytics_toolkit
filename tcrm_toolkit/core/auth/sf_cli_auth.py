@@ -1,14 +1,13 @@
 """SF CLI-based authentication service."""
 
-import asyncio
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 
+from tcrm_toolkit.core.auth.token_store import StoredToken, TokenStore
 from tcrm_toolkit.core.config import Settings
 from tcrm_toolkit.core.crypto import CryptoManager
-from tcrm_toolkit.core.sf_cli import SFCLIManager, SFCLIAuthResult, SFCLIError, SFCLINotFoundError
-from tcrm_toolkit.core.auth.token_store import TokenStore, StoredToken
+from tcrm_toolkit.core.sf_cli import SFCLIError, SFCLIManager, SFCLINotFoundError
 
 logger = structlog.get_logger(__name__)
 
@@ -25,7 +24,7 @@ class SFCLIAuthService:
         self,
         settings: Settings,
         crypto_manager: CryptoManager,
-        sf_cli_manager: Optional[SFCLIManager] = None,
+        sf_cli_manager: SFCLIManager | None = None,
     ):
         """
         Initialize SF CLI auth service.
@@ -43,7 +42,7 @@ class SFCLIAuthService:
     async def login(
         self,
         alias: str = "default",
-        instance_url: Optional[str] = None,
+        instance_url: str | None = None,
         timeout: int = 300,
     ) -> str:
         """
@@ -148,7 +147,7 @@ class SFCLIAuthService:
             raise SFCLIAuthError(f"No token for alias '{alias}'. Run 'tcrm auth login' first.")
         return token.instance_url
 
-    async def get_username(self, alias: str = "default") -> Optional[str]:
+    async def get_username(self, alias: str = "default") -> str | None:
         """
         Get username for alias.
 

@@ -5,11 +5,9 @@ import asyncio
 import typer
 
 from tcrm_toolkit.cli.ui import (
-    console,
     print_header,
     print_warning,
 )
-from tcrm_toolkit.core import get_settings
 
 app = typer.Typer(name="jobs", help="Data Manager job commands")
 

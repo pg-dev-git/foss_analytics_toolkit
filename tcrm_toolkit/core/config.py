@@ -9,7 +9,7 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from tcrm_toolkit.core.platform import get_config_dir, get_data_dir, get_cache_dir
+from tcrm_toolkit.core.platform import get_cache_dir, get_config_dir, get_data_dir
 
 
 class Settings(BaseSettings):

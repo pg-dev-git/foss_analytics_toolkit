@@ -1,15 +1,15 @@
 """Re-export platform utilities."""
 from tcrm_toolkit.core.platform import (
-    get_os,
+    OSType,
+    get_cache_dir,
     get_config_dir,
     get_data_dir,
-    get_cache_dir,
-    is_windows,
-    is_macos,
-    is_linux,
+    get_os,
     get_terminal_size,
+    is_linux,
+    is_macos,
+    is_windows,
     supports_true_color,
-    OSType,
 )
 
 __all__ = [
