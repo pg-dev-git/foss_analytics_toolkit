@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, refactor/**, feature/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      
+      - name: Install dependencies
+        run: uv sync --extra interactive --extra dev
+      
+      - name: Run linting
+        run: uv run ruff check .
+      
+      - name: Run type checking
+        run: uv run mypy tcrm_toolkit
+      
+      - name: Run tests
+        run: uv run pytest -v --tb=short
+      
+      - name: Verify cross-platform
+        run: uv run python scripts/verify-cross-platform.py
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: docker build -t crma-toolkit:test .
+      
+      - name: Test Docker image
+        run: docker run --rm crma-toolkit:test --help

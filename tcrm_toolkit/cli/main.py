@@ -46,11 +46,19 @@ async def _get_authenticated_client():
     await auth_service.close()
 
 
-@app.callback()
+@app.command()
+def interactive() -> None:
+    """Launch interactive TUI mode."""
+    from tcrm_toolkit.interactive import TCRMApp
+    TCRMApp().run()
+
+
+@app.callback(invoke_without_command=True)
 def callback(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     version: bool = typer.Option(False, "--version", help="Show version and exit"),
+    interactive_flag: bool = typer.Option(False, "--interactive", "-i", help="Launch interactive TUI"),
 ) -> None:
     """TCRM Toolkit - Salesforce Tableau CRM Analytics Toolkit."""
     if version:
@@ -58,9 +66,15 @@ def callback(
         console.print(f"tcrm-toolkit version {__version__}")
         raise typer.Exit()
 
-    # Store verbose flag in context for subcommands
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
+
+    if ctx.invoked_subcommand is None and not interactive_flag:
+        if sys.stdin.isatty() and sys.stdout.isatty():
+            from tcrm_toolkit.interactive import TCRMApp
+            TCRMApp().run()
+        else:
+            ctx.invoke(app, ["--help"])
 
 
 @app.command()

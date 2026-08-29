@@ -9,6 +9,8 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from tcrm_toolkit.core.platform import get_config_dir, get_data_dir, get_cache_dir
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -26,6 +28,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    # Cross-platform directories
+    config_dir: Path = Field(default_factory=get_config_dir)
+    data_dir: Path = Field(default_factory=get_data_dir)
+    cache_dir: Path = Field(default_factory=get_cache_dir)
 
     # Salesforce API Settings
     sf_api_version: str = Field(default="v60.0", alias="SF_API_VERSION")
@@ -52,6 +59,11 @@ class Settings(BaseSettings):
 
     # Device Flow Settings
     sf_device_flow_client_id: str | None = Field(default=None, alias="SF_DEVICE_FLOW_CLIENT_ID")
+
+    # Safety Monitor Settings
+    safety_check_interval: int = Field(default=300, alias="SAFETY_CHECK_INTERVAL")
+    safety_block_on_critical: bool = Field(default=True, alias="SAFETY_BLOCK_ON_CRITICAL")
+    safety_allowlist_ips: list[str] = Field(default_factory=list, alias="SAFETY_ALLOWLIST_IPS")
 
     @field_validator("encryption_key")
     @classmethod
