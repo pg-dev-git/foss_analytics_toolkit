@@ -95,6 +95,60 @@ class SFCLIAuthService:
         except Exception as e:
             raise SFCLIAuthError(f"Unexpected error during login: {e}") from e
 
+    async def login_device(
+        self,
+        alias: str = "default",
+        instance_url: str | None = None,
+        timeout: int = 300,
+    ) -> str:
+        """
+        Run device login flow via SF CLI (for headless environments).
+
+        Args:
+            alias: Org alias to use
+            instance_url: Optional custom instance URL
+            timeout: Timeout in seconds for login flow
+
+        Returns:
+            Access token
+
+        Raises:
+            SFCLIAuthError: If login fails
+        """
+        if not self.sf_cli.is_available():
+            raise SFCLIAuthError(
+                "SF CLI not found. Install from https://developer.salesforce.com/tools/sfdxcli"
+            )
+
+        logger.info("starting_sf_cli_device_login", alias=alias)
+
+        try:
+            auth_result = await self.sf_cli.login_device(
+                alias=alias,
+                instance_url=instance_url,
+                timeout=timeout,
+            )
+
+            stored_token = StoredToken(
+                access_token=auth_result.access_token,
+                instance_url=auth_result.instance_url,
+                refresh_token=auth_result.refresh_token,
+                expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
+                alias=auth_result.alias,
+                username=auth_result.username,
+            )
+            await self.token_store.save_token(stored_token)
+
+            logger.info("sf_cli_device_login_success", alias=alias, username=auth_result.username)
+            return auth_result.access_token
+
+        except SFCLINotFoundError as e:
+            raise SFCLIAuthError(str(e)) from e
+        except SFCLIError as e:
+            raise SFCLIAuthError(f"SF CLI device login failed: {e}") from e
+        except Exception as e:
+            raise SFCLIAuthError(f"Unexpected error during device login: {e}") from e
+
     async def get_access_token(
         self,
         alias: str = "default",

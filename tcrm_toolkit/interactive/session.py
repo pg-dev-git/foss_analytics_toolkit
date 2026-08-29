@@ -159,6 +159,13 @@ class SessionManager:
         self._current_alias = alias
         return token
 
+    async def login_device(self, alias: str = "default", instance_url: str | None = None) -> str:
+        """Run SF CLI device login flow for headless environments."""
+        token = await self.auth_service.login_device(alias=alias, instance_url=instance_url)
+        await self.refresh_org_list()
+        self._current_alias = alias
+        return token
+
     async def logout(self, alias: str = "default") -> bool:
         """Logout and remove stored auth for alias."""
         result = await self.auth_service.logout(alias)

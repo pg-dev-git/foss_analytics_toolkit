@@ -241,6 +241,42 @@ class SFCLIManager:
         result_data = output.get("result", {})
         return self._parse_auth_result(result_data, alias)
 
+    async def login_device(
+        self,
+        alias: str = "default",
+        instance_url: str | None = None,
+        timeout: int = 300,
+    ) -> SFCLIAuthResult:
+        """
+        Run SF CLI device login flow (for headless environments).
+
+        Args:
+            alias: Org alias to use
+            instance_url: Optional custom instance URL
+            timeout: Timeout in seconds for the login flow
+
+        Returns:
+            SFCLIAuthResult with authentication details
+        """
+        args = ["org", "login", "device", "--alias", alias, "--json"]
+        if instance_url:
+            args.extend(["--instance-url", instance_url])
+
+        logger.info("starting_sf_cli_device_login", alias=alias, instance_url=instance_url)
+
+        result = await self._run_command_async(args, timeout=timeout)
+
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            raise SFCLIError(f"Failed to parse SF CLI JSON output: {e}") from e
+
+        if output.get("status") != 0:
+            raise SFCLIError(f"Device login failed: {output.get('message', 'Unknown error')}")
+
+        result_data = output.get("result", {})
+        return self._parse_auth_result(result_data, alias)
+
     async def get_org_info(self, alias: str = "default") -> SFCLIAuthResult:
         """
         Get org info including access token.
