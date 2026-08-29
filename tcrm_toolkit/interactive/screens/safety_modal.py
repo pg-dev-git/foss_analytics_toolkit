@@ -1,25 +1,26 @@
-"""Safety modal for critical VPN/Proxy detection."""
+"""Safety modal for critical VPN/Proxy detection with hard block."""
+
+from __future__ import annotations
 
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Static
+from textual.widgets import Button, Static
 
 from tcrm_toolkit.interactive.safety import RiskLevel, SafetyResult
 
 
 class SafetyModalScreen(ModalScreen[str]):
-    """Modal dialog for critical safety alerts."""
+    """Modal dialog for critical safety alerts with hard block."""
 
     BINDINGS = [
-        ("escape", "cancel", "Cancel"),
+        ("escape", "cancel", "Quit"),
     ]
 
     def __init__(self, safety_result: SafetyResult):
         super().__init__()
         self.safety_result = safety_result
-        self._dont_show_again = False
 
     def compose(self) -> ComposeResult:
         details_lines = []
@@ -30,21 +31,19 @@ class SafetyModalScreen(ModalScreen[str]):
                 if check.remediation:
                     details_lines.append(f"   → {check.remediation}")
 
-        details_text = "\n".join(details_lines) if details_lines else "Unknown risk detected"
+        details_text = "\n".join(details_lines) if details_lines else "Critical security risk detected"
 
         yield Container(
             Vertical(
-                Static("⚠️ CONNECTION SAFETY ALERT", id="safety-title"),
+                Static("⚠️ CRITICAL CONNECTION SAFETY ALERT", id="safety-title"),
                 Static(
-                    "Salesforce detects VPN/Proxy connections and will IMMEDIATELY disable your user.\n"
-                    "Continuing risks permanent org lockout.",
+                    "Salesforce immediately disables users detected on VPN/Proxy.\n"
+                    "All API operations are strictly blocked until your connection is secure.",
                     id="safety-warning"
                 ),
                 Static(details_text, id="safety-details"),
-                Checkbox("Don't show again this session", id="dont-show-checkbox"),
                 Container(
                     Button("Disconnect VPN & Retry", id="retry-btn", variant="primary"),
-                    Button("I Understand Risks - Continue", id="continue-btn", variant="warning"),
                     Button("Quit", id="quit-btn", variant="error"),
                     id="safety-buttons"
                 ),
@@ -56,12 +55,6 @@ class SafetyModalScreen(ModalScreen[str]):
     @on(Button.Pressed, "#retry-btn")
     def on_retry(self) -> None:
         self.dismiss("retry")
-
-    @on(Button.Pressed, "#continue-btn")
-    def on_continue(self) -> None:
-        checkbox = self.query_one("#dont-show-checkbox", Checkbox)
-        self._dont_show_again = checkbox.value
-        self.dismiss("continue")
 
     @on(Button.Pressed, "#quit-btn")
     def on_quit(self) -> None:

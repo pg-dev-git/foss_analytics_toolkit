@@ -81,10 +81,7 @@ class TCRMApp(App):
         """Handle safety modal dismissal."""
         if action == "retry":
             self.run_worker(self._recheck_safety_and_continue())
-        elif action == "continue":
-            self.notify("⚠️ Proceeding at your own risk!", severity="warning", timeout=10)
-            self.run_worker(self._show_main_screen())
-        elif action == "quit":
+        else:
             self.exit()
 
     async def _recheck_safety_and_continue(self) -> None:
