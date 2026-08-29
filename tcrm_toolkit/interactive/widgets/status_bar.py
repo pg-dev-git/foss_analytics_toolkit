@@ -15,25 +15,24 @@ class StatusBar(Static):
         self._safety: SafetyResult | None = None
         self._api_usage = "0/15,000"
         self._bg_tasks = 0
-        self._render()
 
     def update_org(self, org: OrgSession | None) -> None:
         self._org = org
-        self._render()
+        self.refresh()
 
     def update_safety(self, safety: SafetyResult) -> None:
         self._safety = safety
-        self._render()
+        self.refresh()
 
     def update_api_usage(self, used: int, limit: int) -> None:
         self._api_usage = f"{used:,}/{limit:,}"
-        self._render()
+        self.refresh()
 
     def update_bg_tasks(self, count: int) -> None:
         self._bg_tasks = count
-        self._render()
+        self.refresh()
 
-    def _render(self) -> None:
+    def render(self) -> str:
         parts = []
 
         if self._org:
@@ -56,5 +55,5 @@ class StatusBar(Static):
         if self._bg_tasks > 0:
             parts.append(f"BG: {self._bg_tasks} running")
 
-        self.update("  •  ".join(parts))
+        return "  •  ".join(parts)
 
