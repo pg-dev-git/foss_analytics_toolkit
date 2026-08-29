@@ -146,3 +146,49 @@ async def test_task_runner():
     await runner.close()
 
 
+def test_phase_4_polish_components():
+    import tempfile
+    from pathlib import Path
+    from tcrm_toolkit.interactive.config import TUIConfig
+    from tcrm_toolkit.interactive.config_manager import ConfigManager
+    from tcrm_toolkit.interactive.window_manager import WindowManager
+    from tcrm_toolkit.interactive.notifications import NotificationManager
+    from tcrm_toolkit.interactive.widgets.command_palette import CommandPaletteScreen
+    from tcrm_toolkit.interactive.screens.help_screen import HelpScreen
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        
+        # Test Config & ConfigManager
+        cfg_mgr = ConfigManager(tmp_path)
+        cfg = cfg_mgr.load()
+        assert cfg.theme == "dark"
+        cfg.theme = "light"
+        cfg_mgr.save(cfg)
+        
+        cfg_mgr2 = ConfigManager(tmp_path)
+        cfg2 = cfg_mgr2.load()
+        assert cfg2.theme == "light"
+
+        # Test WindowManager
+        win_mgr = WindowManager(tmp_path)
+        win_mgr.set("sidebar_width", 30)
+        assert win_mgr.get("sidebar_width") == 30
+
+        # Test NotificationManager
+        notif_mgr = NotificationManager(max_history=5)
+        rec = notif_mgr.record("Test alert", severity="warning")
+        assert rec.message == "Test alert"
+        assert rec.severity == "warning"
+        assert len(notif_mgr.get_history()) == 1
+
+        # Test CommandPaletteScreen init
+        palette = CommandPaletteScreen([("Extract Dataset", "extract"), ("Upload Dataset", "upload")])
+        assert len(palette.commands) == 2
+
+        # Test HelpScreen init
+        help_screen = HelpScreen()
+        assert help_screen is not None
+
+
+

@@ -125,44 +125,90 @@ def config() -> None:
 @app.command()
 def doctor() -> None:
     """Run diagnostics to check setup."""
-    print_header("System Diagnostics", "Checking TCRM Toolkit setup")
+    import asyncio
+    import shutil
+    import subprocess
+    import keyring
+    from pathlib import Path
+    from tcrm_toolkit.interactive.safety import SafetyMonitor
+
+    print_header("System Diagnostics", "Checking TCRM Toolkit setup and environment")
 
     settings = get_settings()
     checks = []
 
-    # Check .env file
-    from pathlib import Path
-    env_file = Path(".env")
-    checks.append((".env file exists", env_file.exists()))
+    # 1. Python version & dependencies
+    import sys
+    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    checks.append(("Python version >= 3.11", sys.version_info >= (3, 11), f"Python {py_ver}"))
 
-    # Check encryption key
-    checks.append(("ENCRYPTION_KEY set", bool(settings.encryption_key)))
-    checks.append(("JWT_SECRET_KEY set", bool(settings.jwt_secret_key)))
+    # 2. SF CLI installation
+    sf_path = shutil.which("sf") or shutil.which("sfdx")
+    sf_installed = sf_path is not None
+    sf_version = "Not found"
+    if sf_installed:
+        try:
+            res = subprocess.run([sf_path, "--version"], capture_output=True, text=True, timeout=3)
+            sf_version = res.stdout.strip()
+        except Exception:
+            sf_version = "Installed (version check failed)"
+    checks.append(("Salesforce CLI (sf/sfdx)", sf_installed, sf_version))
 
-    # Check OAuth credentials
-    checks.append(("Connected App credentials", settings.has_connected_app_credentials))
-    checks.append(("Web OAuth credentials", settings.has_web_oauth_credentials))
-    checks.append(("Device Flow credentials", settings.has_device_flow_credentials))
+    # 3. Keyring access
+    keyring_accessible = True
+    try:
+        keyring.set_password("tcrm_test", "user", "test")
+        keyring.get_password("tcrm_test", "user")
+        keyring.delete_password("tcrm_test", "user")
+    except Exception as e:
+        keyring_accessible = False
+    checks.append(("Keyring access", keyring_accessible, "Working" if keyring_accessible else "Failed"))
+
+    # 4. Config & data directory permissions
+    config_dir = Path.home() / ".tcrm"
+    dir_writable = True
+    try:
+        config_dir.mkdir(parents=True, exist_ok=True)
+        test_file = config_dir / ".test_write"
+        test_file.write_text("test")
+        test_file.unlink()
+    except Exception:
+        dir_writable = False
+    checks.append(("~/.tcrm directory writable", dir_writable, str(config_dir)))
+
+    # 5. Connection Safety (VPN/Proxy check)
+    async def check_safety():
+        monitor = SafetyMonitor(settings)
+        try:
+            res = await monitor.check_connection_safety(force=True)
+            return res.is_safe, f"Risk: {res.risk_level.value}"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            await monitor.close()
+
+    is_safe, safety_details = asyncio.run(check_safety())
+    checks.append(("Connection Safety (VPN/Proxy)", is_safe, safety_details))
 
     from tcrm_toolkit.cli.ui import Table
-    table = Table(title="Configuration Checks", show_header=True)
+    table = Table(title="Diagnostics Summary", show_header=True)
     table.add_column("Check", style="cyan")
     table.add_column("Status", style="white")
+    table.add_column("Details", style="dim")
 
     all_passed = True
-    for check, passed in checks:
+    for check_name, passed, details in checks:
         status = "[green]✓ PASS[/green]" if passed else "[red]✗ FAIL[/red]"
         if not passed:
             all_passed = False
-        table.add_row(check, status)
+        table.add_row(check_name, status, details)
 
     console.print(table)
 
     if all_passed:
-        print_success("All checks passed!")
+        print_success("All diagnostic checks passed!")
     else:
-        print_warning("Some checks failed. Run 'tcrm init' to generate missing keys.")
-        print_info("Configure OAuth credentials in .env for authentication.")
+        print_warning("Some diagnostic checks failed. Review issues above.")
 
 
 def main() -> None:
