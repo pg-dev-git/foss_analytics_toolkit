@@ -41,7 +41,7 @@ class CheckResult:
 
 @dataclass
 class SafetyResult:
-    is_safe: bool
+    is_safe: bool = True
     checks: dict[CheckName, CheckResult] = field(default_factory=dict)
     risk_level: RiskLevel = RiskLevel.SAFE
     details: str = ""

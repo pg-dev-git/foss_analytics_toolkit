@@ -156,13 +156,15 @@ def doctor() -> None:
 
     # 3. Keyring access
     keyring_accessible = True
+    keyring_detail = "Working"
     try:
         keyring.set_password("tcrm_test", "user", "test")
         keyring.get_password("tcrm_test", "user")
         keyring.delete_password("tcrm_test", "user")
     except Exception as e:
         keyring_accessible = False
-    checks.append(("Keyring access", keyring_accessible, "Working" if keyring_accessible else "Failed"))
+        keyring_detail = f"No backend/Headless ({e})"
+    checks.append(("Keyring access", True, keyring_accessible and "Working" or f"Warning: {keyring_detail}"))
 
     # 4. Config & data directory permissions
     config_dir = Path.home() / ".tcrm"

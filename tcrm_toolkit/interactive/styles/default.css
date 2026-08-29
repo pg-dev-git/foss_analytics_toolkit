@@ -12,7 +12,7 @@ Header {
 }
 
 Footer {
-    background: $primary-dark;
+    background: $primary-darken-2;
     color: $text;
     dock: bottom;
     height: 1;
