@@ -15,6 +15,7 @@ class StatusBar(Static):
         self._safety: SafetyResult | None = None
         self._api_usage = "0/15,000"
         self._bg_tasks = 0
+        self._render()
 
     def update_org(self, org: OrgSession | None) -> None:
         self._org = org
