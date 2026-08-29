@@ -1,7 +1,4 @@
-/* Dark theme - extends default.css */
-@import "default.css";
-
-/* Override colors for dark theme */
+/* Dark theme - self-contained stylesheet */
 :root {
     --background: #0c0c0c;
     --surface: #1e1e1e;
@@ -19,4 +16,271 @@
     --text: #d4d4d4;
     --text-muted: #858585;
     --accent: #4ec9b0;
+}
+
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+Header {
+    background: $primary;
+    color: $text;
+    dock: top;
+    height: 3;
+}
+
+Footer {
+    background: $primary-dark;
+    color: $text;
+    dock: bottom;
+    height: 1;
+}
+
+Static#title {
+    text-style: bold;
+    color: $accent;
+    text-align: center;
+}
+
+Static#status-bar {
+    background: $surface-lighten-2;
+    color: $text-muted;
+    height: 1;
+    dock: bottom;
+    padding: 0 1;
+}
+
+Static#sidebar-title {
+    text-style: bold;
+    color: $primary;
+    padding: 1 0;
+}
+
+ListView#nav-list {
+    background: $surface-darken-1;
+    width: 25;
+}
+
+ListView#nav-list > ListItem {
+    padding: 1 2;
+}
+
+ListView#nav-list > ListItem.--highlight {
+    background: $primary;
+    color: $text;
+}
+
+ListView#nav-list > ListItem:hover {
+    background: $primary-darken-2;
+}
+
+Container#sidebar {
+    width: 25;
+    background: $surface-darken-1;
+    border-right: solid $primary-darken-3;
+}
+
+Container#content {
+    width: 1fr;
+}
+
+Container#detail-panel {
+    width: 30;
+    border-left: solid $primary-darken-3;
+    background: $surface-darken-1;
+}
+
+DataTable {
+    background: $surface;
+    color: $text;
+}
+
+DataTable > .datatable--header {
+    background: $primary-darken-2;
+    color: $text;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: $primary;
+    color: $text;
+}
+
+DataTable > .datatable--row--odd {
+    background: $surface-darken-1;
+}
+
+DataTable > .datatable--row--even {
+    background: $surface;
+}
+
+Label#detail-title {
+    text-style: bold;
+    color: $primary;
+    padding: 1 0;
+}
+
+Static#detail-content {
+    padding: 1 2;
+    height: 1fr;
+    overflow: auto;
+}
+
+ProgressBar {
+    color: $success;
+    background: $surface-darken-1;
+}
+
+ProgressBar > .progress-bar--complete {
+    color: $success;
+}
+
+ProgressBar > .progress-bar--remaining {
+    color: $surface-darken-2;
+}
+
+Button {
+    margin: 1 2;
+    min-width: 10;
+}
+
+Button.--primary {
+    background: $success;
+    color: $text;
+}
+
+Button.--primary:hover {
+    background: $success-darken-2;
+}
+
+Button.--warning {
+    background: $warning;
+    color: $text;
+}
+
+Button.--warning:hover {
+    background: $warning-darken-2;
+}
+
+Button.--error {
+    background: $error;
+    color: $text;
+}
+
+Button.--error:hover {
+    background: $error-darken-2;
+}
+
+Input {
+    margin: 1 2;
+    min-width: 20;
+}
+
+Input:focus {
+    border: tall $primary;
+}
+
+ModalScreen {
+    align: center middle;
+}
+
+#login-container, #picker-dialog, #safety-dialog, #palette-dialog, #help-dialog {
+    background: $surface;
+    border: thick $primary;
+    padding: 2 4;
+    width: 60;
+    height: auto;
+}
+
+#login-title, #picker-title, #safety-title, #palette-title, #help-title {
+    text-style: bold;
+    color: $primary;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#login-info, #safety-warning, #safety-details {
+    color: $text-muted;
+    text-align: center;
+    margin: 1 0;
+}
+
+#safety-title {
+    color: $error;
+    text-style: bold;
+}
+
+#safety-warning {
+    color: $warning;
+}
+
+Checkbox {
+    margin: 1 2;
+}
+
+#safety-buttons {
+    height: 3;
+    align: center middle;
+}
+
+#safety-buttons > Button {
+    margin: 0 1;
+    min-width: 20;
+}
+
+#status-bar {
+    layout: horizontal;
+    overflow: hidden;
+}
+
+#status-bar > Static {
+    margin: 0 1;
+}
+
+#browser-header {
+    height: 3;
+    padding: 1 2;
+}
+
+#browser-title {
+    text-style: bold;
+    color: $primary;
+}
+
+#search-input {
+    width: 30;
+}
+
+#pagination-info {
+    color: $text-muted;
+}
+
+#browser-status {
+    color: $warning;
+    text-align: center;
+}
+
+#history-title, #progress-title {
+    text-style: bold;
+    color: $primary;
+    padding: 1 0;
+}
+
+#history-table, #progress-table {
+    background: $surface;
+    color: $text;
+}
+
+#history-table > .datatable--header,
+#progress-table > .datatable--header {
+    background: $primary-darken-2;
+    color: $text;
+    text-style: bold;
+}
+
+#history-table > .datatable--cursor,
+#progress-table > .datatable--cursor {
+    background: $primary;
+    color: $text;
 }
