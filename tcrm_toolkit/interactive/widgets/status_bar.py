@@ -9,8 +9,8 @@ from tcrm_toolkit.interactive.session import OrgSession
 class StatusBar(Static):
     """Bottom status bar showing org, safety, API usage, background tasks."""
 
-    def __init__(self):
-        super().__init__("", id="status-bar")
+    def __init__(self, **kwargs):
+        super().__init__("", **kwargs)
         self._org: OrgSession | None = None
         self._safety: SafetyResult | None = None
         self._api_usage = "0/15,000"
