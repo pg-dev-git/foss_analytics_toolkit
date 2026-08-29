@@ -8,7 +8,7 @@ from typing import Any
 import keyring
 import structlog
 
-from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
+from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData, SafeKeyring
 
 logger = structlog.get_logger(__name__)
 
@@ -90,7 +90,7 @@ class TokenStore:
         encrypted = self.crypto.encrypt(json_data)
 
         # Store in keyring
-        keyring.set_password(
+        SafeKeyring.set_password(
             self.KEYRING_SERVICE,
             self._get_keyring_key(token.alias),
             encrypted.to_json(),
@@ -108,7 +108,7 @@ class TokenStore:
         Returns:
             StoredToken if found, None otherwise
         """
-        stored = keyring.get_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
+        stored = SafeKeyring.get_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
         if not stored:
             return None
 
@@ -133,12 +133,10 @@ class TokenStore:
         Returns:
             True if deleted, False if not found
         """
-        try:
-            keyring.delete_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
+        success = SafeKeyring.delete_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
+        if success:
             logger.info("token_deleted", alias=alias)
-            return True
-        except keyring.errors.PasswordDeleteError:
-            return False
+        return success
 
     async def get_valid_token(
         self,

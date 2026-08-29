@@ -4,12 +4,69 @@ import base64
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import keyring
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+
+class SafeKeyring:
+    """Wrapper around keyring with file-based fallback for headless/container environments."""
+
+    @staticmethod
+    def set_password(service: str, username: str, password: str) -> None:
+        try:
+            keyring.set_password(service, username, password)
+        except Exception:
+            vault = SafeKeyring._load_vault()
+            vault[f"{service}:{username}"] = password
+            SafeKeyring._save_vault(vault)
+
+    @staticmethod
+    def get_password(service: str, username: str) -> str | None:
+        try:
+            return keyring.get_password(service, username)
+        except Exception:
+            vault = SafeKeyring._load_vault()
+            return vault.get(f"{service}:{username}")
+
+    @staticmethod
+    def delete_password(service: str, username: str) -> bool:
+        try:
+            keyring.delete_password(service, username)
+            return True
+        except Exception:
+            vault = SafeKeyring._load_vault()
+            key = f"{service}:{username}"
+            if key in vault:
+                del vault[key]
+                SafeKeyring._save_vault(vault)
+                return True
+            return False
+
+    @staticmethod
+    def _get_vault_path() -> Path:
+        p = Path.home() / ".tcrm"
+        p.mkdir(parents=True, exist_ok=True)
+        return p / "vault.json"
+
+    @staticmethod
+    def _load_vault() -> dict[str, str]:
+        path = SafeKeyring._get_vault_path()
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                return {}
+        return {}
+
+    @staticmethod
+    def _save_vault(vault: dict[str, str]) -> None:
+        path = SafeKeyring._get_vault_path()
+        path.write_text(json.dumps(vault, indent=2), encoding="utf-8")
 
 
 @dataclass
@@ -109,7 +166,7 @@ class CryptoManager:
     def store_token(self, username: str, token_data: dict[str, Any]) -> None:
         """Store OAuth token data in system keyring."""
         encrypted = self.encrypt_json(token_data)
-        keyring.set_password(
+        SafeKeyring.set_password(
             self.KEYRING_SERVICE,
             f"token:{username}",
             encrypted.to_json(),
@@ -117,7 +174,7 @@ class CryptoManager:
 
     def retrieve_token(self, username: str) -> dict[str, Any] | None:
         """Retrieve OAuth token data from system keyring."""
-        stored = keyring.get_password(self.KEYRING_SERVICE, f"token:{username}")
+        stored = SafeKeyring.get_password(self.KEYRING_SERVICE, f"token:{username}")
         if not stored:
             return None
 
@@ -126,16 +183,12 @@ class CryptoManager:
             return self.decrypt_json(encrypted)
         except Exception:
             # If decryption fails, remove corrupted entry
-            keyring.delete_password(self.KEYRING_SERVICE, f"token:{username}")
+            SafeKeyring.delete_password(self.KEYRING_SERVICE, f"token:{username}")
             return None
 
     def delete_token(self, username: str) -> bool:
         """Delete stored token from keyring."""
-        try:
-            keyring.delete_password(self.KEYRING_SERVICE, f"token:{username}")
-            return True
-        except keyring.errors.PasswordDeleteError:
-            return False
+        return SafeKeyring.delete_password(self.KEYRING_SERVICE, f"token:{username}")
 
     def list_stored_tokens(self) -> list[str]:
         """List usernames with stored tokens."""
