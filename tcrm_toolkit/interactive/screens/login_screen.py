@@ -1,6 +1,6 @@
 """Login screen for initial authentication."""
 
-from textual import on, work
+from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
@@ -89,7 +89,6 @@ class LoginScreen(ModalScreen[bool]):
             login_btn.disabled = False
             device_btn.disabled = False
 
-    @work(exclusive=True)
     async def _run_login(self) -> None:
         status = self.query_one("#login-status", Static)
 
@@ -100,7 +99,6 @@ class LoginScreen(ModalScreen[bool]):
 
         status.update(f"✅ Authenticated as {self.session.current_org.username if self.session.current_org else 'user'}")
 
-    @work(exclusive=True)
     async def _run_device_login(self) -> None:
         status = self.query_one("#login-status", Static)
 

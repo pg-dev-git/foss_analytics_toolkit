@@ -64,15 +64,16 @@ class SessionManager:
         return self._org_sessions.get(self._current_alias)
 
     async def initialize(self) -> None:
-        """Initialize session - load orgs, check safety, auto-login if needed."""
+        """Initialize session - load orgs, check safety, check for existing tokens (no auto-login)."""
         safety_result = await self.safety.check_connection_safety()
         if not safety_result.is_safe and self.settings.safety_block_on_critical:
             raise SafetyError(f"Unsafe connection: {safety_result.details}")
 
         await self.refresh_org_list()
 
+        # Check for existing valid token without triggering auto-login
         try:
-            await self.ensure_valid_token()
+            await self.ensure_valid_token(auto_refresh=False)
         except SFCLIAuthError:
             pass
 
@@ -97,7 +98,7 @@ class SessionManager:
 
         return list(self._org_sessions.values())
 
-    async def ensure_valid_token(self, alias: str | None = None) -> str:
+    async def ensure_valid_token(self, alias: str | None = None, auto_refresh: bool = True) -> str:
         """Get valid access token for alias, auto-refresh if needed."""
         alias = alias or self._current_alias
 
@@ -105,7 +106,7 @@ class SessionManager:
         if not safety_result.is_safe and self.settings.safety_block_on_critical:
             raise SafetyError(f"Unsafe connection: {safety_result.details}")
 
-        token = await self.auth_service.get_access_token(alias=alias, auto_refresh=True)
+        token = await self.auth_service.get_access_token(alias=alias, auto_refresh=auto_refresh)
         return token
 
     async def get_client(self, alias: str | None = None) -> SalesforceClient:
