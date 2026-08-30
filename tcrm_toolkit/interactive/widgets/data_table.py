@@ -222,7 +222,7 @@ class DataBrowser(Widget, Generic[T]):
         except Exception:
             pass
 
-    async def refresh(self) -> None:
+    async def refresh(self, layout: bool = False) -> None:
         """Refresh current page."""
         await self._load_page(self._current_page)
 
