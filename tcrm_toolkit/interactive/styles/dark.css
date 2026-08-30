@@ -10,8 +10,11 @@ $primary-darken-2: #005a9e;
 $primary-darken-3: #004780;
 $secondary: #6a9955;
 $success: #6a9955;
+$success-darken-2: #4a7a3d;
 $warning: #d7ba7d;
+$warning-darken-2: #b89d5a;
 $error: #f44747;
+$error-darken-2: #c03030;
 $text: #d4d4d4;
 $text-muted: #858585;
 $accent: #4ec9b0;
@@ -29,7 +32,7 @@ Header {
 }
 
 Footer {
-    background: $primary-dark;
+    background: $primary-darken-2;
     color: $text;
     dock: bottom;
     height: 1;

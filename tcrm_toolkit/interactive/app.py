@@ -1,5 +1,8 @@
 """Main Textual App for CRMA Toolkit Interactive TUI."""
 
+import asyncio
+import signal
+import sys
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -45,6 +48,7 @@ class TCRMApp(App):
         )
         self._main_screen: MainScreen | None = None
         self._safety_check_interval = self.settings.safety_check_interval
+        self._shutdown_event = asyncio.Event()
 
     def compose(self) -> ComposeResult:
         """Compose the app layout."""
@@ -53,8 +57,26 @@ class TCRMApp(App):
         yield StatusBar(id="status-bar")
         yield Footer()
 
+    def _setup_signal_handlers(self) -> None:
+        """Set up signal handlers for graceful shutdown."""
+        if sys.platform != "win32":
+            loop = asyncio.get_running_loop()
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                try:
+                    loop.add_signal_handler(sig, self._handle_shutdown_signal, sig)
+                except NotImplementedError:
+                    # Signal handling not available on this platform
+                    pass
+
+    def _handle_shutdown_signal(self, sig: signal.Signals) -> None:
+        """Handle shutdown signal by initiating clean exit."""
+        self._shutdown_event.set()
+        # Exit directly - signal handler runs in event loop context
+        self.exit()
+
     async def on_mount(self) -> None:
         """Initialize app on mount."""
+        self._setup_signal_handlers()
         self.safety.start_monitoring(callback=self._on_safety_update)
 
         try:
@@ -151,6 +173,7 @@ class TCRMApp(App):
             await self._main_screen.action_escape()
 
     async def on_unmount(self) -> None:
+        self._shutdown_event.set()
         self.safety.stop_monitoring()
         await self.session.close()
         await self.safety.close()
