@@ -250,8 +250,25 @@ class DataBrowser(Widget, Generic[T]):
         except Exception:
             pass
 
-    async def refresh(self, layout: bool = False) -> None:
-        """Refresh current page."""
+    def refresh(
+        self,
+        *regions: Any,
+        repaint: bool = True,
+        layout: bool = False,
+        recompose: bool = False,
+        **kwargs: Any,
+    ) -> Any:
+        """Refresh widget and current page data."""
+        result = super().refresh(*regions, repaint=repaint, layout=layout, recompose=recompose, **kwargs)
+        if self._is_mounted:
+            try:
+                self.run_worker(self._load_page(self._current_page), exclusive=False)
+            except Exception:
+                pass
+        return result
+
+    async def reload_data(self) -> None:
+        """Reload current page data."""
         await self._load_page(self._current_page)
 
     # Actions

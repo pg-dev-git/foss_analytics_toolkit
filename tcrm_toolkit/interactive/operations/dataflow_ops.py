@@ -134,7 +134,7 @@ def create_dataflow_job_browser(session) -> DataBrowser[DataflowJob]:
                     for row in range(table.row_count)
                 )
                 if has_running:
-                    await self.refresh()
+                    await self.reload_data()
             except Exception:
                 pass
 
