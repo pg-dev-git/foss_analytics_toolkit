@@ -5,7 +5,6 @@ from typing import Any
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
-from textual.screen import Screen
 from textual.widgets import DataTable, Label, ListItem, ListView, Static
 
 from tcrm_toolkit.interactive.safety import SafetyMonitor
@@ -15,7 +14,7 @@ from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
 from tcrm_toolkit.interactive.widgets.detail_panel import DetailPanel
 
 
-class MainScreen(Screen):
+class MainScreen(Vertical):
     """Main screen with navigation sidebar and content area."""
 
     BINDINGS = [

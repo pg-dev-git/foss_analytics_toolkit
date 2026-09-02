@@ -78,23 +78,43 @@ class SessionManager:
             pass
 
     async def refresh_org_list(self) -> list[OrgSession]:
-        """Refresh list of authorized orgs from SF CLI."""
-        orgs = await self.auth_service.list_orgs()
+        """Refresh list of authorized orgs from SF CLI and token store."""
+        orgs = []
+        try:
+            orgs = await self.auth_service.list_orgs()
+        except Exception:
+            pass
+
         self._org_sessions = {}
 
         for org in orgs:
-            alias = org.get("alias", "unknown")
+            alias = org.get("alias") or org.get("username", "unknown")
             username = org.get("username")
             instance_url = org.get("instanceUrl", "")
-            connected = org.get("connectedStatus") == "Connected"
+            connected = org.get("connectedStatus") in ("Connected", "Active") or org.get("isAuthorized", True) or bool(instance_url)
 
-            if connected and username and instance_url:
+            if username and instance_url:
                 self._org_sessions[alias] = OrgSession(
                     alias=alias,
                     username=username,
                     instance_url=instance_url.rstrip("/"),
                     is_default=(alias == "default"),
                 )
+
+        # Ensure current alias and default are in org sessions if tokens exist
+        for alias in [self._current_alias, "default"]:
+            if alias not in self._org_sessions:
+                try:
+                    stored = await self.auth_service.token_store.load_token(alias)
+                    if stored and stored.username and stored.instance_url:
+                        self._org_sessions[alias] = OrgSession(
+                            alias=alias,
+                            username=stored.username,
+                            instance_url=stored.instance_url.rstrip("/"),
+                            is_default=(alias == "default"),
+                        )
+                except Exception:
+                    pass
 
         return list(self._org_sessions.values())
 
@@ -156,15 +176,33 @@ class SessionManager:
     async def login(self, alias: str = "default", instance_url: str | None = None) -> str:
         """Run SF CLI web login flow."""
         token = await self.auth_service.login(alias=alias, instance_url=instance_url)
-        await self.refresh_org_list()
         self._current_alias = alias
+        await self.refresh_org_list()
+        if alias not in self._org_sessions:
+            stored = await self.auth_service.token_store.load_token(alias)
+            if stored and stored.username and stored.instance_url:
+                self._org_sessions[alias] = OrgSession(
+                    alias=alias,
+                    username=stored.username,
+                    instance_url=stored.instance_url.rstrip("/"),
+                    is_default=(alias == "default"),
+                )
         return token
 
     async def login_device(self, alias: str = "default", instance_url: str | None = None) -> str:
         """Run SF CLI device login flow for headless environments."""
         token = await self.auth_service.login_device(alias=alias, instance_url=instance_url)
-        await self.refresh_org_list()
         self._current_alias = alias
+        await self.refresh_org_list()
+        if alias not in self._org_sessions:
+            stored = await self.auth_service.token_store.load_token(alias)
+            if stored and stored.username and stored.instance_url:
+                self._org_sessions[alias] = OrgSession(
+                    alias=alias,
+                    username=stored.username,
+                    instance_url=stored.instance_url.rstrip("/"),
+                    is_default=(alias == "default"),
+                )
         return token
 
     async def logout(self, alias: str = "default") -> bool:
