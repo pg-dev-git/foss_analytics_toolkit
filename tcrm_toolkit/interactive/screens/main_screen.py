@@ -11,6 +11,7 @@ from textual.widgets import DataTable, Label, ListItem, ListView, Static
 from tcrm_toolkit.interactive.safety import SafetyMonitor
 from tcrm_toolkit.interactive.screens.help_screen import HelpScreen
 from tcrm_toolkit.interactive.session import SessionManager
+from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
 from tcrm_toolkit.interactive.widgets.detail_panel import DetailPanel
 
 
@@ -105,49 +106,38 @@ class MainScreen(Screen):
     async def _load_datasets_view(self, container: Container) -> None:
         """Load datasets browser."""
         from tcrm_toolkit.interactive.operations.dataset_ops import create_dataset_browser
-        from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
         browser = create_dataset_browser(self.session)
         await container.mount(browser)
-
-        @browser.on(DataBrowser.RowSelected)
-        async def on_dataset_selected(event: DataBrowser.RowSelected) -> None:
-            detail = self.query_one("#detail-panel", DetailPanel)
-            detail.show_dataset(event.row)
 
     async def _load_dashboards_view(self, container: Container) -> None:
         """Load dashboards browser."""
         from tcrm_toolkit.interactive.operations.dashboard_ops import create_dashboard_browser
-        from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
         browser = create_dashboard_browser(self.session)
         await container.mount(browser)
-
-        @browser.on(DataBrowser.RowSelected)
-        async def on_dashboard_selected(event: DataBrowser.RowSelected) -> None:
-            detail = self.query_one("#detail-panel", DetailPanel)
-            detail.show_dashboard(event.row)
 
     async def _load_dataflows_view(self, container: Container) -> None:
         """Load dataflows browser."""
         from tcrm_toolkit.interactive.operations.dataflow_ops import create_dataflow_browser
-        from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
         browser = create_dataflow_browser(self.session)
         await container.mount(browser)
-
-        @browser.on(DataBrowser.RowSelected)
-        async def on_dataflow_selected(event: DataBrowser.RowSelected) -> None:
-            detail = self.query_one("#detail-panel", DetailPanel)
-            detail.show_dataflow(event.row)
 
     async def _load_jobs_view(self, container: Container) -> None:
         """Load jobs browser with auto-refresh."""
         from tcrm_toolkit.interactive.operations.dataflow_ops import create_dataflow_job_browser
-        from tcrm_toolkit.interactive.widgets.data_table import DataBrowser
         browser = create_dataflow_job_browser(self.session)
         await container.mount(browser)
 
-        @browser.on(DataBrowser.RowSelected)
-        async def on_job_selected(event: DataBrowser.RowSelected) -> None:
-            detail = self.query_one("#detail-panel", DetailPanel)
+    @on(DataBrowser.RowSelected)
+    async def on_data_browser_row_selected(self, event: DataBrowser.RowSelected) -> None:
+        """Handle row selection from any data browser."""
+        detail = self.query_one("#detail-panel", DetailPanel)
+        if self._current_view == "datasets":
+            detail.show_dataset(event.row)
+        elif self._current_view == "dashboards":
+            detail.show_dashboard(event.row)
+        elif self._current_view == "dataflows":
+            detail.show_dataflow(event.row)
+        elif self._current_view == "jobs":
             detail.show_dataflow_job(event.row)
 
     async def _load_orgs_view(self, container: Container) -> None:
