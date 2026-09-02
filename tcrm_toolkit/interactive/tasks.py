@@ -287,3 +287,30 @@ def process_csv_chunk(args: tuple) -> dict:
         "data_file_base64": b64,
         "rows": len(df),
     }
+
+
+def split_csv_for_parallel(input_path: str, num_chunks: int, output_dir: str) -> list[str]:
+    """
+    Split large CSV into chunks for parallel processing.
+
+    Returns list of chunk file paths.
+    """
+    from pathlib import Path
+
+    import pandas as pd
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    chunk_paths = []
+    chunk_size = 100000  # 100k rows per chunk
+
+    for i, chunk in enumerate(pd.read_csv(input_path, chunksize=chunk_size)):
+        if i >= num_chunks:
+            break
+        chunk_path = output_dir / f"chunk_{i:04d}.csv"
+        chunk.to_csv(chunk_path, index=False)
+        chunk_paths.append(str(chunk_path))
+
+    return chunk_paths
+

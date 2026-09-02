@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Any
 
 from tcrm_toolkit.interactive.config import TUIConfig
 

@@ -28,7 +28,7 @@ def check_imports():
         ("tenacity", "tenacity"),
         ("typer", "typer"),
     ]
-    
+
     for name, module in imports:
         try:
             __import__(module)
@@ -64,7 +64,7 @@ def check_platform_utils():
 def main():
     print(f"[INFO] Cross-platform verification for {platform.system()} {platform.machine()}")
     print("=" * 60)
-    
+
     check_python_version()
     print()
     check_imports()

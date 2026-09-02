@@ -149,23 +149,23 @@ async def test_task_runner():
 def test_phase_4_polish_components():
     import tempfile
     from pathlib import Path
-    from tcrm_toolkit.interactive.config import TUIConfig
+
     from tcrm_toolkit.interactive.config_manager import ConfigManager
-    from tcrm_toolkit.interactive.window_manager import WindowManager
     from tcrm_toolkit.interactive.notifications import NotificationManager
-    from tcrm_toolkit.interactive.widgets.command_palette import CommandPaletteScreen
     from tcrm_toolkit.interactive.screens.help_screen import HelpScreen
+    from tcrm_toolkit.interactive.widgets.command_palette import CommandPaletteScreen
+    from tcrm_toolkit.interactive.window_manager import WindowManager
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
-        
+
         # Test Config & ConfigManager
         cfg_mgr = ConfigManager(tmp_path)
         cfg = cfg_mgr.load()
         assert cfg.theme == "dark"
         cfg.theme = "light"
         cfg_mgr.save(cfg)
-        
+
         cfg_mgr2 = ConfigManager(tmp_path)
         cfg2 = cfg_mgr2.load()
         assert cfg2.theme == "light"
@@ -189,6 +189,41 @@ def test_phase_4_polish_components():
         # Test HelpScreen init
         help_screen = HelpScreen()
         assert help_screen is not None
+
+
+def test_phase_3_operations_and_widgets(settings):
+    from tcrm_toolkit.interactive.operations.dashboard_backup import DashboardBackupManager
+    from tcrm_toolkit.interactive.operations.dataflow_control import DataflowController
+    from tcrm_toolkit.interactive.operations.dataset_extract import ParallelDatasetExtractor
+    from tcrm_toolkit.interactive.operations.dataset_upload import ParallelDatasetUploader
+    from tcrm_toolkit.interactive.tasks import TaskRunner
+    from tcrm_toolkit.interactive.widgets.progress_panel import ProgressPanel
+    from tcrm_toolkit.interactive.widgets.task_history import TaskHistory, TaskHistoryPanel
+
+    runner = TaskRunner()
+    progress_panel = ProgressPanel(runner)
+    assert progress_panel is not None
+
+    history_panel = TaskHistory(runner)
+    assert history_panel is not None
+    assert TaskHistoryPanel is TaskHistory
+
+    class DummySession:
+        settings = settings
+
+    session = DummySession()
+    extractor = ParallelDatasetExtractor(session, runner)
+    assert extractor is not None
+
+    uploader = ParallelDatasetUploader(session, runner)
+    assert uploader is not None
+
+    backup_mgr = DashboardBackupManager(session, runner)
+    assert backup_mgr is not None
+
+    df_controller = DataflowController(session, runner)
+    assert df_controller is not None
+
 
 
 

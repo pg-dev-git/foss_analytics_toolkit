@@ -128,8 +128,10 @@ def doctor() -> None:
     import asyncio
     import shutil
     import subprocess
-    import keyring
     from pathlib import Path
+
+    import keyring
+
     from tcrm_toolkit.interactive.safety import SafetyMonitor
 
     print_header("System Diagnostics", "Checking TCRM Toolkit setup and environment")

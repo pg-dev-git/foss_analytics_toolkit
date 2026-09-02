@@ -1,7 +1,7 @@
 """Enhanced notification manager with history and severity."""
 
 from datetime import datetime
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 
 class NotificationRecord(NamedTuple):

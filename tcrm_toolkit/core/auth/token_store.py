@@ -5,7 +5,6 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-import keyring
 import structlog
 
 from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData, SafeKeyring

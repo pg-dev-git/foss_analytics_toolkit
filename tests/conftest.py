@@ -77,6 +77,7 @@ def _set_test_env(monkeypatch):
 def settings():
     """Return Settings instance configured for tests."""
     import base64
+
     from tcrm_toolkit.core.config import Settings
     return Settings(
         encryption_key=base64.urlsafe_b64encode(b"12345678901234567890123456789012").decode(),
