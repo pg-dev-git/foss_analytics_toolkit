@@ -32,11 +32,25 @@ class TCRMApp(App):
         Binding("ctrl+p", "command_palette", "Command Palette", show=True),
         Binding("ctrl+o", "org_picker", "Switch Org", show=True),
         Binding("ctrl+r", "refresh", "Refresh", show=True),
-        Binding("f1", "help", "Help", show=False),
+        Binding("f1", "help", "Help", show=True),
         Binding("escape", "escape", "Back/Cancel", show=False),
     ]
 
     def __init__(self, **kwargs):
+        from tcrm_toolkit.interactive.config_manager import ConfigManager
+        from tcrm_toolkit.interactive.window_manager import WindowManager
+        from tcrm_toolkit.interactive.tasks import TaskRunner
+
+        self.config_manager = ConfigManager()
+        self.tui_config = self.config_manager.load()
+        self.window_manager = WindowManager()
+        self.task_runner = TaskRunner()
+
+        if self.tui_config.theme == "light":
+            type(self).CSS_PATH = "styles/light.css"
+        else:
+            type(self).CSS_PATH = "styles/dark.css"
+
         super().__init__(**kwargs)
         self.settings = get_settings()
         self.crypto = create_crypto_manager()
@@ -131,7 +145,7 @@ class TCRMApp(App):
 
     async def _mount_main_screen(self) -> None:
         if self._main_screen is None:
-            self._main_screen = MainScreen(self.session, self.safety)
+            self._main_screen = MainScreen(self.session, self.safety, self.task_runner)
 
         container = self.query_one("#main-container", Container)
         await container.mount(self._main_screen)
@@ -140,6 +154,10 @@ class TCRMApp(App):
     async def action_command_palette(self) -> None:
         if self._main_screen:
             await self._main_screen.action_command_palette()
+
+    async def action_help(self) -> None:
+        from tcrm_toolkit.interactive.screens.help_screen import HelpScreen
+        self.push_screen(HelpScreen())
 
     async def action_org_picker(self) -> None:
         orgs = self.session.list_orgs()
@@ -175,6 +193,7 @@ class TCRMApp(App):
     async def on_unmount(self) -> None:
         self._shutdown_event.set()
         self.safety.stop_monitoring()
+        await self.task_runner.close()
         await self.session.close()
         await self.safety.close()
 

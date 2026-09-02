@@ -13,6 +13,8 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import DataTable, Input, Label, Static
 
+from tcrm_toolkit.interactive.window_manager import WindowManager
+
 T = TypeVar("T")
 
 
@@ -96,12 +98,38 @@ class DataBrowser(Widget, Generic[T]):
         """Initialize table columns and load first page."""
         table = self.query_one("#data-table", DataTable)
 
+        from tcrm_toolkit.interactive.window_manager import WindowManager
+        win_mgr = WindowManager()
+        browser_id = self.id or self.title.lower().replace(" ", "_")
+        saved_widths = win_mgr.get(f"col_widths_{browser_id}", {})
+
         # Add columns
         for col in self.columns:
+            if col.key in saved_widths:
+                col.width = saved_widths[col.key]
             table.add_column(col.title, key=col.key, width=col.width)
 
         # Load initial data
         await self._load_page(0)
+
+    def on_unmount(self) -> None:
+        """Save column widths on unmount."""
+        try:
+            table = self.query_one("#data-table", DataTable)
+            win_mgr = WindowManager()
+            browser_id = self.id or self.title.lower().replace(" ", "_")
+            widths = {}
+            for col in self.columns:
+                try:
+                    c = table.get_column(col.key)
+                    if hasattr(c, 'width') and c.width:
+                        widths[col.key] = c.width
+                except Exception:
+                    if col.width:
+                        widths[col.key] = col.width
+            win_mgr.set(f"col_widths_{browser_id}", widths)
+        except Exception:
+            pass
 
     @on(DataTable.HeaderSelected, "#data-table")
     async def on_header_selected(self, event: DataTable.HeaderSelected) -> None:

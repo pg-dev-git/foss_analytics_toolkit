@@ -190,6 +190,10 @@ def test_phase_4_polish_components():
         help_screen = HelpScreen()
         assert help_screen is not None
 
+        # Test column widths persistence via WindowManager
+        win_mgr.set("col_widths_datasets", {"id": 15, "name": 35})
+        assert win_mgr.get("col_widths_datasets") == {"id": 15, "name": 35}
+
 
 def test_phase_3_operations_and_widgets(settings):
     from tcrm_toolkit.interactive.operations.dashboard_backup import DashboardBackupManager
