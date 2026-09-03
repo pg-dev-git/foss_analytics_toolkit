@@ -85,13 +85,10 @@ class SessionManager:
         except Exception:
             pass
 
-        self._org_sessions = {}
-
         for org in orgs:
             alias = org.get("alias") or org.get("username", "unknown")
             username = org.get("username")
             instance_url = org.get("instanceUrl", "")
-            connected = org.get("connectedStatus") in ("Connected", "Active") or org.get("isAuthorized", True) or bool(instance_url)
 
             if username and instance_url:
                 self._org_sessions[alias] = OrgSession(
@@ -101,7 +98,7 @@ class SessionManager:
                     is_default=(alias == "default"),
                 )
 
-        # Ensure current alias and default are in org sessions if tokens exist
+        # Ensure current alias and default are in org sessions if tokens exist in token store
         for alias in [self._current_alias, "default"]:
             if alias not in self._org_sessions:
                 try:

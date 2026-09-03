@@ -24,6 +24,11 @@ Screen {
     color: $text;
 }
 
+#main-container, MainScreen, #main-layout {
+    width: 100%;
+    height: 100%;
+}
+
 Header {
     background: $primary;
     color: $text;
