@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: crma-dev
+    volumes:
+      - .:/app:cached
+      - ~/.ssh:/home/tcrm/.ssh:ro
+      - ~/.gitconfig:/home/tcrm/.gitconfig:ro
+    environment:
+      - DISPLAY=${DISPLAY}
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
+      - XDG_RUNTIME_DIR=/run/user/${UID}
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+    network_mode: "host"
+    working_dir: /app
+    command: sleep infinity
+
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: crma-prod
+    volumes:
+      - tcrm-data:/home/tcrm/.local/share/tcrm
+      - tcrm-config:/home/tcrm/.config/tcrm
+    stdin_open: true
+    tty: true
+    network_mode: "host"
+
+volumes:
+  tcrm-data:
+  tcrm-config:
