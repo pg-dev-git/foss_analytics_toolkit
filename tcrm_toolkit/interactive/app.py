@@ -38,7 +38,7 @@ class TCRMApp(App):
 
     def __init__(self, **kwargs):
         from tcrm_toolkit.core.logger import setup_logging
-        setup_logging()
+        setup_logging(stream_logs=False)
 
         from tcrm_toolkit.interactive.config_manager import ConfigManager
         from tcrm_toolkit.interactive.window_manager import WindowManager

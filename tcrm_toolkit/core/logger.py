@@ -5,7 +5,7 @@ from pathlib import Path
 import structlog
 
 
-def setup_logging(log_file: Path | None = None) -> None:
+def setup_logging(log_file: Path | None = None, stream_logs: bool = True) -> None:
     """Configure structured logging to stderr and a persistent log file."""
     log_file = log_file or (Path.home() / ".tcrm" / "tcrm.log")
     try:
@@ -14,9 +14,14 @@ def setup_logging(log_file: Path | None = None) -> None:
     except Exception:
         file_handler = None
 
-    handlers = [logging.StreamHandler()]
+    handlers = []
+    if stream_logs:
+        handlers.append(logging.StreamHandler())
     if file_handler:
         handlers.append(file_handler)
+
+    if not handlers:
+        handlers.append(logging.StreamHandler())
 
     logging.basicConfig(
         level=logging.INFO,
