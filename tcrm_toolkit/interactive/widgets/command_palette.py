@@ -33,7 +33,9 @@ class CommandPaletteScreen(ModalScreen[str | None]):
         list_view = self.query_one("#nav-list", ListView)
         list_view.clear()
         for display_name, action_id in cmds:
-            list_view.append(ListItem(Static(display_name), id=f"cmd-{action_id}"))
+            item = ListItem(Static(display_name))
+            item.action_id = action_id
+            list_view.append(item)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         query = event.value.lower()
@@ -46,10 +48,9 @@ class CommandPaletteScreen(ModalScreen[str | None]):
         self._populate_list(self.filtered_commands)
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
-        item_id = event.item.id
-        if item_id and item_id.startswith("cmd-"):
-            action_id = item_id[4:]
-            self.dismiss(action_id)
+        item = event.item
+        if hasattr(item, "action_id"):
+            self.dismiss(item.action_id)
 
     def on_key(self, event) -> None:
         if event.key == "escape":

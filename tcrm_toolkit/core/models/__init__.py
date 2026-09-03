@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
 # Progress Models (used by UI)
@@ -133,15 +134,15 @@ class Dataset(BaseModel):
     current_version_url: str | None = None
     versions_url: str | None = None
     histories_url: str | None = None
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
+    created_date: datetime | None = None
+    created_by_id: str | None = None
+    last_modified_date: datetime | None = None
+    last_modified_by_id: str | None = None
     row_count: int | None = None
     status: str = "Active"
     type: str = "Edgemart"
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", alias_generator=to_camel, populate_by_name=True)
 
 
 class DatasetListResponse(BaseModel):
@@ -200,14 +201,14 @@ class Dashboard(BaseModel):
     description: str | None = None
     folder_id: str | None = None
     folder_name: str | None = None
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
+    created_date: datetime | None = None
+    created_by_id: str | None = None
+    last_modified_date: datetime | None = None
+    last_modified_by_id: str | None = None
     histories_url: str | None = None
     datasets_url: str | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", alias_generator=to_camel, populate_by_name=True)
 
 
 class DashboardListResponse(BaseModel):
@@ -246,14 +247,14 @@ class Dataflow(BaseModel):
     name: str
     label: str
     description: str | None = None
-    status: str
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
+    status: str | None = None
+    created_date: datetime | None = None
+    created_by_id: str | None = None
+    last_modified_date: datetime | None = None
+    last_modified_by_id: str | None = None
     histories_url: str | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", alias_generator=to_camel, populate_by_name=True)
 
 
 class DataflowListResponse(BaseModel):

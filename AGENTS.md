@@ -72,6 +72,7 @@ Use the format `<type>(<scope>): <short description>`:
   `ProcessPoolExecutor` only for CPU-bound work (pandas).
 - `structlog` for logging. `datetime.now(timezone.utc)` — **not** `datetime.utcnow()`
   (deprecated, flagged in CI warnings).
+- **Error Logging**: Centralized structured JSON logging via `core/logger.py` writes concurrently to `stderr` and persistent log file `~/.tcrm/tcrm.log`. TUI unhandled errors and background worker failures are intercepted and logged via `TCRMApp.on_error`.
 - Keep it simple: no special-case glue, no dead stubs. Prefer eliminating a branch over
   guarding it.
 

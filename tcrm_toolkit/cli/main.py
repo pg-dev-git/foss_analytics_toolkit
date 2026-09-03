@@ -65,6 +65,9 @@ def callback(
     interactive_flag: bool = typer.Option(False, "--interactive", "-i", help="Launch interactive TUI"),
 ) -> None:
     """TCRM Toolkit - Salesforce Tableau CRM Analytics Toolkit."""
+    from tcrm_toolkit.core.logger import setup_logging
+    setup_logging()
+
     if version:
         from tcrm_toolkit import __version__
         console.print(f"tcrm-toolkit version {__version__}")

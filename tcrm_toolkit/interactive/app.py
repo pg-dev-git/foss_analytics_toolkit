@@ -37,6 +37,9 @@ class TCRMApp(App):
     ]
 
     def __init__(self, **kwargs):
+        from tcrm_toolkit.core.logger import setup_logging
+        setup_logging()
+
         from tcrm_toolkit.interactive.config_manager import ConfigManager
         from tcrm_toolkit.interactive.window_manager import WindowManager
         from tcrm_toolkit.interactive.tasks import TaskRunner
@@ -196,6 +199,14 @@ class TCRMApp(App):
         await self.task_runner.close()
         await self.session.close()
         await self.safety.close()
+
+    def on_error(self, event) -> None:
+        """Capture unhandled async worker/UI errors into structured logs."""
+        import structlog
+        logger = structlog.get_logger(__name__)
+        logger.exception("tui_unhandled_error", error=str(getattr(event, "error", event)))
+        self.notify(f"Error: {getattr(event, 'error', event)}", severity="error", timeout=5)
+        event.prevent_default()
 
 
 def main() -> None:
