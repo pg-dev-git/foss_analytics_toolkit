@@ -82,6 +82,12 @@ Use the format `<type>(<scope>): <short description>`:
 - Add tests for new/changed behaviour. Assert on real outputs/state, not mocked calls.
 - Integration tests mock the HTTP layer via the `mock_client` fixture — exercise real
   service code, not the client.
+- **Live Session Seeding & E2E Testing**:
+  - To test against a live Salesforce org without interactive browser login, use `scripts/seed_session.py`:
+    ```bash
+    TCRM_ACCESS_TOKEN="..." TCRM_INSTANCE_URL="..." TCRM_USERNAME="..." uv run python scripts/seed_session.py
+    ```
+  - **Token Expiry**: If a live session token expires or encounters authentication errors during testing, the agent must immediately notify the user to request a fresh token.
 
 ## Gotchas
 
