@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import structlog
@@ -25,7 +25,7 @@ class StoredToken:
     updated_at: str = ""  # ISO format string
 
     def __post_init__(self):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         if not self.created_at:
             self.created_at = now
         if not self.updated_at:
@@ -46,13 +46,13 @@ class StoredToken:
             return True
         try:
             expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
-            return datetime.utcnow() >= (expires - timedelta(seconds=buffer_seconds))
+            return datetime.now(timezone.utc) >= (expires - timedelta(seconds=buffer_seconds))
         except (ValueError, TypeError):
             return True
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow().isoformat()
+        self.updated_at = datetime.now(timezone.utc).isoformat()
 
 
 class TokenStore:
