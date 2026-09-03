@@ -25,7 +25,7 @@ async def _get_client(alias: str = "default") -> SalesforceClient:
     crypto = create_crypto_manager()
     auth_service = SFCLIAuthService(settings, crypto)
     try:
-        token = await auth_service.get_access_token(alias)
+        token = await auth_service.get_access_token(alias, auto_refresh=False)
         instance_url = await auth_service.get_instance_url(alias)
     except Exception as e:
         print_error(f"Authentication failed: {e}. Run 'tcrm auth login' first.")

@@ -1,5 +1,6 @@
 """Dataset service for TCRM Toolkit."""
 
+import asyncio
 import base64
 import json
 import math
@@ -134,7 +135,7 @@ class DatasetService:
 
     async def get_row_count(self, dataset_id: str, version_id: str) -> int:
         """Get total row count for a dataset using SAQL."""
-        saql = f'q = load "{dataset_id}/{version_id}"; q = group q by all; q = foreach q generate count() as "count"; q = limit q 1;'
+        saql = f'q = load "{dataset_id}/{version_id}"; q = group q by all; q = foreach q generate count() as count;'
         response = await self.client.saql_query(saql)
         records = response.get("results", {}).get("records", [])
         if records:
@@ -226,7 +227,10 @@ class DatasetService:
                     total_chunks=total_chunks,
                     status="running",
                 )
-                await progress_callback(progress)
+                if asyncio.iscoroutinefunction(progress_callback):
+                    await progress_callback(progress)
+                else:
+                    progress_callback(progress)
 
         # Combine and save
         if all_chunks:
