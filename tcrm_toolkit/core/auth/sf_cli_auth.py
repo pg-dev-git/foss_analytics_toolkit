@@ -152,10 +152,10 @@ class SFCLIAuthService:
     async def get_access_token(
         self,
         alias: str = "default",
-        auto_refresh: bool = True,
+        auto_refresh: bool = False,
     ) -> str:
         """
-        Get valid access token, auto-refresh if needed.
+        Get valid access token.
 
         Args:
             alias: Org alias
@@ -172,12 +172,6 @@ class SFCLIAuthService:
 
         if token and not token.is_expired():
             return token.access_token
-
-        # If we have a token but it's expired and auto_refresh failed,
-        # or no token at all, try to re-login
-        if auto_refresh:
-            logger.info("attempting_re_login", alias=alias)
-            return await self.login(alias=alias)
 
         raise SFCLIAuthError(
             f"No valid token for alias '{alias}'. Run 'tcrm auth login' first."

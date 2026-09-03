@@ -115,7 +115,7 @@ class SessionManager:
 
         return list(self._org_sessions.values())
 
-    async def ensure_valid_token(self, alias: str | None = None, auto_refresh: bool = True) -> str:
+    async def ensure_valid_token(self, alias: str | None = None, auto_refresh: bool = False) -> str:
         """Get valid access token for alias, auto-refresh if needed."""
         alias = alias or self._current_alias
 
