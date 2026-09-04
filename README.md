@@ -1,75 +1,96 @@
-### First things first: 
+# TCRM Toolkit
 
-### This is a FOSS tool, not an official Salesforce or Tableau product. This toolkit hasn't been officially tested or documented by Salesforce or Tableau. Salesforce support is not available. Use at your own risk. It's provided as is and without any type of warranties.
+Salesforce Tableau CRM (TCRM) Analytics Toolkit - A modern, async Python CLI for managing TCRM datasets, dashboards, and dataflows.
 
-This toolkit has the purpose of expand the usability of TCRM. There are many tasks that are difficult to do using the UI like uploading CSVs or backing up data. The goal is to make those tasks easy to complete.
+## Features
 
-#### ----------------------------------------------------------------------------------------------------------------
+- **Async Architecture**: Built on `httpx` with automatic retries and circuit breakers
+- **Secure Authentication**: Web PKCE, Device Authorization Flow, and JWT Bearer flows
+- **Credential Security**: Dynamic salt encryption with OS keyring integration
+- **Type Safety**: 100% typed with Pydantic models and mypy validation
+- **Modern CLI**: Rich terminal UI with progress bars and formatted tables
 
-### Dependencies:
-You need to have Salesforce CLI installed. Get it from here: https://developer.salesforce.com/tools/sfdxcli
+## Installation
 
-#### Notes for Win10: 
-You need to install *Windows Terminal* from the Microsoft App Store. There are colors and functions in the app that won't work in command prompt. You can get it here: https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701
+```bash
+# Clone the repository
+git clone https://github.com/pg-dev-git/foss_analytics_toolkit
+cd foss_analytics_toolkit
 
-After installing Windows Terminal, reboot and now you should have an option to open the terminal when you right click inside a directory.
-Navigate to the folder you extracted the tool, right click and launch Windows Terminal.
-Then just launch TCRM_toolkit.exe from it.
+# Install with uv (recommended) or pip
+uv sync --extra dev
+# or
+pip install -e ".[dev]"
+```
 
-Also, make sure you have the Visual C++ Redist installed. Get it from here: https://aka.ms/vs/16/release/vc_redist.x64.exe
+## Configuration
 
-### Python:
-The recommended version of Python is 3.9 but you can use 3.8 too. Python 3.10 won't work at the moment.
+Copy `.env.example` to `.env` and configure:
 
-You can run "python3.9 -m pip install -r requirements.txt" to install the required dependencies for the tool to run properly.
+```bash
+cp .env.example .env
+# Edit .env with your settings
+```
 
-#### ----------------------------------------------------------------------------------------------------------------
+## Usage
 
-### Compatibility:
-This tool is able to run on Windows/Linux/MacOS without any issues. If you find a bug, please report it.
+```bash
+# Authenticate
+tcrm auth login
 
-#### ----------------------------------------------------------------------------------------------------------------
+# List datasets
+tcrm datasets list
 
-### At this time, the only date format supported when uploading CSV files is: yyyy/mm/dd. If another format is used, the field will be formatted as text.
+# Extract dataset to CSV
+tcrm datasets extract <DATASET_ID>
 
-#### ----------------------------------------------------------------------------------------------------------------
+# Upload CSV to dataset
+tcrm datasets upload <DATASET_ID> <CSV_FILE>
 
-## Login instructions
+# List dashboards
+tcrm dashboards list
 
-There are two ways how to authenticate. Web Login and via a Connected app. The Web Login is the easier and recommended way.
+# Backup dashboard
+tcrm dashboards backup <DASHBOARD_ID>
 
-You will need the server id from the Company Information section of your instance and also the domain name.
+# List dataflows
+tcrm dataflows list
 
-### Instructions for Web Login:
+# Start/stop dataflow
+tcrm dataflows start <DATAFLOW_ID>
+tcrm dataflows stop <DATAFLOW_ID>
+```
 
-When you select this option on the console, enter your instance username and the server id. Your browser will open up the Salesforce login screen. Enter your credentials and you should be good to go. You can close the browser afterwards. *Make sure your user has a TCRM license and access to the Wave API*
+## Architecture
 
-### Instructions for Connected App: https://github.com/pg-dev-git/foss_analytics_toolkit/blob/master/conn-app.md
+```
+tcrm_toolkit/
+├── core/           # Reusable SDK layer (UI-agnostic)
+│   ├── config.py   # Pydantic settings
+│   ├── crypto.py   # Encryption with dynamic salts
+│   ├── client.py   # Async HTTP client with retries
+│   ├── models/     # Pydantic data models
+│   └── services/   # Domain services (auth, dataset, dashboard, dataflow)
+└── cli/            # Presentation layer only
+    ├── main.py     # Typer entry point
+    ├── commands/   # CLI command implementations
+    └── ui.py       # Rich formatting
+```
 
-#### ----------------------------------------------------------------------------------------------------------------
+## Development
 
-## Security
+```bash
+# Run tests
+pytest
 
-All config files will be encrypted with a password that you set up on the first run. If you forget the password, just delete the config files in the data folder and start from scratch.
+# Type checking
+mypy tcrm_toolkit
 
-#### ----------------------------------------------------------------------------------------------------------------
+# Linting
+ruff check tcrm_toolkit
+ruff format tcrm_toolkit
+```
 
-## Contact
+## License
 
-You can reach out via LinkedIn: https://www.linkedin.com/in/pedro-gagliardi-a9b95638/
-Or submit a PR here on GitHub
-
-#### ----------------------------------------------------------------------------------------------------------------
-
-## Data Extraction and Upload Performance
-
-When this tool is not targeted to execute massive "ETL" jobs, it can perform decent extractions/uploads. 
-If you want to download big datasets, you will need a lot of RAM.
-The following numbers were obtained on Windows Desktop with 16 cores and 32gb of RAM and a Ubuntu Desktop with 8 cores and 16gb of RAM.
-The tool will automatically try to use disk space in case you run out of RAM but it could also help if you manually increase the size of your SWAP.
-
-![alt text](https://i.ibb.co/CMptHth/perf-table.jpg)
-
-![alt text](https://i.ibb.co/vQnwHNg/16.jpg)
-
-![alt text](https://i.ibb.co/kGtNx3g/32.jpg)
+GNU Affero General Public License v3.0
