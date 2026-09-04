@@ -1,14 +1,12 @@
 """Unit tests for auth schemas."""
 
-import pytest
-from pydantic import ValidationError
 
 from asftool.core.models import (
-    OAuthToken,
     ConnectedAppConfig,
-    WebOAuthConfig,
-    DeviceFlowConfig,
     DeviceAuthorizationResponse,
+    DeviceFlowConfig,
+    OAuthToken,
+    WebOAuthConfig,
 )
 
 

@@ -62,7 +62,7 @@ class Settings(BaseSettings):
             if len(decoded) != 32:
                 raise ValueError("Encryption key must decode to exactly 32 bytes")
         except Exception as e:
-            raise ValueError(f"Invalid encryption key: {e}")
+            raise ValueError(f"Invalid encryption key: {e}") from e
         return v
 
     @field_validator("jwt_secret_key")

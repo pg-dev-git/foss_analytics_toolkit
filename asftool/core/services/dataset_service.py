@@ -1,14 +1,15 @@
 """Dataset service for ASFTool."""
 
-import asyncio
 import base64
 import json
 import math
-import structlog
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable
+from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
+import structlog
 
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
@@ -18,8 +19,8 @@ from asftool.core.models import (
     DatasetListResponse,
     DatasetXMD,
     ExtractionJob,
-    UploadJob,
     ExtractionProgress,
+    UploadJob,
     UploadProgress,
 )
 
@@ -450,7 +451,7 @@ class DatasetService:
                 status="processing",
             ))
 
-        result = await self.client.process_insights_external_data(external_data_id)
+        await self.client.process_insights_external_data(external_data_id)
 
         job.status = "completed"
         job.completed_at = pd.Timestamp.utcnow().to_pydatetime()
@@ -526,7 +527,7 @@ class DatasetService:
             status="processing",
         )
 
-        result = await self.client.process_insights_external_data(external_data_id)
+        await self.client.process_insights_external_data(external_data_id)
 
         yield UploadProgress(
             total_rows=total_rows,
@@ -554,6 +555,3 @@ class DatasetService:
         parsed = urlparse(url)
         params = parse_qs(parsed.query)
         return params.get("pageToken", [None])[0]
-
-
-from urllib.parse import urlparse, parse_qs

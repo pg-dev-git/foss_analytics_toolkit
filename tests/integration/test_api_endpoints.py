@@ -1,16 +1,15 @@
 """Integration tests for API endpoints with mocked responses."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
+import pytest
 
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings
-from asftool.core.services.dataset_service import DatasetService
 from asftool.core.services.dashboard_service import DashboardService
 from asftool.core.services.dataflow_service import DataflowService
-from asftool.core.models import Dataset, Dashboard, Dataflow
+from asftool.core.services.dataset_service import DatasetService
 
 
 class MockResponse:

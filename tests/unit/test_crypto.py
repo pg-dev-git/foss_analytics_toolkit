@@ -1,10 +1,11 @@
 """Unit tests for crypto module."""
 
 import base64
+
 import pytest
 
-from asftool.core.crypto import CryptoManager, EncryptedData
 from asftool.core.config import Settings
+from asftool.core.crypto import CryptoManager, EncryptedData
 
 
 @pytest.fixture
@@ -56,7 +57,7 @@ class TestCryptoManager:
         plaintext = "test secret data"
         encrypted = crypto1.encrypt(plaintext)
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017  (any crypto error is acceptable; pinning the type would test the impl)
             crypto2.decrypt(encrypted)
 
     def test_encrypt_json_decrypt_json(self, crypto_manager):

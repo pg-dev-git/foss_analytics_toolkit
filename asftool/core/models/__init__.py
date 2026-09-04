@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Progress Models (used by UI)

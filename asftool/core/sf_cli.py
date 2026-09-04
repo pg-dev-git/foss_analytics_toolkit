@@ -5,8 +5,8 @@ import json
 import shutil
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any
 
 import structlog
 
@@ -18,10 +18,10 @@ class SFCLIAuthResult:
     """Result from SF CLI authentication."""
     access_token: str
     instance_url: str
-    refresh_token: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    refresh_token: str | None = None
+    expires_at: datetime | None = None
     alias: str = "default"
-    username: Optional[str] = None
+    username: str | None = None
 
 
 class SFCLIError(Exception):
@@ -45,14 +45,14 @@ class SFCLIManager:
             cli_command: SF CLI command name ('sf' or 'sfdx')
         """
         self.cli_command = cli_command
-        self._cli_path: Optional[str] = None
+        self._cli_path: str | None = None
 
     def is_available(self) -> bool:
         """Check if SF CLI is installed and available."""
         self._cli_path = self._find_cli_path()
         return self._cli_path is not None
 
-    def _find_cli_path(self) -> Optional[str]:
+    def _find_cli_path(self) -> str | None:
         """Find SF CLI executable path, checking common locations."""
         # First try standard PATH lookup
         path = shutil.which(self.cli_command)
@@ -176,7 +176,7 @@ class SFCLIManager:
                 process.communicate(),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
         except FileNotFoundError as e:
             raise SFCLINotFoundError(f"SF CLI not found: {self.cli_command}") from e
@@ -206,7 +206,7 @@ class SFCLIManager:
     async def login_web(
         self,
         alias: str = "default",
-        instance_url: Optional[str] = None,
+        instance_url: str | None = None,
         timeout: int = 300,
     ) -> SFCLIAuthResult:
         """

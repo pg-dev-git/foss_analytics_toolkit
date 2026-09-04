@@ -1,7 +1,8 @@
 """Dataflow service for ASFTool."""
 
-import structlog
 from typing import Any
+
+import structlog
 
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
@@ -109,8 +110,6 @@ class DataflowService:
         output_path: str | None = None,
     ) -> dict[str, Any]:
         """Backup current dataflow definition."""
-        dataflow = await self.get_dataflow(dataflow_id)
-
         # Get the dataflow definition
         response = await self.client.get(
             f"{self.client.wave_base_url}/dataflows/{dataflow_id}"

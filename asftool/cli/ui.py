@@ -1,28 +1,27 @@
 """Rich UI components for ASFTool CLI."""
 
-import asyncio
-from pathlib import Path
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
+    BarColumn,
     Progress,
     SpinnerColumn,
-    TextColumn,
-    BarColumn,
     TaskProgressColumn,
+    TextColumn,
     TimeRemainingColumn,
 )
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 from rich.text import Text
 
 from asftool.core.models import (
-    Dataset,
     Dashboard,
     Dataflow,
     DataflowJob,
+    Dataset,
     ExtractionProgress,
     UploadProgress,
 )
