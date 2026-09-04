@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [project.scripts]
-asftool = "asftool.cli.main:app"
+asftool = "asftool.cli.main:main"
 
 [project.optional-dependencies]
 dev = [
