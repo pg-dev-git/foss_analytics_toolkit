@@ -1,19 +1,30 @@
-"""Data Manager Jobs menu — stub for Phase 3. Full implementation in Phase 7."""
+"""Data Manager Jobs menu — wired to Phase 7 job commands."""
+
+import typer
 
 from asftool.cli.menu import Menu, MenuItem
-from asftool.cli.ui import print_warning
-
-
-async def _stub(operation: str) -> None:
-    print_warning(f"{operation} — coming in Phase 7 (Data Manager Jobs)")
+from asftool.cli.ui import prompt_text
 
 
 async def list_jobs() -> None:
-    await _stub("List jobs")
+    from asftool.cli.commands.jobs import list_jobs_async
+
+    try:
+        await list_jobs_async()
+    except typer.Exit:
+        pass
 
 
 async def show_job() -> None:
-    await _stub("Show job details")
+    from asftool.cli.commands.jobs import show_job_async
+
+    job_id = prompt_text("Job ID")
+    if not job_id:
+        return
+    try:
+        await show_job_async(job_id=job_id)
+    except typer.Exit:
+        pass
 
 
 def jobs_operations(menu: Menu) -> None:
