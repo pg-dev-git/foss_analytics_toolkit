@@ -124,7 +124,9 @@ class SFCLIManager:
                 "Install from https://developer.salesforce.com/tools/sfdxcli"
             )
 
-        cmd = [self._cli_path] + args
+        # is_available() guarantees _cli_path is set
+        assert self._cli_path is not None
+        cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli", command=cmd)
 
         try:
@@ -163,7 +165,9 @@ class SFCLIManager:
                 "Install from https://developer.salesforce.com/tools/sfdxcli"
             )
 
-        cmd = [self._cli_path] + args
+        # is_available() guarantees _cli_path is set
+        assert self._cli_path is not None
+        cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli_async", command=cmd)
 
         try:
@@ -184,7 +188,7 @@ class SFCLIManager:
             raise SFCLIError(f"Failed to run SF CLI: {e}") from e
 
         result = subprocess.CompletedProcess(
-            args=cmd,
+            args=cmd,  # type: ignore[arg-type]
             returncode=process.returncode or 0,
             stdout=stdout.decode() if stdout else "",
             stderr=stderr.decode() if stderr else "",

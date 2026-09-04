@@ -5,7 +5,7 @@ import json
 import math
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
@@ -361,7 +361,7 @@ class DatasetService:
         dataset_id: str,
         file_path: Path,
         dataset_name: str | None = None,
-        operation: str = "Overwrite",
+        operation: Literal["Overwrite", "Append"] = "Overwrite",
         chunk_size: int = 50000,
         progress_callback: Callable | None = None,
     ) -> UploadJob:

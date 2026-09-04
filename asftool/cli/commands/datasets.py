@@ -8,6 +8,7 @@ interactive menu (asftool/cli/menus/datasets.py).
 import asyncio
 from collections.abc import Callable
 from pathlib import Path
+from typing import Literal
 
 import typer
 from rich.table import Table
@@ -149,7 +150,7 @@ def upload_dataset(
     name: str | None = typer.Option(
         None, "--name", "-n", help="Dataset name (default: from dataset)"
     ),
-    operation: str = typer.Option(
+    operation: Literal["Overwrite", "Append"] = typer.Option(
         "Overwrite", "--operation", "-o", help="Overwrite or Append"
     ),
     show_progress: bool = typer.Option(

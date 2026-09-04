@@ -4,8 +4,8 @@
 class ASFToolError(Exception):
     """Base exception for ASFTool."""
 
-    def __init__(self, message: str, *args: object) -> None:
-        super().__init__(message, *args)
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
         self.message = message
 
 
@@ -27,11 +27,11 @@ class SalesforceAPIError(ASFToolError):
     def __init__(
         self,
         message: str,
+        *,
         status_code: int | None = None,
         error_code: str | None = None,
-        *args: object,
     ) -> None:
-        super().__init__(message, *args)
+        super().__init__(message)
         self.status_code = status_code
         self.error_code = error_code
 
@@ -39,8 +39,8 @@ class SalesforceAPIError(ASFToolError):
 class SalesforceAuthError(SalesforceAPIError):
     """Raised when authentication fails or token expires."""
 
-    def __init__(self, message: str = "Authentication failed or token expired", *args: object) -> None:
-        super().__init__(message, *args, status_code=401)
+    def __init__(self, message: str = "Authentication failed or token expired") -> None:
+        super().__init__(message, status_code=401)
 
 
 class SalesforceRateLimitError(SalesforceAPIError):
@@ -49,18 +49,18 @@ class SalesforceRateLimitError(SalesforceAPIError):
     def __init__(
         self,
         message: str = "Rate limit exceeded",
+        *,
         retry_after: int = 60,
-        *args: object,
     ) -> None:
-        super().__init__(message, *args, status_code=429)
+        super().__init__(message, status_code=429)
         self.retry_after = retry_after
 
 
 class SalesforceNotFoundError(SalesforceAPIError):
     """Raised when a resource is not found."""
 
-    def __init__(self, message: str = "Resource not found", *args: object) -> None:
-        super().__init__(message, *args, status_code=404)
+    def __init__(self, message: str = "Resource not found") -> None:
+        super().__init__(message, status_code=404)
 
 
 class OAuthError(ASFToolError):
@@ -69,10 +69,10 @@ class OAuthError(ASFToolError):
     def __init__(
         self,
         message: str,
+        *,
         error_code: str | None = None,
-        *args: object,
     ) -> None:
-        super().__init__(message, *args)
+        super().__init__(message)
         self.error_code = error_code
 
 
