@@ -69,7 +69,13 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     dataflows_menu = main.add_submenu("3", "⚙️  Dataflows")
     jobs_menu = main.add_submenu("4", "📋  Data Manager Jobs")
     auth_menu = main.add_submenu("5", "🔐  Authentication")
-    main.add(MenuItem(key="6", label="🩺  Doctor / Diagnostics"))
+
+    async def _run_doctor() -> None:
+        from asftool.cli.commands.doctor import run_diagnostics
+
+        run_diagnostics()
+
+    main.add(MenuItem(key="6", label="🩺  Doctor / Diagnostics", handler=_run_doctor))
     main.add(MenuItem(key="q", label="❌  Exit"))
 
     # Wire submenu operations (phases 4-7 fill in handlers).
