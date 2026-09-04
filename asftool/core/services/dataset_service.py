@@ -79,10 +79,10 @@ class DatasetService:
         response = await self.client.get_dataset_xmd(dataset_id, version_id)
         return DatasetXMD(**response)
 
-    async def get_dataset_dependencies(self, dataset_id: str) -> list[dict[str, Any]]:
+    async def get_dataset_dependencies(self, dataset_id: str) -> list[Any]:
         """Get dataset dependencies (downstream dataflows/dashboards)."""
         response = await self.client.get_dataset_dependencies(dataset_id)
-        return response.get("dependencies", [])
+        return response.get("dependencies", [])  # type: ignore[no-any-return]
 
     # =========================================================================
     # Extraction
@@ -139,7 +139,7 @@ class DatasetService:
         response = await self.client.saql_query(saql)
         records = response.get("results", {}).get("records", [])
         if records:
-            return records[0].get("count", 0)
+            return int(records[0].get("count", 0))
         return 0
 
     async def extract_dataset(

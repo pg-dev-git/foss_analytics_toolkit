@@ -211,17 +211,17 @@ class SalesforceClient:
         return await self._request("DELETE", path, **kwargs)
 
     # Salesforce-specific API methods
-    async def query(self, soql: str) -> dict[str, Any]:
+    async def query(self, soql: str) -> Any:
         """Execute a SOQL query."""
         response = await self.get("/query", params={"q": soql})
         return response.json()
 
-    async def query_all(self, soql: str) -> dict[str, Any]:
+    async def query_all(self, soql: str) -> Any:
         """Execute a SOQL query including deleted/archived records."""
         response = await self.get("/queryAll", params={"q": soql})
         return response.json()
 
-    async def saql_query(self, query: str) -> dict[str, Any]:
+    async def saql_query(self, query: str) -> Any:
         """Execute a SAQL query against Wave/Analytics."""
         payload = {"query": query, "queryLanguage": "SAQL"}
         response = await self.post(f"{self.wave_base_url}/query", json=payload)
@@ -233,7 +233,7 @@ class SalesforceClient:
         page_size: int = 50,
         sort: str = "Mru",
         page_token: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Any:
         """List datasets with pagination."""
         params = {"pageSize": page_size, "sort": sort}
         if page_token:
@@ -241,17 +241,17 @@ class SalesforceClient:
         response = await self.get(f"{self.wave_base_url}/datasets", params=params)
         return response.json()
 
-    async def get_dataset(self, dataset_id: str) -> dict[str, Any]:
+    async def get_dataset(self, dataset_id: str) -> Any:
         """Get dataset details by ID."""
         response = await self.get(f"{self.wave_base_url}/datasets/{dataset_id}")
         return response.json()
 
-    async def get_dataset_version(self, dataset_id: str, version_id: str) -> dict[str, Any]:
+    async def get_dataset_version(self, dataset_id: str, version_id: str) -> Any:
         """Get specific dataset version."""
         response = await self.get(f"{self.wave_base_url}/datasets/{dataset_id}/versions/{version_id}")
         return response.json()
 
-    async def get_dataset_xmd(self, dataset_id: str, version_id: str) -> dict[str, Any]:
+    async def get_dataset_xmd(self, dataset_id: str, version_id: str) -> Any:
         """Get dataset XMD (Extended Metadata)."""
         response = await self.get(
             f"{self.wave_base_url}/datasets/{dataset_id}/versions/{version_id}/xmds/main"
@@ -262,7 +262,7 @@ class SalesforceClient:
         """Delete a dataset."""
         return await self.delete(f"{self.wave_base_url}/datasets/{dataset_id}")
 
-    async def get_dataset_dependencies(self, dataset_id: str) -> dict[str, Any]:
+    async def get_dataset_dependencies(self, dataset_id: str) -> Any:
         """Get dataset dependencies (downstream dataflows/dashboards)."""
         response = await self.get(f"{self.wave_base_url}/dependencies/{dataset_id}")
         return response.json()
@@ -273,7 +273,7 @@ class SalesforceClient:
         page_size: int = 50,
         sort: str = "Mru",
         page_token: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Any:
         """List dashboards with pagination."""
         params = {"pageSize": page_size, "sort": sort}
         if page_token:
@@ -281,12 +281,12 @@ class SalesforceClient:
         response = await self.get(f"{self.wave_base_url}/dashboards", params=params)
         return response.json()
 
-    async def get_dashboard(self, dashboard_id: str) -> dict[str, Any]:
+    async def get_dashboard(self, dashboard_id: str) -> Any:
         """Get dashboard details by ID."""
         response = await self.get(f"{self.wave_base_url}/dashboards/{dashboard_id}")
         return response.json()
 
-    async def get_dashboard_datasets(self, dashboard_id: str) -> dict[str, Any]:
+    async def get_dashboard_datasets(self, dashboard_id: str) -> Any:
         """Get datasets used in a dashboard."""
         response = await self.get(f"{self.wave_base_url}/dashboards/{dashboard_id}/datasets")
         return response.json()
@@ -296,29 +296,29 @@ class SalesforceClient:
         return await self.delete(f"{self.wave_base_url}/dashboards/{dashboard_id}")
 
     # Dataflow methods
-    async def list_dataflows(self) -> dict[str, Any]:
+    async def list_dataflows(self) -> Any:
         """List all dataflows."""
         response = await self.get(f"{self.wave_base_url}/dataflows")
         return response.json()
 
-    async def get_dataflow(self, dataflow_id: str) -> dict[str, Any]:
+    async def get_dataflow(self, dataflow_id: str) -> Any:
         """Get dataflow details by ID."""
         response = await self.get(f"{self.wave_base_url}/dataflows/{dataflow_id}")
         return response.json()
 
-    async def start_dataflow(self, dataflow_id: str) -> dict[str, Any]:
+    async def start_dataflow(self, dataflow_id: str) -> Any:
         """Start a dataflow execution."""
         payload = {"dataflowId": dataflow_id, "command": "start"}
         response = await self.post(f"{self.wave_base_url}/dataflowjobs", json=payload)
         return response.json()
 
-    async def stop_dataflow(self, dataflow_id: str) -> dict[str, Any]:
+    async def stop_dataflow(self, dataflow_id: str) -> Any:
         """Stop a running dataflow."""
         payload = {"dataflowId": dataflow_id, "command": "stop"}
         response = await self.post(f"{self.wave_base_url}/dataflowjobs", json=payload)
         return response.json()
 
-    async def list_dataflow_jobs(self) -> dict[str, Any]:
+    async def list_dataflow_jobs(self) -> Any:
         """List dataflow jobs."""
         response = await self.get(f"{self.wave_base_url}/dataflowjobs")
         return response.json()
@@ -329,7 +329,7 @@ class SalesforceClient:
         edgemart_alias: str,
         metadata_json: str,
         operation: str = "Overwrite",
-    ) -> dict[str, Any]:
+    ) -> Any:
         """Create an InsightsExternalData job for CSV upload."""
         payload = {
             "Format": "Csv",
@@ -346,7 +346,7 @@ class SalesforceClient:
         external_data_id: str,
         part_number: int,
         data_file_base64: str,
-    ) -> dict[str, Any]:
+    ) -> Any:
         """Upload a part of the CSV data."""
         payload = {
             "DataFile": data_file_base64,
@@ -356,14 +356,14 @@ class SalesforceClient:
         response = await self.post("/sobjects/InsightsExternalDataPart", json=payload)
         return response.json()
 
-    async def process_insights_external_data(self, external_data_id: str) -> dict[str, Any]:
+    async def process_insights_external_data(self, external_data_id: str) -> Any:
         """Process the uploaded data (trigger Data Manager job)."""
         payload = {"Action": "Process"}
         response = await self.patch(f"/sobjects/InsightsExternalData/{external_data_id}", json=payload)
         return response.json()
 
     # Limits
-    async def get_limits(self) -> dict[str, Any]:
+    async def get_limits(self) -> Any:
         """Get API limits."""
         response = await self.get("/limits")
         return response.json()

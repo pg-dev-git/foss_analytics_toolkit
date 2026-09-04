@@ -108,7 +108,7 @@ class DataflowService:
         self,
         dataflow_id: str,
         output_path: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> Any:
         """Backup current dataflow definition."""
         # Get the dataflow definition
         response = await self.client.get(

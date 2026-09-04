@@ -176,6 +176,8 @@ def prompt_select(prompt_text: str, choices: list[str], default: str | None = No
                 "Enter your choice",
                 default=str(default) if default else None,
             )
+            if selection is None:
+                continue
             idx = int(selection) - 1
             if 0 <= idx < len(choices):
                 return choices[idx]
@@ -191,7 +193,8 @@ def prompt_confirm(prompt_text: str, default: bool = False) -> bool:
 
 def prompt_text(prompt_text: str, default: str | None = None) -> str:
     """Prompt user for text input."""
-    return Prompt.ask(prompt_text, default=default)
+    result = Prompt.ask(prompt_text, default=default)
+    return result or ""
 
 
 def prompt_password(prompt_text: str) -> str:

@@ -119,7 +119,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    # ENCRYPTION_KEY and JWT_SECRET_KEY are required by Settings but loaded
+    # from the environment / .env file at runtime; not visible to mypy.
+    return Settings()  # type: ignore[call-arg]
 
 
 def generate_encryption_key() -> str:

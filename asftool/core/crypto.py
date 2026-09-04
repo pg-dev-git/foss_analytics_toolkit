@@ -101,7 +101,7 @@ class CryptoManager:
         """Encrypt a JSON-serializable dictionary."""
         return self.encrypt(json.dumps(data), iterations)
 
-    def decrypt_json(self, encrypted_data: EncryptedData) -> dict[str, Any]:
+    def decrypt_json(self, encrypted_data: EncryptedData) -> Any:
         """Decrypt and parse JSON."""
         return json.loads(self.decrypt(encrypted_data))
 
@@ -115,7 +115,7 @@ class CryptoManager:
             encrypted.to_json(),
         )
 
-    def retrieve_token(self, username: str) -> dict[str, Any] | None:
+    def retrieve_token(self, username: str) -> Any | None:
         """Retrieve OAuth token data from system keyring."""
         stored = keyring.get_password(self.KEYRING_SERVICE, f"token:{username}")
         if not stored:
