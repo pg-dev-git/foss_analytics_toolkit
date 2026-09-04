@@ -21,6 +21,7 @@ from asftool.cli.commands.auth import app as auth_app
 from asftool.cli.commands.dashboards import app as dashboards_app
 from asftool.cli.commands.dataflows import app as dataflows_app
 from asftool.cli.commands.datasets import app as datasets_app
+from asftool.cli.commands.doctor import app as doctor_app
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.menu import Menu, create_menus
 from asftool.cli.session import Session
@@ -38,6 +39,7 @@ app.add_typer(datasets_app, name="datasets")
 app.add_typer(dashboards_app, name="dashboards")
 app.add_typer(dataflows_app, name="dataflows")
 app.add_typer(jobs_app, name="jobs")
+app.add_typer(doctor_app, name="doctor")
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +166,7 @@ async def _run_menu_loop(main_menu: Menu) -> None:
 
 def _has_subcommand(argv: list[str]) -> bool:
     """True if argv contains a known subcommand (not just --flags)."""
-    known = {"auth", "datasets", "dashboards", "dataflows", "jobs"}
+    known = {"auth", "datasets", "dashboards", "dataflows", "jobs", "doctor"}
     for arg in argv[1:]:
         if arg in known:
             return True
