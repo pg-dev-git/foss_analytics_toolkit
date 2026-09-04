@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from tcrm_toolkit.core.models import (
+from asftool.core.models import (
     OAuthToken,
     ConnectedAppConfig,
     WebOAuthConfig,

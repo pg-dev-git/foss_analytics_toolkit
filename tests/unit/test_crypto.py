@@ -3,8 +3,8 @@
 import base64
 import pytest
 
-from tcrm_toolkit.core.crypto import CryptoManager, EncryptedData
-from tcrm_toolkit.core.config import Settings
+from asftool.core.crypto import CryptoManager, EncryptedData
+from asftool.core.config import Settings
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ class TestCryptoManager:
 
     def test_generate_encryption_key(self):
         """Test encryption key generation."""
-        from tcrm_toolkit.core.config import generate_encryption_key
+        from asftool.core.config import generate_encryption_key
 
         key = generate_encryption_key()
         decoded = base64.urlsafe_b64decode(key + "=" * (-len(key) % 4))
@@ -93,7 +93,7 @@ class TestCryptoManager:
 
     def test_generate_jwt_secret(self):
         """Test JWT secret generation."""
-        from tcrm_toolkit.core.config import generate_jwt_secret
+        from asftool.core.config import generate_jwt_secret
 
         secret = generate_jwt_secret()
         assert len(secret) >= 32

@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 
-from tcrm_toolkit.core.client import SalesforceClient
-from tcrm_toolkit.core.config import Settings
-from tcrm_toolkit.core.exceptions import (
+from asftool.core.client import SalesforceClient
+from asftool.core.config import Settings
+from asftool.core.exceptions import (
     SalesforceAuthError,
     SalesforceRateLimitError,
     SalesforceNotFoundError,

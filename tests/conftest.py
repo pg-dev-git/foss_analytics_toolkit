@@ -16,7 +16,7 @@ def event_loop():
 @pytest.fixture
 def sample_dataset():
     """Sample dataset for testing."""
-    from tcrm_toolkit.core.models import Dataset
+    from asftool.core.models import Dataset
     return Dataset(
         id="0Fb000000000001",
         name="TestDataset",
@@ -35,7 +35,7 @@ def sample_dataset():
 @pytest.fixture
 def sample_dashboard():
     """Sample dashboard for testing."""
-    from tcrm_toolkit.core.models import Dashboard
+    from asftool.core.models import Dashboard
     return Dashboard(
         id="0FK000000000001",
         name="TestDashboard",
@@ -52,7 +52,7 @@ def sample_dashboard():
 @pytest.fixture
 def sample_dataflow():
     """Sample dataflow for testing."""
-    from tcrm_toolkit.core.models import Dataflow
+    from asftool.core.models import Dataflow
     return Dataflow(
         id="03C000000000001",
         name="TestDataflow",
