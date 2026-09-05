@@ -172,24 +172,65 @@ the phase document and the current branch.
 
 ---
 
-## Lessons Learned (read these before adding new submenus or auth code)
+## Lessons Learned (read this section before making changes)
 
-These are the bugs that shipped in earlier phases and were caught only
-by user testing from the menu, not by unit tests. They are now fixed
-and have regression tests, but the patterns below are easy to
-re-introduce if you are not careful.
+This section captures the most important gotchas, bugs, and
+architectural patterns discovered across all 10 phases of the
+refactor. Many of these were shipped and only caught by user
+testing from the menu (not by unit tests). Each lesson is tied to
+the commit that fixed it; follow the trail in git history if you
+need full context.
 
-### 1. `*_async` wrappers must contain the async body, not delegate to sync commands
+### Architecture & dependencies
 
-If a Typer command is `def cmd(): _run(_async_fn())` and a menu handler
-calls `cmd()`, the menu loop's `asyncio.run()` collides with the
-`asyncio.run()` inside `cmd()`. The error is
-`RuntimeError: asyncio.run() cannot be called from a running event loop`.
+**1. `cli/` must never import from each other across command groups.**
+Each `commands/<domain>.py` is independent. Shared logic lives in
+`core/services/` and `core/auth/`. The `cli/session.py::Session`
+class is the only place a domain command should reach for the
+client — it owns auth + lifecycle and ensures the client is closed
+even on exception. The `asftool cli main` callback is the
+orchestrator that calls Typer's app or runs the menu loop. Never
+short-circuit the session lifecycle for convenience.
 
-The correct shape is:
+**2. The dependency direction is strict: `cli/ → core/tasks/ →
+core/services/ → core/`. Nothing below `core/` may import from
+`cli/`. This is enforced by convention, not a linter rule. If you
+add a new package, document its place in this chain in AGENTS.md.
+
+**3. `Session.client_context()` is an async context manager. It
+opens a `SalesforceClient` and closes it on exit, even when an
+exception propagates. The session itself is closed in the
+`finally` block of every `_async` function. This is the only
+correct way to use the client. Don't instantiate a bare
+`SalesforceClient` in a command.**
+
+### Phase 0-1: the rename and what it broke
+
+**4. Mechanical renames miss string content.** Phase 1 renamed
+`tcrm_toolkit` → `asftool` and `tcrm` → `asftool` in code paths
+(imports, pyproject, entry points) but not in user-facing strings
+inside `f-strings` and exception messages. The result: 3 hardcoded
+`"Run 'tcrm auth login'"` strings stayed in
+`core/auth/sf_cli_auth.py`. Tests didn't catch it because no test
+asserted the message text. Always grep for the old name as a string
+literal — not just as an identifier — after a rename. Fixed in
+commit `bdf94cb`, regression test in
+`tests/unit/test_auth_schemas.py::TestAuthErrorMessages`.
+
+**5. Phase 0 also killed the `core/services/auth_service.py`
+pure-Python OAuth. Never re-introduce it.** The only auth path is
+SF CLI subprocess → `org display --json` → token. The legacy
+service had manual OAuth callback server code that never worked
+reliably across networks. SF CLI's own refresh logic is the only
+abstraction we want to depend on.
+
+### Phase 2-7: the async/Typer pattern
+
+**6. `*_async` wrappers must contain the actual coroutine body, not
+delegate to the sync Typer command.** The correct shape is:
 
 ```python
-# Async wrapper - contains the actual coroutine body
+# Async wrapper - contains the full async body
 async def cmd_async(*args, **kwargs) -> None:
     session = Session(...)
     try:
@@ -204,24 +245,71 @@ def cmd(*args, **kwargs):
     _run(cmd_async(*args, **kwargs))
 ```
 
-The menu handler `await cmd_async(...)` works. The CLI command works.
-Both share the same code path. The regression test
-`tests/unit/test_menu_submenus.py` enforces this for all 5 submenus
-(auth, datasets, dashboards, dataflows, jobs).
+The anti-pattern that ships a bug:
 
-### 2. SF CLI's `org display --json` field is `expirationDate`, not `tokenExpiration`
+```python
+# BAD: wrapper just calls sync command
+async def cmd_async(*args, **kwargs):
+    cmd(*args, **kwargs)   # cmd ends with _run(_async_fn()) = asyncio.run(...)
+```
 
-The legacy `sfdx` CLI used `tokenExpiration`; the current `sf` CLI uses
-`expirationDate`. If the field name doesn't match, `expires_at` is
-parsed as `None` and `StoredToken.is_expired()` returns whatever the
-default is. See point 3 for why that default matters.
+When a menu handler `await cmd_async(...)` runs, it is already inside
+an event loop. The inner `asyncio.run()` in `cmd` raises
+`RuntimeError: asyncio.run() cannot be called from a running event
+loop`, the `coroutine was never awaited` warning is logged, and the
+menu dies. This bug shipped in Phases 4-7 because the wrappers
+were stubs. Fixed in commits `76acfc8` (auth), `8fffaae` (datasets),
+`ff96111` (dashboards), `9fbbfa2` (dataflows), `8fc8229` (jobs).
+The regression test `tests/unit/test_menu_submenus.py` enforces
+this for all 5 submenus by static-checking that every handler's
+source contains the `*_async` wrapper name.
 
-`_parse_auth_result` in `core/sf_cli.py` tries both names and
-falls back gracefully. Keep the fallback list in sync with
-real-world SF CLI output.
+**7. `asyncio.run()` is one-shot per process.** Once a Typer
+subcommand has finished and `asyncio.run()` returned, that event
+loop is dead. If you try to `await` something that was created on
+that loop (like an httpx connection) from a different loop, you
+get "Event loop is closed". Solution: create the client fresh per
+command inside `client_context()` (which is what `Session` does
+anyway), never cache an async client across commands.
 
-### 3. Don't return `True` for "unknown expiry" in `is_expired()`
+**8. The menu loop's `_run_menu_loop` runs in a single event loop.
+The `await item.handler()` call is the only way to enter handler
+code. A handler that does any sync I/O (including `asyncio.run()`)
+will block the loop and break other concurrent features. Always
+await the `*_async` wrappers — never call sync Typer commands
+directly from a handler.**
 
+### Phase 8: parallelism
+
+**9. `asyncio.Semaphore` + `asyncio.gather` is the right pattern for
+I/O-bound parallelism (e.g. concurrent SAQL queries).** Bound
+concurrency to ~10 in production to respect Salesforce rate limits
+(no documented limit, but empirically 10 works well).
+
+**10. `ProcessPoolExecutor` is for CPU-bound work only** (pandas
+concat, base64 encoding, CSV splitting). Picklable top-level
+functions are required for worker arguments. Lambdas and bound
+methods don't pickle. The pattern is `asyncio.to_thread()` to
+integrate a sync CPU-bound function into async code.
+
+**11. The `asftool/core/tasks/` module is TUI-agnostic and reusable.**
+If you add a new CPU-bound operation (e.g. parquet decode, gzip
+compression), put the worker function in
+`asftool/core/tasks/parallel.py` and a picklable top-level, then
+call it from the service via `TaskRunner.run_in_process_pool`.
+
+### Phase 9: SF CLI auth — the most fragile integration
+
+**12. SF CLI's `org display --json` field is `expirationDate`, not
+`tokenExpiration`.** The legacy `sfdx` CLI used `tokenExpiration`;
+the current `sf` CLI uses `expirationDate`. If the field name
+doesn't match, `expires_at` is parsed as `None`. `_parse_auth_result`
+in `core/sf_cli.py` tries both names. Keep the fallback list in
+sync with real-world SF CLI output — if a future version changes
+the field name again, add the new name to the `for field in
+("expirationDate", "tokenExpiration"):` loop.
+
+**13. Don't return `True` for "unknown expiry" in `is_expired()`.**
 The original code was:
 
 ```python
@@ -231,53 +319,81 @@ def is_expired(self, buffer_seconds=60):
     ...
 ```
 
-This made the auth flow unrecoverable: if `expires_at` was None
-(because of bug #2 or any field-name change), every request was
-treated as expired, which triggered a re-login via web, which got
-the same broken result, forever. The user had to manually clean the
-keyring.
+This made the auth flow **unrecoverable**: if `expires_at` was
+`None` (because of a missing/wrong field name, see #12), every
+request was treated as expired, which triggered a re-login via web,
+which got the same broken result, forever. The user had to manually
+clean the keyring.
 
-The fix: return `False` when `expires_at` is None or unparseable.
-We trust SF CLI's own refresh logic; the API call will get a real
-401 if the token is actually bad, and that is a real signal we can act
-on. A guess of "expired" from missing data is worse than a guess
-of "fresh".
+The fix: return `False` when `expires_at` is `None` or
+unparseable. We trust SF CLI's own refresh logic; the API call
+will get a real 401 if the token is actually bad, and that's a
+real signal we can act on. A guess of "expired" from missing
+data is worse than a guess of "fresh". Fixed in `869db7b`.
 
-### 4. `datetime.utcnow()` is naive; comparing to aware datetimes silently raises `TypeError`
+**14. `datetime.utcnow()` is naive; comparing to aware datetimes
+silently raises `TypeError`.** The `except (ValueError, TypeError)`
+clause in `is_expired` swallowed the error and returned the default
+value, masking the bug. The fix: use
+`datetime.now(timezone.utc)` when the parsed expiry has a tzinfo,
+so both sides of the comparison are tz-aware.
 
-```python
-expires = datetime.fromisoformat("2026-01-01T00:00:00Z")  # aware
-datetime.utcnow() >= expires                                 # naive >= aware -> TypeError
-```
+**15. Stale `tcrm` binaries on user laptops are an environment
+issue, not a code issue.** When the user types `tcrm auth login`
+and it fails with `ModuleNotFoundError: No module named
+'tcrm_toolkit.cli.main'`, that's a leftover `tcrm` shim from
+before the refactor. The fix is environment-level: `where.exe
+tcrm` then delete the shim, or
+`py -3.13 -m pip uninstall tcrm-toolkit`. If the error message
+mentions `tcrm` from *inside* `asftool`, that's a different bug
+(hardcoded user-facing string — fixed in `bdf94cb`).
 
-The `except (ValueError, TypeError)` clause caught the TypeError
-and returned the default value, masking the bug. The fix: use
-`datetime.now(timezone.utc)` (aware) so the comparison works.
+### Cross-cutting patterns
 
-This affected `is_expired()` and only surfaced when an actually-
-expired token was stored with a tz-aware `expires_at`. The bug was
-found by writing the test in `tests/unit/test_token_store.py`.
+**16. `raise ... from err` in `except` blocks** (B904) and
+`from None` when re-raising an unrelated error. Without this, the
+original exception is lost from the traceback. The `bdf94cb` and
+`76acfc8` commits cleaned up most of these.
 
-### 5. Stale `tcrm` binaries on user laptops
+**17. `keyring` on Windows uses the Windows Credential Manager, but
+in headless containers it may not be available.** The `keyring`
+package then raises `No recommended backend was available`. On
+those systems, `asftool auth status` will fail. The fix is either
+`uv pip install keyrings.alt` (encrypted-file backend) or a proper
+GUI session. The check in `doctor` reports the keyring backend
+status, so the user can diagnose from there.
 
-When the user types `tcrm auth login` and it fails with
-`ModuleNotFoundError: No module named 'tcrm_toolkit.cli.main'`, that is
-NOT our code — it is a leftover `tcrm` shim from before the refactor
-(a Python 3.13 install with the old `tcrm-toolkit` package). The fix
-is environment-level: `where.exe tcrm` then delete the shim, or
-`py -3.13 -m pip uninstall tcrm-toolkit`. The error message that
-mentions `tcrm` from inside `asftool` is a different bug: we had
-a few hardcoded user-facing strings saying "Run 'tcrm auth login'".
-Fixed in commit `bdf94cb` (3 occurrences in `core/auth/sf_cli_auth.py`)
-with a regression test in `tests/unit/test_auth_schemas.py` that
-asserts the message contains "asftool" not "tcrm".
+**18. Tests must cover the user-visible path, not the internal one.**
+The original `auth_schemas.py` tests verified the `AuthService`
+class, not the `SFCLIAuthService` class, not the `cli/commands/auth.py`
+Typer commands, and not the menu handlers. A bug in any of those
+three layers would slip through. The same principle applies to
+the menu: tests that call `cmd.login()` directly don't exercise
+the menu's `asyncio.run()` nesting, so they pass while the user
+sees a crash. Always add a test that drives the user-visible entry
+point (`_run_menu_loop` with mocked `console.input`, or the
+`typer.testing.CliRunner` for CLI commands).
 
-### 6. The menu loop has its own event loop — always test from inside it
+### Workflow / collaboration
 
-Unit tests that call Typer commands directly work fine because there is
-no outer event loop. The `asyncio.run()` nesting bug only surfaces when
-the menu calls the same code. When adding or refactoring menu
-handlers, add a test that exercises the menu path
-(`_run_menu_loop` with a mocked `console.input`) or at minimum
-the structural check in `tests/unit/test_menu_submenus.py` will
-catch a regression via the `*_async` wrapper name assertion.
+**19. The branch `feature/asftool-refactor` is the work-in-progress
+refactor of the old `main` (which holds only the legacy toolkit).
+The plan documents in `docs/plans/asftool-refactor/` are the source
+of truth for what's done and what's next.** If a phase doc says
+"Fix X" and the code doesn't match, the doc is right and the code
+needs work — not the other way around.
+
+**20. After every code change: run `uv run pytest`, `uv run mypy
+asftool`, and `uv run ruff check .` — all three must be clean
+before committing.** The plan's acceptance criteria require this
+for every phase. A pre-commit hook that runs all three is worth
+adding in a future phase.
+
+**21. Stale state on user laptops is invisible to CI.** When a
+user reports a bug that doesn't reproduce on the dev machine,
+first suspect environment-level state: leftover binaries on PATH,
+old `~/.tcrm/` configs, `~/.sfdx/`, `~/.sf/`, keyring backends.
+The `asftool doctor` command is the first-line diagnostic — it
+checks all of these in one table. If the user says "doctor passes
+and the bug still happens", then it's a real code bug. Otherwise
+it's the environment.
