@@ -1,6 +1,7 @@
 """Unit tests for auth schemas."""
 
 
+from asftool.core.auth import SFCLIAuthError
 from asftool.core.models import (
     ConnectedAppConfig,
     DeviceAuthorizationResponse,
@@ -125,3 +126,35 @@ class TestDeviceAuthorizationResponse:
             interval=5,
         )
         assert response.verification_uri_complete is not None
+
+
+class TestAuthErrorMessages:
+    """Tests to ensure user-facing error messages don't reference the old 'tcrm' name."""
+
+    def test_sfcli_auth_error_no_valid_token(self):
+        """Test that no-valid-token error mentions asftool, not tcrm."""
+        error = SFCLIAuthError(
+            "No valid token for alias 'default'. Run 'asftool auth login' first."
+        )
+        assert "tcrm" not in str(error).lower()
+        assert "asftool auth login" in str(error)
+
+    def test_sfcli_auth_error_no_token(self):
+        """Test that no-token error mentions asftool, not tcrm."""
+        error = SFCLIAuthError("No token for alias 'default'. Run 'asftool auth login' first.")
+        assert "tcrm" not in str(error).lower()
+        assert "asftool auth login" in str(error)
+
+    def test_sfcli_auth_error_not_authenticated(self):
+        """Test that not-authenticated error mentions asftool, not tcrm."""
+        # This tests the status() method's message for unauthenticated state
+        error = SFCLIAuthError("Not authenticated. Run 'asftool auth login'.")
+        assert "tcrm" not in str(error).lower()
+        assert "asftool auth login" in str(error)
+
+
+if __name__ == "__main__":
+    import pytest
+    pytest.main([__file__, "-v"])
+
+

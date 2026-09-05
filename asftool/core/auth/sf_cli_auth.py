@@ -180,7 +180,7 @@ class SFCLIAuthService:
             return await self.login(alias=alias)
 
         raise SFCLIAuthError(
-            f"No valid token for alias '{alias}'. Run 'tcrm auth login' first."
+            f"No valid token for alias '{alias}'. Run 'asftool auth login' first."
         )
 
     async def get_instance_url(self, alias: str = "default") -> str:
@@ -198,7 +198,7 @@ class SFCLIAuthService:
         """
         token = await self.token_store.load_token(alias)
         if not token:
-            raise SFCLIAuthError(f"No token for alias '{alias}'. Run 'tcrm auth login' first.")
+            raise SFCLIAuthError(f"No token for alias '{alias}'. Run 'asftool auth login' first.")
         return token.instance_url
 
     async def get_username(self, alias: str = "default") -> str | None:
@@ -249,7 +249,7 @@ class SFCLIAuthService:
             return {
                 "authenticated": False,
                 "alias": alias,
-                "message": "Not authenticated. Run 'tcrm auth login'.",
+                "message": "Not authenticated. Run 'asftool auth login'.",
             }
 
         is_expired = token.is_expired()
