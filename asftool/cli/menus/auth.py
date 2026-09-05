@@ -1,4 +1,10 @@
-"""Authentication menu — wired to Phase 2 SF CLI auth commands."""
+"""Authentication menu — uses the async wrappers in asftool.cli.commands.auth.
+
+The menu loop already runs an asyncio event loop, so handlers MUST call
+the `*_async` wrappers (not the Typer commands, which start their own
+event loop via asyncio.run() and would crash with
+'asyncio.run() cannot be called from a running event loop').
+"""
 
 import typer
 
@@ -8,62 +14,62 @@ from asftool.cli.ui import prompt_text
 
 async def login() -> None:
     """Login via SF CLI web (default) flow."""
-    from asftool.cli.commands.auth import login as cmd_login
+    from asftool.cli.commands.auth import login_async
 
     alias = prompt_text("Org alias", default="default")
     if not alias:
         return
     try:
-        cmd_login(alias=alias)
+        await login_async(alias=alias)
     except typer.Exit:
         pass
 
 
 async def login_device() -> None:
     """Login via SF CLI device (headless) flow."""
-    from asftool.cli.commands.auth import login as cmd_login
+    from asftool.cli.commands.auth import login_async
 
     alias = prompt_text("Org alias", default="default")
     if not alias:
         return
     try:
-        cmd_login(alias=alias, device=True)
+        await login_async(alias=alias, device=True)
     except typer.Exit:
         pass
 
 
 async def logout() -> None:
     """Logout of an org alias."""
-    from asftool.cli.commands.auth import logout as cmd_logout
+    from asftool.cli.commands.auth import logout_async
 
     alias = prompt_text("Org alias", default="default")
     if not alias:
         return
     try:
-        cmd_logout(alias=alias)
+        await logout_async(alias=alias)
     except typer.Exit:
         pass
 
 
 async def status() -> None:
     """Check auth status."""
-    from asftool.cli.commands.auth import status as cmd_status
+    from asftool.cli.commands.auth import status_async
 
     alias = prompt_text("Org alias", default="default")
     if not alias:
         return
     try:
-        cmd_status(alias=alias)
+        await status_async(alias=alias)
     except typer.Exit:
         pass
 
 
 async def list_orgs() -> None:
     """List all authorized orgs."""
-    from asftool.cli.commands.auth import list_orgs as cmd_list
+    from asftool.cli.commands.auth import list_orgs_async
 
     try:
-        cmd_list()
+        await list_orgs_async()
     except typer.Exit:
         pass
 
