@@ -85,6 +85,25 @@ class SFCLIAuthService:
             )
             await self.token_store.save_token(stored_token)
 
+            # Refresh token via SF CLI org display to get fully-activated
+            # access token. The initial login token may not work for all
+            # API endpoints; 'sf org display --json' retrieves the real token.
+            try:
+                refreshed = await self.sf_cli.get_org_info(alias=alias)
+                refreshed_token = StoredToken(
+                    access_token=refreshed.access_token,
+                    instance_url=refreshed.instance_url,
+                    refresh_token=refreshed.refresh_token,
+                    expires_at=refreshed.expires_at.isoformat() if refreshed.expires_at else None,
+                    alias=refreshed.alias,
+                    username=refreshed.username,
+                )
+                await self.token_store.save_token(refreshed_token)
+                logger.info("sf_cli_login_token_refreshed", alias=alias)
+            except Exception as refresh_err:
+                # Non-fatal: the initial token may still work; log and continue.
+                logger.warning("sf_cli_login_token_refresh_skipped", alias=alias, error=str(refresh_err))
+
             logger.info("sf_cli_login_success", alias=alias, username=auth_result.username)
             return auth_result.access_token
 
@@ -138,6 +157,22 @@ class SFCLIAuthService:
                 username=auth_result.username,
             )
             await self.token_store.save_token(stored_token)
+
+            # Refresh token via SF CLI org display to get fully-activated token
+            try:
+                refreshed = await self.sf_cli.get_org_info(alias=alias)
+                refreshed_token = StoredToken(
+                    access_token=refreshed.access_token,
+                    instance_url=refreshed.instance_url,
+                    refresh_token=refreshed.refresh_token,
+                    expires_at=refreshed.expires_at.isoformat() if refreshed.expires_at else None,
+                    alias=refreshed.alias,
+                    username=refreshed.username,
+                )
+                await self.token_store.save_token(refreshed_token)
+                logger.info("sf_cli_device_login_token_refreshed", alias=alias)
+            except Exception as refresh_err:
+                logger.warning("sf_cli_device_login_token_refresh_skipped", alias=alias, error=str(refresh_err))
 
             logger.info("sf_cli_device_login_success", alias=alias, username=auth_result.username)
             return auth_result.access_token
