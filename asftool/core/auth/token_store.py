@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import keyring
@@ -57,7 +57,13 @@ class StoredToken:
             return False
         try:
             expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
-            return datetime.utcnow() >= (expires - timedelta(seconds=buffer_seconds))
+            # ``datetime.utcnow()`` is deprecated and returns a NAIVE
+            # datetime; if ``expires`` carries a tzinfo (which it does
+            # for any Z-suffixed or +00:00-suffixed string) comparing
+            # naive vs aware raises TypeError. Use datetime.now(UTC)
+            # so both sides are timezone-aware and the comparison works.
+            now = datetime.now(UTC) if expires.tzinfo is not None else datetime.utcnow()
+            return now >= (expires - timedelta(seconds=buffer_seconds))
         except (ValueError, TypeError):
             return False
 
