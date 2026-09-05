@@ -339,13 +339,22 @@ class SFCLIManager:
         refresh_token = data.get("refreshToken")
         username = data.get("username")
 
-        # Parse expiration if available
-        expires_at = None
-        if "tokenExpiration" in data:
+        # Parse expiration if available. SF CLI's `org display --json` returns
+        # the field as `expirationDate`; older sfdx and some custom forks
+        # used `tokenExpiration`. Try the real field name first, then the
+        # legacy name as a fallback. Without a valid timestamp the
+        # StoredToken is saved with expires_at=None, which is treated as
+        # "unknown expiry, trust SF CLI" (see StoredToken.is_expired).
+        expires_at: datetime | None = None
+        for field in ("expirationDate", "tokenExpiration"):
+            raw = data.get(field)
+            if not raw:
+                continue
             try:
-                expires_at = datetime.fromisoformat(data["tokenExpiration"].replace("Z", "+00:00"))
+                expires_at = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                break
             except (ValueError, TypeError):
-                pass
+                continue
 
         if not access_token or not instance_url:
             raise SFCLIError("Missing access token or instance URL in SF CLI response")

@@ -43,14 +43,23 @@ class StoredToken:
         return cls(**data)
 
     def is_expired(self, buffer_seconds: int = 60) -> bool:
-        """Check if token is expired (with buffer)."""
+        """Check if token is expired (with buffer).
+
+        Returns:
+            True if we have a parseable timestamp that's already past
+            (or within ``buffer_seconds`` of being past). False if the
+            token is clearly still valid, OR if we have no ``expires_at``
+            at all (e.g. SF CLI returned a different field name we don't
+            know about) — in which case we trust SF CLI's own refresh
+            logic and let the request go through.
+        """
         if not self.expires_at:
-            return True
+            return False
         try:
             expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
             return datetime.utcnow() >= (expires - timedelta(seconds=buffer_seconds))
         except (ValueError, TypeError):
-            return True
+            return False
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp."""
