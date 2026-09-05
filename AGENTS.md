@@ -169,3 +169,115 @@ the phase document and the current branch.
 - **CI on `main` does not run** (workflow targets `main`/`refactor/**`/`feature/**`;
   `main` holds only the legacy toolkit). Update CI to target the new branches
   in phase 9.
+
+---
+
+## Lessons Learned (read these before adding new submenus or auth code)
+
+These are the bugs that shipped in earlier phases and were caught only
+by user testing from the menu, not by unit tests. They are now fixed
+and have regression tests, but the patterns below are easy to
+re-introduce if you are not careful.
+
+### 1. `*_async` wrappers must contain the async body, not delegate to sync commands
+
+If a Typer command is `def cmd(): _run(_async_fn())` and a menu handler
+calls `cmd()`, the menu loop's `asyncio.run()` collides with the
+`asyncio.run()` inside `cmd()`. The error is
+`RuntimeError: asyncio.run() cannot be called from a running event loop`.
+
+The correct shape is:
+
+```python
+# Async wrapper - contains the actual coroutine body
+async def cmd_async(*args, **kwargs) -> None:
+    session = Session(...)
+    try:
+        async with session.client_context() as client:
+            # ... actual work ...
+    finally:
+        await session.close()
+
+# Typer command - thin shim that calls the wrapper via _run
+@app.command()
+def cmd(*args, **kwargs):
+    _run(cmd_async(*args, **kwargs))
+```
+
+The menu handler `await cmd_async(...)` works. The CLI command works.
+Both share the same code path. The regression test
+`tests/unit/test_menu_submenus.py` enforces this for all 5 submenus
+(auth, datasets, dashboards, dataflows, jobs).
+
+### 2. SF CLI's `org display --json` field is `expirationDate`, not `tokenExpiration`
+
+The legacy `sfdx` CLI used `tokenExpiration`; the current `sf` CLI uses
+`expirationDate`. If the field name doesn't match, `expires_at` is
+parsed as `None` and `StoredToken.is_expired()` returns whatever the
+default is. See point 3 for why that default matters.
+
+`_parse_auth_result` in `core/sf_cli.py` tries both names and
+falls back gracefully. Keep the fallback list in sync with
+real-world SF CLI output.
+
+### 3. Don't return `True` for "unknown expiry" in `is_expired()`
+
+The original code was:
+
+```python
+def is_expired(self, buffer_seconds=60):
+    if not self.expires_at:
+        return True   # <-- wrong
+    ...
+```
+
+This made the auth flow unrecoverable: if `expires_at` was None
+(because of bug #2 or any field-name change), every request was
+treated as expired, which triggered a re-login via web, which got
+the same broken result, forever. The user had to manually clean the
+keyring.
+
+The fix: return `False` when `expires_at` is None or unparseable.
+We trust SF CLI's own refresh logic; the API call will get a real
+401 if the token is actually bad, and that is a real signal we can act
+on. A guess of "expired" from missing data is worse than a guess
+of "fresh".
+
+### 4. `datetime.utcnow()` is naive; comparing to aware datetimes silently raises `TypeError`
+
+```python
+expires = datetime.fromisoformat("2026-01-01T00:00:00Z")  # aware
+datetime.utcnow() >= expires                                 # naive >= aware -> TypeError
+```
+
+The `except (ValueError, TypeError)` clause caught the TypeError
+and returned the default value, masking the bug. The fix: use
+`datetime.now(timezone.utc)` (aware) so the comparison works.
+
+This affected `is_expired()` and only surfaced when an actually-
+expired token was stored with a tz-aware `expires_at`. The bug was
+found by writing the test in `tests/unit/test_token_store.py`.
+
+### 5. Stale `tcrm` binaries on user laptops
+
+When the user types `tcrm auth login` and it fails with
+`ModuleNotFoundError: No module named 'tcrm_toolkit.cli.main'`, that is
+NOT our code — it is a leftover `tcrm` shim from before the refactor
+(a Python 3.13 install with the old `tcrm-toolkit` package). The fix
+is environment-level: `where.exe tcrm` then delete the shim, or
+`py -3.13 -m pip uninstall tcrm-toolkit`. The error message that
+mentions `tcrm` from inside `asftool` is a different bug: we had
+a few hardcoded user-facing strings saying "Run 'tcrm auth login'".
+Fixed in commit `bdf94cb` (3 occurrences in `core/auth/sf_cli_auth.py`)
+with a regression test in `tests/unit/test_auth_schemas.py` that
+asserts the message contains "asftool" not "tcrm".
+
+### 6. The menu loop has its own event loop — always test from inside it
+
+Unit tests that call Typer commands directly work fine because there is
+no outer event loop. The `asyncio.run()` nesting bug only surfaces when
+the menu calls the same code. When adding or refactoring menu
+handlers, add a test that exercises the menu path
+(`_run_menu_loop` with a mocked `console.input`) or at minimum
+the structural check in `tests/unit/test_menu_submenus.py` will
+catch a regression via the `*_async` wrapper name assertion.
