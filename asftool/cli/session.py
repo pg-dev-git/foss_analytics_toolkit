@@ -56,6 +56,8 @@ class Session:
             auto_refresh=True,
         )
         instance_url = await self.auth_service.get_instance_url(alias=self.alias)
+        print(f"[DEBUG] Session.get_client token (first 10): {token[:10]}...")
+        print(f"[DEBUG] Session.get_client instance_url: {instance_url}")
 
         self._client = SalesforceClient(
             access_token=token,

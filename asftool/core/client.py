@@ -180,6 +180,14 @@ class SalesforceClient:
     ) -> httpx.Response:
         """Make an HTTP request with retry logic."""
         url = self._build_url(path)
+        # Debug: show what token is being used
+        try:
+            auth_header = self.client.headers.get("Authorization", "")
+            if auth_header and hasattr(auth_header, 'startswith') and auth_header.startswith("Bearer "):
+                token_preview = auth_header[7:17] + "..."
+                print(f"[DEBUG] Client._request Authorization: Bearer {token_preview}")
+        except Exception:
+            pass  # Ignore debug errors
 
         async def _make_request() -> httpx.Response:
             response = await self.client.request(method, url, **kwargs)
