@@ -135,11 +135,12 @@ class DatasetService:
 
     async def get_row_count(self, dataset_id: str, version_id: str) -> int:
         """Get total row count for a dataset using SAQL."""
-        saql = f'q = load "{dataset_id}/{version_id}"; q = group q by all; q = foreach q generate count() as "count"; q = limit q 1;'
+        # In SAQL, count() is a function, alias must be unquoted and not "count"
+        saql = f'q = load "{dataset_id}/{version_id}"; q = group q by all; q = foreach q generate count() as cnt; q = limit q 1;'
         response = await self.client.saql_query(saql)
         records = response.get("results", {}).get("records", [])
         if records:
-            return int(records[0].get("count", 0))
+            return int(records[0].get("cnt", 0))
         return 0
 
     async def extract_dataset(
