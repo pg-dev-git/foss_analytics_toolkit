@@ -133,15 +133,37 @@ class Dataset(BaseModel):
     current_version_url: str | None = Field(default=None, alias="currentVersionUrl")
     versions_url: str | None = Field(default=None, alias="versionsUrl")
     histories_url: str | None = Field(default=None, alias="historiesUrl")
-    created_date: datetime = Field(alias="CreatedDate")
-    created_by_id: str = Field(alias="CreatedById")
-    last_modified_date: datetime = Field(alias="LastModifiedDate")
-    last_modified_by_id: str = Field(alias="LastModifiedById")
+    created_date: datetime = Field(alias="createdDate")
+    created_by: dict | None = Field(default=None, alias="createdBy")
+    last_modified_date: datetime = Field(alias="lastModifiedDate")
+    last_modified_by: dict | None = Field(default=None, alias="lastModifiedBy")
     row_count: int | None = Field(default=None, alias="rowCount")
     status: str = "Active"
     type: str = "Edgemart"
+    data_refresh_date: datetime | None = Field(default=None, alias="dataRefreshDate")
+    dataset_type: str | None = Field(default=None, alias="datasetType")
+    folder: dict | None = Field(default=None, alias="folder")
+    last_accessed_date: datetime | None = Field(default=None, alias="lastAccessedDate")
+    last_queried_date: datetime | None = Field(default=None, alias="lastQueriedDate")
+    permissions: dict | None = Field(default=None, alias="permissions")
+    client_shards_url: str | None = Field(default=None, alias="clientShardsUrl")
+    visibility: str | None = Field(default=None, alias="visibility")
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @property
+    def created_by_id(self) -> str | None:
+        """Get createdBy ID from the createdBy object."""
+        if self.created_by and isinstance(self.created_by, dict):
+            return self.created_by.get("id")
+        return None
+
+    @property
+    def last_modified_by_id(self) -> str | None:
+        """Get lastModifiedBy ID from the lastModifiedBy object."""
+        if self.last_modified_by and isinstance(self.last_modified_by, dict):
+            return self.last_modified_by.get("id")
+        return None
 
 
 class DatasetListResponse(BaseModel):
