@@ -198,16 +198,16 @@ class Dashboard(BaseModel):
     name: str
     label: str
     description: str | None = None
-    folder_id: str | None = None
-    folder_name: str | None = None
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
-    histories_url: str | None = None
-    datasets_url: str | None = None
+    folder_id: str | None = Field(default=None, alias="folderId")
+    folder_name: str | None = Field(default=None, alias="folderName")
+    created_date: datetime = Field(alias="CreatedDate")
+    created_by_id: str = Field(alias="CreatedById")
+    last_modified_date: datetime = Field(alias="LastModifiedDate")
+    last_modified_by_id: str = Field(alias="LastModifiedById")
+    histories_url: str | None = Field(default=None, alias="historiesUrl")
+    datasets_url: str | None = Field(default=None, alias="datasetsUrl")
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DashboardListResponse(BaseModel):
@@ -247,13 +247,13 @@ class Dataflow(BaseModel):
     label: str
     description: str | None = None
     status: str
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
-    histories_url: str | None = None
+    created_date: datetime = Field(alias="CreatedDate")
+    created_by_id: str = Field(alias="CreatedById")
+    last_modified_date: datetime = Field(alias="LastModifiedDate")
+    last_modified_by_id: str = Field(alias="LastModifiedById")
+    histories_url: str | None = Field(default=None, alias="historiesUrl")
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DataflowListResponse(BaseModel):
