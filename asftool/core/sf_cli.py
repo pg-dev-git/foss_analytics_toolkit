@@ -308,9 +308,41 @@ class SFCLIManager:
         result_data = output.get("result", {})
         return self._parse_auth_result(result_data, alias)
 
+    async def get_access_token(self, alias: str = "default") -> str:
+        """
+        Get the actual access token using 'sf org auth show-access-token -p'.
+
+        This is the correct way to get an unredacted access token from SF CLI.
+        The 'org display' command redacts the token for security.
+
+        Args:
+            alias: Org alias
+
+        Returns:
+            Access token string
+        """
+        args = ["org", "auth", "show-access-token", "--target-org", alias, "-p", "--json"]
+
+        result = await self._run_command_async(args)
+
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            raise SFCLIError(f"Failed to parse SF CLI JSON output: {e}") from e
+
+        if output.get("status") != 0:
+            raise SFCLIError(f"Failed to get access token: {output.get('message', 'Unknown error')}")
+
+        result_data = output.get("result", {})
+        access_token = result_data.get("accessToken")
+        if not access_token:
+            raise SFCLIError("Missing access token in SF CLI response")
+
+        return str(access_token)
+
     async def refresh_token(self, alias: str = "default") -> SFCLIAuthResult:
         """
-        Force token refresh by getting org info (SF CLI handles refresh internally).
+        Force token refresh by getting the actual access token and org info.
 
         Args:
             alias: Org alias
@@ -318,8 +350,19 @@ class SFCLIManager:
         Returns:
             SFCLIAuthResult with refreshed auth details
         """
-        # SF CLI automatically refreshes tokens when running org display
-        return await self.get_org_info(alias)
+        # Get the actual access token (unredacted)
+        access_token = await self.get_access_token(alias)
+        # Get org info for metadata
+        org_info = await self.get_org_info(alias)
+        # Return combined result with actual token
+        return SFCLIAuthResult(
+            access_token=access_token,
+            instance_url=org_info.instance_url,
+            refresh_token=org_info.refresh_token,
+            expires_at=org_info.expires_at,
+            alias=org_info.alias,
+            username=org_info.username,
+        )
 
     async def logout(self, alias: str = "default") -> None:
         """

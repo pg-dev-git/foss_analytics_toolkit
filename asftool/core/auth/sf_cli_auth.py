@@ -85,36 +85,27 @@ class SFCLIAuthService:
             )
             await self.token_store.save_token(stored_token)
 
-            # Refresh token via SF CLI org display to get fully-activated
-            # access token. The initial login token may not work for all
-            # API endpoints; 'sf org display --json' retrieves the real token.
+            # Get the actual access token using 'sf org auth show-access-token -p'
+            # The 'org display' command redacts the token for security.
+            # Also get org info for instance_url, username, etc.
             try:
-                print(f"[DEBUG] login_web token (first 30): {auth_result.access_token[:30]}...")
-                print(f"[DEBUG] Calling get_org_info for alias={alias}...")
-                refreshed = await self.sf_cli.get_org_info(alias=alias)
-                print(f"[DEBUG] get_org_info token (first 30): {refreshed.access_token[:30]}...")
-                print(f"[DEBUG] Tokens match: {auth_result.access_token == refreshed.access_token}")
-                print(f"[DEBUG] get_org_info expires_at: {refreshed.expires_at}")
-                print(f"[DEBUG] get_org_info instance_url: {refreshed.instance_url}")
-                print(f"[DEBUG] get_org_info username: {refreshed.username}")
-                print(f"[DEBUG] get_org_info refresh_token: {refreshed.refresh_token[:30] if refreshed.refresh_token else 'None'}...")
+                actual_token = await self.sf_cli.get_access_token(alias=alias)
+
+                # Get org info for metadata (instance_url, username, etc.)
+                org_info = await self.sf_cli.get_org_info(alias=alias)
                 refreshed_token = StoredToken(
-                    access_token=refreshed.access_token,
-                    instance_url=refreshed.instance_url,
-                    refresh_token=refreshed.refresh_token,
-                    expires_at=refreshed.expires_at.isoformat() if refreshed.expires_at else None,
-                    alias=refreshed.alias,
-                    username=refreshed.username,
+                    access_token=actual_token,
+                    instance_url=org_info.instance_url,
+                    refresh_token=org_info.refresh_token,
+                    expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
+                    alias=org_info.alias,
+                    username=org_info.username,
                 )
                 await self.token_store.save_token(refreshed_token)
                 logger.info("sf_cli_login_token_refreshed", alias=alias)
-                print(f"[DEBUG] Token refreshed and saved successfully")
             except Exception as refresh_err:
                 # Non-fatal: the initial token may still work; log and continue.
                 logger.warning("sf_cli_login_token_refresh_skipped", alias=alias, error=str(refresh_err))
-                print(f"[DEBUG] Token refresh FAILED: {refresh_err}")
-                import traceback
-                traceback.print_exc()
 
             logger.info("sf_cli_login_success", alias=alias, username=auth_result.username)
             return auth_result.access_token
@@ -170,16 +161,17 @@ class SFCLIAuthService:
             )
             await self.token_store.save_token(stored_token)
 
-            # Refresh token via SF CLI org display to get fully-activated token
+            # Get the actual access token using 'sf org auth show-access-token -p'
             try:
-                refreshed = await self.sf_cli.get_org_info(alias=alias)
+                actual_token = await self.sf_cli.get_access_token(alias=alias)
+                org_info = await self.sf_cli.get_org_info(alias=alias)
                 refreshed_token = StoredToken(
-                    access_token=refreshed.access_token,
-                    instance_url=refreshed.instance_url,
-                    refresh_token=refreshed.refresh_token,
-                    expires_at=refreshed.expires_at.isoformat() if refreshed.expires_at else None,
-                    alias=refreshed.alias,
-                    username=refreshed.username,
+                    access_token=actual_token,
+                    instance_url=org_info.instance_url,
+                    refresh_token=org_info.refresh_token,
+                    expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
+                    alias=org_info.alias,
+                    username=org_info.username,
                 )
                 await self.token_store.save_token(refreshed_token)
                 logger.info("sf_cli_device_login_token_refreshed", alias=alias)
