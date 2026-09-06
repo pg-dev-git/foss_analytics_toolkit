@@ -1,5 +1,6 @@
 """Dataflow service for ASFTool."""
 
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -7,6 +8,7 @@ import structlog
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
 from asftool.core.exceptions import DataflowError
+from asftool.core.storage import get_storage_manager
 from asftool.core.models import (
     Dataflow,
     DataflowJob,
@@ -28,6 +30,7 @@ class DataflowService:
         """Initialize the dataflow service."""
         self.client = client
         self.settings = settings or get_settings()
+        self.storage = get_storage_manager(self.settings)
 
     # =========================================================================
     # Listing and Retrieval
@@ -107,19 +110,33 @@ class DataflowService:
     async def backup_dataflow(
         self,
         dataflow_id: str,
-        output_path: str | None = None,
+        output_path: Path | None = None,
+        alias: str = "default",
     ) -> Any:
-        """Backup current dataflow definition."""
+        """Backup current dataflow definition.
+
+        If output_path is not provided, generates an organized path using
+        the storage manager: ~/.asftool/downloads/<alias>/dataflows/
+        <timestamp>_<name>_<id>.json
+        """
         # Get the dataflow definition
         response = await self.client.get(
             f"{self.client.wave_base_url}/dataflows/{dataflow_id}"
         )
         definition = response.json()
 
-        if output_path:
-            import json
-            with open(output_path, "w") as f:
-                json.dump(definition, f, indent=2)
-            logger.info("dataflow_backup_saved", path=output_path)
+        # Get dataflow info for naming
+        dataflow = await self.get_dataflow(dataflow_id)
+
+        if output_path is None:
+            output_path = self.storage.dataflow_path(
+                alias=alias,
+                dataflow_name=dataflow.name,
+                dataflow_id=dataflow_id,
+            )
+
+        import json
+        output_path.write_text(json.dumps(definition, indent=2))
+        logger.info("dataflow_backup_saved", path=str(output_path))
 
         return definition

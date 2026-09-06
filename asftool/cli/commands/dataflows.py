@@ -90,16 +90,16 @@ async def list_dataflows_async() -> None:
         await session.close()
 
 
-async def backup_dataflow_async(dataflow_id: str, output: Path) -> None:
+async def backup_dataflow_async(dataflow_id: str, output: Path | None = None, alias: str = "default") -> None:
     """Backup dataflow JSON definition."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
             await service.backup_dataflow(
-                dataflow_id=dataflow_id, output_path=str(output)
+                dataflow_id=dataflow_id, output_path=output, alias=alias
             )
-            print_success(f"Dataflow {dataflow_id} backed up to {output}")
+            print_success(f"Dataflow {dataflow_id} backed up")
     except DataflowError as e:
         print_error(f"Backup failed: {e}")
         raise typer.Exit(1) from e
@@ -185,15 +185,13 @@ def list_dataflows():
 @app.command("backup")
 def backup_dataflow(
     dataflow_id: str = typer.Argument(..., help="Dataflow ID"),
-    output: Path = typer.Option(
-        Path.cwd() / "dataflow_backup.json",
-        "--output",
-        "-o",
-        help="Output JSON file path",
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Output JSON file path (default: organized storage)"
     ),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Backup dataflow JSON definition."""
-    _run(backup_dataflow_async(dataflow_id=dataflow_id, output=output))
+    _run(backup_dataflow_async(dataflow_id=dataflow_id, output=output, alias=alias))
 
 
 @app.command("start")

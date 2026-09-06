@@ -106,11 +106,12 @@ async def list_datasets_async(
 
 async def extract_dataset_async(
     dataset_id: str,
-    output: Path,
+    output: Path | None = None,
+    alias: str = "default",
     show_progress: bool = True,
 ) -> None:
     """Extract dataset to CSV."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DatasetService(client, session.settings)
@@ -125,6 +126,7 @@ async def extract_dataset_async(
             job = await service.extract_dataset(
                 dataset_id=dataset_id,
                 output_path=output,
+                alias=alias,
                 progress_callback=_to_async_cb(progress_cb),
             )
             print_success(
@@ -240,9 +242,10 @@ def list_datasets(
 @app.command("extract")
 def extract_dataset(
     dataset_id: str = typer.Argument(..., help="Dataset ID"),
-    output: Path = typer.Option(
-        Path.cwd() / "extracted.csv", "--output", "-o", help="Output CSV path"
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Output CSV path (default: organized storage)"
     ),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
     show_progress: bool = typer.Option(
         True, "--progress/--no-progress", help="Show progress"
     ),
@@ -250,7 +253,7 @@ def extract_dataset(
     """Extract dataset to CSV."""
     _run(
         extract_dataset_async(
-            dataset_id=dataset_id, output=output, show_progress=show_progress
+            dataset_id=dataset_id, output=output, alias=alias, show_progress=show_progress
         )
     )
 

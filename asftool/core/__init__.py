@@ -13,6 +13,7 @@ from asftool.core.auth import (
 from asftool.core.client import SalesforceClient, create_client, create_client_from_sf_cli
 from asftool.core.config import Settings, get_settings
 from asftool.core.crypto import CryptoManager, EncryptedData
+from asftool.core.storage import StorageManager, get_storage_manager
 from asftool.core.exceptions import (
     ASFToolError,
     ConfigurationError,
@@ -36,6 +37,8 @@ __all__ = [
     "get_settings",
     "CryptoManager",
     "EncryptedData",
+    "StorageManager",
+    "get_storage_manager",
     "SalesforceClient",
     "create_client",
     "create_client_from_sf_cli",

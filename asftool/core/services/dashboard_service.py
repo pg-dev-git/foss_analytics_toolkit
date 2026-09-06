@@ -7,6 +7,7 @@ import structlog
 
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
+from asftool.core.storage import get_storage_manager
 from asftool.core.models import (
     Dashboard,
     DashboardBackup,
@@ -28,6 +29,7 @@ class DashboardService:
         """Initialize the dashboard service."""
         self.client = client
         self.settings = settings or get_settings()
+        self.storage = get_storage_manager(self.settings)
 
     # =========================================================================
     # Listing and Retrieval
@@ -77,8 +79,14 @@ class DashboardService:
         self,
         dashboard_id: str,
         output_path: Path | None = None,
+        alias: str = "default",
     ) -> DashboardBackup:
-        """Backup dashboard JSON definition."""
+        """Backup dashboard JSON definition.
+
+        If output_path is not provided, generates an organized path using
+        the storage manager: ~/.asftool/downloads/<alias>/dashboards/
+        <timestamp>_<name>_<id>.json
+        """
         dashboard = await self.get_dashboard(dashboard_id)
 
         # Get the full dashboard JSON
@@ -92,9 +100,15 @@ class DashboardService:
             json_definition=json_definition,
         )
 
-        if output_path:
-            output_path.write_text(json.dumps(json_definition, indent=2))
-            logger.info("dashboard_backup_saved", path=str(output_path))
+        if output_path is None:
+            output_path = self.storage.dashboard_path(
+                alias=alias,
+                dashboard_name=dashboard.name,
+                dashboard_id=dashboard_id,
+            )
+
+        output_path.write_text(json.dumps(json_definition, indent=2))
+        logger.info("dashboard_backup_saved", path=str(output_path))
 
         return backup
 

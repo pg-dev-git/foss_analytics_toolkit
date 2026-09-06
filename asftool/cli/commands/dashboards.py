@@ -77,17 +77,17 @@ async def list_dashboards_async(
         await session.close()
 
 
-async def backup_dashboard_async(dashboard_id: str, output: Path) -> None:
+async def backup_dashboard_async(dashboard_id: str, output: Path | None = None, alias: str = "default") -> None:
     """Backup dashboard JSON definition."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DashboardService(client, session.settings)
             backup = await service.backup_dashboard(
-                dashboard_id=dashboard_id, output_path=output
+                dashboard_id=dashboard_id, output_path=output, alias=alias
             )
             print_success(
-                f"Dashboard '{backup.dashboard_name}' backed up to {output}"
+                f"Dashboard '{backup.dashboard_name}' backed up to {backup.dashboard_id}"
             )
     except DashboardError as e:
         print_error(f"Backup failed: {e}")
@@ -143,15 +143,13 @@ def list_dashboards(
 @app.command("backup")
 def backup_dashboard(
     dashboard_id: str = typer.Argument(..., help="Dashboard ID"),
-    output: Path = typer.Option(
-        Path.cwd() / "dashboard_backup.json",
-        "--output",
-        "-o",
-        help="Output JSON file path",
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Output JSON file path (default: organized storage)"
     ),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Backup dashboard JSON definition."""
-    _run(backup_dashboard_async(dashboard_id=dashboard_id, output=output))
+    _run(backup_dashboard_async(dashboard_id=dashboard_id, output=output, alias=alias))
 
 
 @app.command("show")

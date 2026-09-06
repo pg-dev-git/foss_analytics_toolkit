@@ -14,6 +14,7 @@ import structlog
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
 from asftool.core.exceptions import DatasetError, UploadError
+from asftool.core.storage import get_storage_manager
 from asftool.core.models import (
     Dataset,
     DatasetListResponse,
@@ -38,6 +39,7 @@ class DatasetService:
         """Initialize the dataset service."""
         self.client = client
         self.settings = settings or get_settings()
+        self.storage = get_storage_manager(self.settings)
 
     # =========================================================================
     # Listing and Retrieval
@@ -146,10 +148,16 @@ class DatasetService:
     async def extract_dataset(
         self,
         dataset_id: str,
-        output_path: Path,
+        output_path: Path | None = None,
+        alias: str = "default",
         progress_callback: Callable | None = None,
     ) -> ExtractionJob:
-        """Extract dataset to CSV file with progress tracking."""
+        """Extract dataset to CSV file with progress tracking.
+
+        If output_path is not provided, generates an organized path using
+        the storage manager: ~/.asftool/downloads/<alias>/datasets/
+        <timestamp>_<name>_<id>.csv
+        """
         # Get dataset info
         dataset = await self.get_dataset(dataset_id)
         version_id = dataset.current_version_id
@@ -169,6 +177,12 @@ class DatasetService:
             logger.warning("dataset_empty", dataset_id=dataset_id)
             # Create empty CSV with headers
             df = pd.DataFrame(columns=fields)
+            if output_path is None:
+                output_path = self.storage.dataset_path(
+                    alias=alias,
+                    dataset_name=dataset.name,
+                    dataset_id=dataset_id,
+                )
             df.to_csv(output_path, index=False)
             return ExtractionJob(
                 id=f"extract-{dataset_id}",
@@ -201,6 +215,14 @@ class DatasetService:
             total_rows=total_rows,
             total_chunks=total_chunks,
         )
+
+        # Generate output path if not provided
+        if output_path is None:
+            output_path = self.storage.dataset_path(
+                alias=alias,
+                dataset_name=dataset.name,
+                dataset_id=dataset_id,
+            )
 
         # Extract in chunks
         all_chunks = []
