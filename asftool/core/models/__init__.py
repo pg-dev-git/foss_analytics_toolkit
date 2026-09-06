@@ -149,7 +149,7 @@ class DatasetListResponse(BaseModel):
     datasets: list[Dataset]
     next_page_url: str | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class ExtractionJob(BaseModel):
@@ -215,7 +215,7 @@ class DashboardListResponse(BaseModel):
     dashboards: list[Dashboard]
     next_page_url: str | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DashboardDataset(BaseModel):
@@ -260,7 +260,7 @@ class DataflowListResponse(BaseModel):
     """Response for dataflow listing."""
     dataflows: list[Dataflow]
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DataflowJob(BaseModel):
