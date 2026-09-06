@@ -112,15 +112,15 @@ class DatasetXMD(BaseModel):
 class DatasetVersion(BaseModel):
     """Dataset version information."""
     id: str
-    dataset_id: str
-    version_number: int
-    created_date: datetime
-    created_by_id: str
+    dataset_id: str = Field(alias="datasetId")
+    version_number: int = Field(alias="versionNumber")
+    created_date: datetime = Field(alias="CreatedDate")
+    created_by_id: str = Field(alias="CreatedById")
     status: str
-    row_count: int | None = None
+    row_count: int | None = Field(default=None, alias="rowCount")
     xmd: DatasetXMD | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class Dataset(BaseModel):
@@ -129,19 +129,19 @@ class Dataset(BaseModel):
     name: str
     label: str
     description: str | None = None
-    current_version_id: str | None = None
-    current_version_url: str | None = None
-    versions_url: str | None = None
-    histories_url: str | None = None
-    created_date: datetime
-    created_by_id: str
-    last_modified_date: datetime
-    last_modified_by_id: str
-    row_count: int | None = None
+    current_version_id: str | None = Field(default=None, alias="currentVersionId")
+    current_version_url: str | None = Field(default=None, alias="currentVersionUrl")
+    versions_url: str | None = Field(default=None, alias="versionsUrl")
+    histories_url: str | None = Field(default=None, alias="historiesUrl")
+    created_date: datetime = Field(alias="CreatedDate")
+    created_by_id: str = Field(alias="CreatedById")
+    last_modified_date: datetime = Field(alias="LastModifiedDate")
+    last_modified_by_id: str = Field(alias="LastModifiedById")
+    row_count: int | None = Field(default=None, alias="rowCount")
     status: str = "Active"
     type: str = "Edgemart"
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DatasetListResponse(BaseModel):
