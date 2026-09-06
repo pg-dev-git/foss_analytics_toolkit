@@ -89,13 +89,15 @@ class SFCLIAuthService:
             # access token. The initial login token may not work for all
             # API endpoints; 'sf org display --json' retrieves the real token.
             try:
-                print(f"[DEBUG] login_web token (first 10): {auth_result.access_token[:10]}...")
+                print(f"[DEBUG] login_web token (first 30): {auth_result.access_token[:30]}...")
                 print(f"[DEBUG] Calling get_org_info for alias={alias}...")
                 refreshed = await self.sf_cli.get_org_info(alias=alias)
-                print(f"[DEBUG] get_org_info token (first 10): {refreshed.access_token[:10]}...")
+                print(f"[DEBUG] get_org_info token (first 30): {refreshed.access_token[:30]}...")
+                print(f"[DEBUG] Tokens match: {auth_result.access_token == refreshed.access_token}")
                 print(f"[DEBUG] get_org_info expires_at: {refreshed.expires_at}")
                 print(f"[DEBUG] get_org_info instance_url: {refreshed.instance_url}")
                 print(f"[DEBUG] get_org_info username: {refreshed.username}")
+                print(f"[DEBUG] get_org_info refresh_token: {refreshed.refresh_token[:30] if refreshed.refresh_token else 'None'}...")
                 refreshed_token = StoredToken(
                     access_token=refreshed.access_token,
                     instance_url=refreshed.instance_url,
