@@ -72,7 +72,7 @@ async def list_dataflows_async() -> None:
             table.add_column("Updated", style="dim")
 
             for df in dataflows:
-                color = _STATUS_COLORS.get(df.status, "white")
+                color = _STATUS_COLORS.get(df.status or "Unknown", "white")
                 table.add_row(
                     df.id,
                     df.name,

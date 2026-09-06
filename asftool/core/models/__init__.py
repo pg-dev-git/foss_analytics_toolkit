@@ -222,14 +222,41 @@ class Dashboard(BaseModel):
     description: str | None = None
     folder_id: str | None = Field(default=None, alias="folderId")
     folder_name: str | None = Field(default=None, alias="folderName")
-    created_date: datetime = Field(alias="CreatedDate")
-    created_by_id: str = Field(alias="CreatedById")
-    last_modified_date: datetime = Field(alias="LastModifiedDate")
-    last_modified_by_id: str = Field(alias="LastModifiedById")
+    created_date: datetime = Field(alias="createdDate")
+    created_by: dict | None = Field(default=None, alias="createdBy")
+    last_modified_date: datetime = Field(alias="lastModifiedDate")
+    last_modified_by: dict | None = Field(default=None, alias="lastModifiedBy")
     histories_url: str | None = Field(default=None, alias="historiesUrl")
     datasets_url: str | None = Field(default=None, alias="datasetsUrl")
+    allow_preview: bool | None = Field(default=None, alias="allowPreview")
+    asset_sharing_url: str | None = Field(default=None, alias="assetSharingUrl")
+    datasets: list[dict] | None = Field(default=None, alias="datasets")
+    date_version: int | None = Field(default=None, alias="dateVersion")
+    files: list | None = Field(default=None, alias="files")
+    folder: dict | None = Field(default=None, alias="folder")
+    mobile_disabled: bool | None = Field(default=None, alias="mobileDisabled")
+    permissions: dict | None = Field(default=None, alias="permissions")
+    refresh_date: datetime | None = Field(default=None, alias="refreshDate")
+    template_asset_source_name: str | None = Field(default=None, alias="templateAssetSourceName")
+    template_source_id: str | None = Field(default=None, alias="templateSourceId")
+    type: str | None = Field(default=None, alias="type")
+    visibility: str | None = Field(default=None, alias="visibility")
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @property
+    def created_by_id(self) -> str | None:
+        """Get createdBy ID from the createdBy object."""
+        if self.created_by and isinstance(self.created_by, dict):
+            return self.created_by.get("id")
+        return None
+
+    @property
+    def last_modified_by_id(self) -> str | None:
+        """Get lastModifiedBy ID from the lastModifiedBy object."""
+        if self.last_modified_by and isinstance(self.last_modified_by, dict):
+            return self.last_modified_by.get("id")
+        return None
 
 
 class DashboardListResponse(BaseModel):
@@ -267,15 +294,31 @@ class Dataflow(BaseModel):
     id: str
     name: str
     label: str
-    description: str | None = None
-    status: str
-    created_date: datetime = Field(alias="CreatedDate")
-    created_by_id: str = Field(alias="CreatedById")
-    last_modified_date: datetime = Field(alias="LastModifiedDate")
-    last_modified_by_id: str = Field(alias="LastModifiedById")
+    description: str | None = Field(default=None, alias="description")
+    status: str | None = None  # Not present in list response
+    created_date: datetime = Field(alias="createdDate")
+    created_by: dict | None = Field(default=None, alias="createdBy")
+    last_modified_date: datetime = Field(alias="lastModifiedDate")
+    last_modified_by: dict | None = Field(default=None, alias="lastModifiedBy")
     histories_url: str | None = Field(default=None, alias="historiesUrl")
+    email_notification_level: str | None = Field(default=None, alias="emailNotificationLevel")
+    type: str | None = Field(default=None, alias="type")
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @property
+    def created_by_id(self) -> str | None:
+        """Get createdBy ID from the createdBy object."""
+        if self.created_by and isinstance(self.created_by, dict):
+            return self.created_by.get("id")
+        return None
+
+    @property
+    def last_modified_by_id(self) -> str | None:
+        """Get lastModifiedBy ID from the lastModifiedBy object."""
+        if self.last_modified_by and isinstance(self.last_modified_by, dict):
+            return self.last_modified_by.get("id")
+        return None
 
 
 class DataflowListResponse(BaseModel):
