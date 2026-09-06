@@ -175,12 +175,19 @@ class TokenStore:
         """
         token = await self.load_token(alias)
         if not token:
+            print(f"[DEBUG] TokenStore.get_valid_token: No token found for alias={alias}")
             return None
 
+        print(f"[DEBUG] TokenStore.get_valid_token: Loaded token (first 10): {token.access_token[:10]}...")
+        print(f"[DEBUG] TokenStore.get_valid_token: token.expires_at: {token.expires_at}")
+        print(f"[DEBUG] TokenStore.get_valid_token: token.is_expired(): {token.is_expired()}")
+
         if not token.is_expired():
+            print(f"[DEBUG] TokenStore.get_valid_token: Token is valid, returning")
             return token
 
         logger.info("token_expired_attempting_refresh", alias=alias)
+        print(f"[DEBUG] TokenStore.get_valid_token: Token expired, attempting refresh")
 
         if not auto_refresh:
             return None
@@ -188,6 +195,7 @@ class TokenStore:
         # Try to refresh via SF CLI
         try:
             auth_result = await sf_cli_manager.refresh_token(alias)
+            print(f"[DEBUG] TokenStore.get_valid_token: Refreshed token (first 10): {auth_result.access_token[:10]}...")
             new_token = StoredToken(
                 access_token=auth_result.access_token,
                 instance_url=auth_result.instance_url,
@@ -200,6 +208,7 @@ class TokenStore:
             return new_token
         except Exception as e:
             logger.error("token_refresh_failed", alias=alias, error=str(e))
+            print(f"[DEBUG] TokenStore.get_valid_token: Refresh failed: {e}")
             return None
 
     async def list_aliases(self) -> list[str]:

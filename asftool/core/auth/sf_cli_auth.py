@@ -90,8 +90,12 @@ class SFCLIAuthService:
             # API endpoints; 'sf org display --json' retrieves the real token.
             try:
                 print(f"[DEBUG] login_web token (first 10): {auth_result.access_token[:10]}...")
+                print(f"[DEBUG] Calling get_org_info for alias={alias}...")
                 refreshed = await self.sf_cli.get_org_info(alias=alias)
                 print(f"[DEBUG] get_org_info token (first 10): {refreshed.access_token[:10]}...")
+                print(f"[DEBUG] get_org_info expires_at: {refreshed.expires_at}")
+                print(f"[DEBUG] get_org_info instance_url: {refreshed.instance_url}")
+                print(f"[DEBUG] get_org_info username: {refreshed.username}")
                 refreshed_token = StoredToken(
                     access_token=refreshed.access_token,
                     instance_url=refreshed.instance_url,
@@ -106,7 +110,9 @@ class SFCLIAuthService:
             except Exception as refresh_err:
                 # Non-fatal: the initial token may still work; log and continue.
                 logger.warning("sf_cli_login_token_refresh_skipped", alias=alias, error=str(refresh_err))
-                print(f"[DEBUG] Token refresh failed: {refresh_err}")
+                print(f"[DEBUG] Token refresh FAILED: {refresh_err}")
+                import traceback
+                traceback.print_exc()
 
             logger.info("sf_cli_login_success", alias=alias, username=auth_result.username)
             return auth_result.access_token
