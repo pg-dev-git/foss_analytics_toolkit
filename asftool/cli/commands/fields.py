@@ -14,12 +14,23 @@ from asftool.cli.session import Session
 from asftool.cli.ui import console, print_error, print_header, print_info, print_success
 from asftool.core.config import get_settings
 from asftool.core.services import FieldImpactService
+from asftool.core.storage import get_storage_manager
 
 app = typer.Typer(help="Field impact analysis across TCRM assets")
 
 
 def _run(coro):
     return asyncio.run(coro)
+
+
+# Stage labels for progress output.
+_STAGE_LABELS = {
+    "datasets": "Datasets",
+    "dashboards": "Dashboards",
+    "dataflows": "Dataflows",
+    "replicated_datasets": "Replicated datasets",
+    "building_graph": "Application graph",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -38,13 +49,34 @@ async def analyze_field_async(
     include_dashboards: bool = True,
     include_dataflows: bool = True,
     include_replicated: bool = True,
-) -> None:
+) -> Path | None:
+    """Run the field analyzer.
+
+    Returns the path of the saved JSON report (always written, regardless of fmt).
+    """
     session = Session()
     try:
         from asftool.core.models import MatchMode
 
+        settings = get_settings()
+
+        async def _progress(stage: str, count: int, total: int) -> None:
+            # Strip the "_complete" suffix to look up the friendly label.
+            base = stage.removesuffix("_complete")
+            label = _STAGE_LABELS.get(base, base)
+            if stage.endswith("_complete"):
+                print_info(f"  → {label}: {count} asset(s) scanned")
+            elif stage == "building_graph" and count == total and total > 0:
+                print_info("  → Application graph built")
+            else:
+                print_info(f"  [{count + 1}/{total}] {label}...")
+
         async with session.client_context() as client:
             service = FieldImpactService(client, session.settings)
+            print_header(f"Field Impact: '{search_term}'")
+            print_info(f"Mode: {mode}  |  Threshold: {threshold}  |  Org: {session.alias}")
+            print_info("Scanning...")
+
             report = await service.analyze_field_impact(
                 search_term=search_term,
                 match_mode=MatchMode(mode),
@@ -54,42 +86,65 @@ async def analyze_field_async(
                 include_dataflows=include_dataflows,
                 include_replicated=include_replicated,
                 application_id=application,
+                progress_callback=_progress,
             )
 
-            if fmt == "summary":
-                summary = report.to_summary_dict()
-                print_header(f"Field Impact: '{search_term}'")
-                print_info(f"Mode: {summary['match_mode']}  |  Threshold: {threshold}")
-                print_success(
-                    f"Assets: {summary['total_assets_scanned']}  |  "
-                    f"Matches: {summary['total_matches']} "
-                    f"({summary['exact_matches']} exact + {summary['fuzzy_matches']} fuzzy)"
-                )
-                for asset_type, count in summary["by_asset_type"].items():
-                    print_info(f"  - {asset_type}: {count}")
-                if summary.get("error_count"):
-                    print_error(f"Errors during scan: {summary['error_count']}")
-            elif fmt == "json":
-                import json
+            # Always save a JSON report via StorageManager.
+            storage = get_storage_manager(settings)
+            output_path = output or storage.field_impact_path(
+                alias=session.alias, search_term=search_term
+            )
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report.model_dump_json(indent=2))
 
-                output_path = output or Path.home() / ".asftool" / "downloads" / f"field_impact_{search_term}.json"
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                output_path.write_text(report.model_dump_json(indent=2))
-                print_success(f"Report saved to {output_path}")
-            else:
-                # Default table format
-                print_header(f"Field Impact: '{search_term}' (mode={mode}, threshold={threshold})")
-                summary = report.to_summary_dict()
-                print_info(
-                    f"Assets scanned: {summary['total_assets_scanned']}  |  "
-                    f"Matches: {summary['total_matches']}  |  Execution: {summary['execution_time_ms']}ms"
-                )
-                if summary.get("error_count"):
-                    print_error(f"Errors: {summary['error_count']}")
-                    for err in report.errors:
-                        print_error(f"  - {err}")
+            # Summary block.
+            summary = report.to_summary_dict()
+            console.print()
+            print_success(
+                f"Scan complete in {summary['execution_time_ms']}ms — "
+                f"{summary['total_matches']} match(es) across "
+                f"{summary['total_assets_scanned']} asset(s)"
+            )
+            print_info(
+                f"  {summary['exact_matches']} exact + {summary['fuzzy_matches']} fuzzy"
+            )
+            for asset_type, count in summary["by_asset_type"].items():
+                print_info(f"  - {asset_type}: {count} matched")
+            if summary.get("error_count"):
+                print_error(f"Errors during scan: {summary['error_count']}")
+                for err in report.errors:
+                    print_error(f"  - {err}")
+
+            console.print()
+            print_success(f"Report saved: {output_path}")
+
+            # Optional detailed inline listing (table format only).
+            if fmt == "table":
+                for ds in report.details.datasets:
+                    if ds.match_count > 0:
+                        print_info(
+                            f"  Dataset [{ds.dataset_name}]: {ds.match_count} match(es)"
+                        )
+                        for m in ds.matches[:5]:
+                            print_info(f"    - {m.field_api_name}")
+                for db in report.details.dashboards:
+                    if db.match_count > 0:
+                        print_info(
+                            f"  Dashboard [{db.dashboard_name}]: {db.match_count} match(es)"
+                        )
+                for df in report.details.dataflows:
+                    if df.match_count > 0:
+                        print_info(
+                            f"  Dataflow [{df.dataflow_name}]: {df.match_count} match(es)"
+                        )
+                for rd in report.details.replicated_datasets:
+                    if rd.match_count > 0:
+                        print_info(
+                            f"  Replicated [{rd.object_name}]: {rd.match_count} match(es)"
+                        )
+            return output_path
     except typer.Exit:
-        pass
+        return None
     except Exception as e:
         print_error(f"Analysis failed: {e}")
         raise typer.Exit(1) from e
@@ -113,7 +168,7 @@ def analyze(
         None, "--app", "-a", help="Limit to application dependency graph"
     ),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="Output JSON path (optional)"
+        None, "--output", "-o", help="Output JSON path (default: organized storage)"
     ),
     fmt: Literal["table", "json", "summary"] = typer.Option(
         "table", "--format", "-f", help="Output format"

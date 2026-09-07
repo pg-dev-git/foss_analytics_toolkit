@@ -43,11 +43,27 @@ class StorageManager:
         org_dir.mkdir(parents=True, exist_ok=True)
         return org_dir
 
-    def _type_dir(self, alias: str, type_: Literal["datasets", "dashboards", "dataflows", "backups"]) -> Path:
+    def _type_dir(
+        self,
+        alias: str,
+        type_: Literal["datasets", "dashboards", "dataflows", "backups", "field_impact"],
+    ) -> Path:
         """Get the type-specific directory within org directory."""
         type_dir = self._org_dir(alias) / type_
         type_dir.mkdir(parents=True, exist_ok=True)
         return type_dir
+
+    def field_impact_path(
+        self,
+        alias: str,
+        search_term: str,
+        extension: str = "json",
+    ) -> Path:
+        """Generate path for a field impact analysis report."""
+        timestamp = self._timestamp()
+        safe_term = self._sanitize(search_term) or "field"
+        filename = f"{timestamp}_{safe_term}.{extension}"
+        return self._type_dir(alias, "field_impact") / filename
 
     def dataset_path(
         self,

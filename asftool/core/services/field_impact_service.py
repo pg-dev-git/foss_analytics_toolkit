@@ -138,6 +138,8 @@ class FieldImpactService:
             )
             details.datasets = ds_results
             errors.extend(ds_errors)
+            if progress_callback:
+                await progress_callback("datasets_complete", len(ds_results), total_stages)
 
         if include_dashboards:
             stage_idx += 1
@@ -148,6 +150,8 @@ class FieldImpactService:
             )
             details.dashboards = db_results
             errors.extend(db_errors)
+            if progress_callback:
+                await progress_callback("dashboards_complete", len(db_results), total_stages)
 
         if include_dataflows:
             stage_idx += 1
@@ -158,6 +162,8 @@ class FieldImpactService:
             )
             details.dataflows = df_results
             errors.extend(df_errors)
+            if progress_callback:
+                await progress_callback("dataflows_complete", len(df_results), total_stages)
 
         if include_replicated:
             stage_idx += 1
@@ -168,6 +174,10 @@ class FieldImpactService:
             )
             details.replicated_datasets = rd_results
             errors.extend(rd_errors)
+            if progress_callback:
+                await progress_callback(
+                    "replicated_datasets_complete", len(rd_results), total_stages
+                )
 
         summary = self._build_summary(details)
         elapsed_ms = int((time.monotonic() - start) * 1000)
