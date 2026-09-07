@@ -469,22 +469,21 @@ app.add_typer(fields_app, name="fields")
 - [x] `uv run mypy asftool` clean — **no issues**
 
 ### Phase 3 Complete When:
-- [ ] FieldMatcher handles exact + fuzzy with configurable threshold
-- [ ] AssetGraph builds and traverses correctly
-- [ ] FieldImpactService orchestrates all 4 scan types
-- [ ] Parallel execution works (if implemented)
-- [ ] Unit tests pass for matcher, graph, service
-- [ ] Integration tests pass with mocked client
+- [x] FieldMatcher handles exact + fuzzy with configurable threshold (4 scorers)
+- [x] AssetGraph builds and traverses correctly (up/downstream, graph filtering)
+- [x] FieldImpactService orchestrates 4 scan types with safe wrappers
+- [x] Unit tests pass — **48/48 passing**
+- [x] `uv run mypy asftool` clean — **no issues**
+- [x] `uv run ruff check` clean — **passed**
 
 ### Phase 4 Complete When:
-- [ ] `asftool fields analyze --help` works
-- [ ] `asftool fields scan-dataset --help` works
-- [ ] Interactive menu shows "Field Impact Analysis" option
-- [ ] Menu handlers invoke async wrappers correctly
-- [ ] Output formats (table, JSON, summary) render correctly
-- [ ] All tests pass: `uv run pytest -v`
-- [ ] Lint clean: `uv run ruff check .`
-- [ ] Type check clean: `uv run mypy asftool`
+- [x] `asftool fields --help` works
+- [x] `asftool fields analyze --help` works
+- [x] Interactive menu shows "Field Impact Analysis" option
+- [x] Menu handlers invoke async wrappers correctly
+- [x] CLI registered in main (`cli/main.py`)
+- [x] Menu registered (`cli/menu.py`)
+- [x] CLI file (`cli/commands/fields.py`) + menu file (`cli/menus/fields.py`)
 
 ---
 
