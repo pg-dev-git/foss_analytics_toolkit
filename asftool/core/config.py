@@ -27,8 +27,11 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
-    # Salesforce API Settings
-    sf_api_version: str = Field(default="v60.0", alias="SF_API_VERSION")
+    # Salesforce API Settings.
+    # Default = current latest stable (Winter '27 = v68.0). Override via
+    # SF_API_VERSION env var, ~/.asftool/config.json (Phase 2), or
+    # --api-version CLI flag.
+    sf_api_version: str = Field(default="v68.0", alias="SF_API_VERSION")
     sf_default_domain: str = Field(default="login.salesforce.com", alias="SF_DEFAULT_DOMAIN")
 
     # Encryption Settings
@@ -63,6 +66,18 @@ class Settings(BaseSettings):
     field_impact_default_match_mode: Literal["exact", "fuzzy", "both"] = Field(
         default="both", alias="FIELD_IMPACT_DEFAULT_MATCH_MODE"
     )
+
+    @field_validator("sf_api_version")
+    @classmethod
+    def validate_sf_api_version(cls, v: str) -> str:
+        """Validate Salesforce API version format (v<major>.<minor>)."""
+        import re
+        if not re.match(r"^v\d+\.\d+$", v):
+            raise ValueError(
+                f"Invalid SF_API_VERSION {v!r}: must match v<major>.<minor> "
+                f"(e.g. 'v60.0', 'v68.0')"
+            )
+        return v
 
     @field_validator("encryption_key")
     @classmethod

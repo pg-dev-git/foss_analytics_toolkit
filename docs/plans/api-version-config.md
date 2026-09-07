@@ -3,6 +3,20 @@
 **Branch**: `feature/asftool-refactor`
 **Goal**: Make the Salesforce API version configurable. Default to the latest stable (currently `v68.0`). Allow override via env var, per-command flag, or interactive menu. Persist user choice so it survives sessions.
 
+## Phase Completion Log
+
+| Phase | Status | Tests | Notes |
+|-------|--------|-------|-------|
+| **1: Bump default + validator** | ✅ Complete | 13 new | Default → v68.0; rejects `60.0`, `v68`, `latest`, etc. |
+| **2: Persistent config_store** | ⏳ Pending | — | — |
+| **3: Interactive menu + discovery** | ⏳ Pending | — | — |
+
+### Phase 1 Details
+- `asftool/core/config.py`: default `"v60.0"` → `"v68.0"`. Added `validate_sf_api_version` field_validator enforcing `^v\d+\.\d+$` regex.
+- `.env.example`: `ASFTOOL_SF_API_VERSION=v60.0` → `SF_API_VERSION=v68.0` (and removed the wrong `ASFTOOL_` prefix — the alias is `SF_API_VERSION`).
+- `tests/unit/test_config.py` (NEW): 13 tests covering default field value, env override, 4 valid + 7 invalid format cases.
+- 173 tests pass total; mypy + ruff clean.
+
 ---
 
 ## Why this matters
@@ -54,10 +68,10 @@ def validate_sf_api_version(cls, v: str) -> str:
 ```
 
 ### Acceptance
-- [ ] Default is `v68.0` out of the box
-- [ ] Invalid format (e.g. `60.0`, `v68`, `latest`) raises a clear error
-- [ ] Env var override still works
-- [ ] Existing tests still pass (no behavior change for those who set `SF_API_VERSION`)
+- [x] Default is `v68.0` out of the box (verified by `Settings.model_fields["sf_api_version"].default == "v68.0"`)
+- [x] Invalid format (e.g. `60.0`, `v68`, `latest`) raises a clear error (covered by 7 parametrized tests)
+- [x] Env var override still works (test: `test_env_override_still_works`)
+- [x] Existing tests still pass — 173 total (160 → 173, +13 new)
 
 ---
 
