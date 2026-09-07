@@ -165,7 +165,17 @@ async def analyze_field_async(
     except typer.Exit:
         return None
     except Exception as e:
+        # ponytail: terminal encoding ceiling (emoji from real TCRM data)
         print_error(f"Analysis failed: {e}")
+        import sys
+        if isinstance(e, UnicodeEncodeError):
+            enc = getattr(sys.stdout, "encoding", None) or "unknown"
+            print_error(
+                f"Encoding error (terminal encoding: {enc}). " +
+                "Your terminal cannot display some characters in the data. " +
+                "Use '--format json --output <path>' to save a UTF-8 JSON report.")
+        else:
+            print_error(f"Analysis failed: {e}")
         raise typer.Exit(1) from e
     finally:
         await session.close()

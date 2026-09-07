@@ -10,8 +10,17 @@ The interactive menu loop is fully async. We detect "no subcommand" before
 calling Typer so we can run the async menu in a fresh event loop.
 """
 
+# ponytail: PYTHONIOENCODING (env layer) + sys.stdout.reconfigure (stdlib).
+# If emoji (real TCRM label: 'Canadian Sales 🇨🇦') causes encoding errors,
+# root fix = force UTF-8 at CLI startup, not filter the data.
+import os
+try:
+    import sys
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+except (AttributeError, TypeError):
+    pass  # Python < 3.7: PYTHONIOENCODING handles it.
+
 import asyncio
-import sys
 
 import typer
 from rich.panel import Panel
