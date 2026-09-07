@@ -5,6 +5,8 @@ the dataset/auth/dashboard/dataflow commands.
 """
 
 import asyncio
+import os
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -21,6 +23,23 @@ app = typer.Typer(help="Field impact analysis across TCRM assets")
 
 def _run(coro):
     return asyncio.run(coro)
+
+
+def _apply_api_version_override(api_version: str | None) -> None:
+    """Set SF_API_VERSION in os.environ for this process if --api-version was given.
+
+    Per-phase-2 precedence: --api-version > env var > ~/.asftool/config.json > default.
+    Setting it in os.environ here is what makes the chain work: get_settings()
+    reads os.environ first, before checking the persisted config.
+    """
+    if not api_version:
+        return
+    if not re.match(r"^v\d+\.\d+$", api_version):
+        print_error(
+            f"Invalid --api-version {api_version!r}: must match v<major>.<minor>"
+        )
+        raise typer.Exit(1)
+    os.environ["SF_API_VERSION"] = api_version
 
 
 # Stage labels for progress output.
@@ -173,12 +192,19 @@ def analyze(
     fmt: Literal["table", "json", "summary"] = typer.Option(
         "table", "--format", "-f", help="Output format"
     ),
+    api_version: str | None = typer.Option(
+        None,
+        "--api-version",
+        help="Override Salesforce API version (e.g. v68.0). "
+        "Takes precedence over SF_API_VERSION env var and ~/.asftool/config.json.",
+    ),
     no_datasets: bool = typer.Option(False, "--no-datasets", help="Skip dataset scanning"),
     no_dashboards: bool = typer.Option(False, "--no-dashboards", help="Skip dashboard scanning"),
     no_dataflows: bool = typer.Option(False, "--no-dataflows", help="Skip dataflow scanning"),
     no_replicated: bool = typer.Option(False, "--no-replicated", help="Skip replicated dataset scanning"),
 ) -> None:
     """Analyze where a field is used across all TCRM assets."""
+    _apply_api_version_override(api_version)
     _run(
         analyze_field_async(
             search_term=search_term,

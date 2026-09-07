@@ -144,10 +144,41 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Get cached settings instance."""
-    # ENCRYPTION_KEY and JWT_SECRET_KEY are required by Settings but loaded
-    # from the environment / .env file at runtime; not visible to mypy.
-    return Settings()  # type: ignore[call-arg]
+    """Get cached settings instance.
+
+    Precedence (highest first):
+      1. Environment variable (SF_API_VERSION, ENCRYPTION_KEY, ...)
+      2. Persisted user config at ~/.asftool/config.json (sf_api_version only)
+      3. Hardcoded default
+
+    The persisted config is applied AFTER pydantic-settings has read
+    the env vars, so env vars always win.
+    """
+    from asftool.core.config_store import get_user_config  # avoid circular
+
+    settings = Settings()  # type: ignore[call-arg]
+    settings.sf_api_version = _resolve_sf_api_version(
+        from_settings=settings.sf_api_version,
+        from_user_config=get_user_config().sf_api_version,
+    )
+    return settings
+
+
+def _resolve_sf_api_version(
+    from_settings: str | None,
+    from_user_config: str | None,
+) -> str:
+    """Apply the merge rule: env > persisted > default.
+
+    Extracted so tests can exercise the logic without needing to
+    construct a full Settings instance (which requires the .env to
+    provide encryption keys).
+    """
+    if "SF_API_VERSION" in os.environ:
+        return from_settings or "v68.0"  # Settings already validated env value.
+    if from_user_config:
+        return from_user_config
+    return from_settings or "v68.0"
 
 
 def generate_encryption_key() -> str:
