@@ -20,8 +20,8 @@ class StorageManager:
 
     @property
     def base_dir(self) -> Path:
-        """Base directory for all downloads."""
-        return self.settings.config_dir / "downloads"
+        """Base directory for all downloads (in current working directory)."""
+        return Path.cwd() / "asftool_downloads"
 
     def _sanitize(self, name: str) -> str:
         """Sanitize a string for use in filenames."""
