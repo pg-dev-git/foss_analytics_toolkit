@@ -26,7 +26,10 @@ from asftool.core.models import (
     UploadProgress,
 )
 
-console = Console(encoding="utf-8")
+console = Console()
+# ponytail: PYTHONIOENCODING=utf-8 enforces UTF-8 at the Python stdout level.
+# If non-ASCII data causes encoding errors, the root fix is the env var,
+# not a custom encoding wrapper.
 
 
 def print_header(title: str, subtitle: str | None = None) -> None:
