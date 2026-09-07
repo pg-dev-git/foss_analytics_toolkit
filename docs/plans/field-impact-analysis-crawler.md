@@ -9,8 +9,8 @@
 
 | Phase | Status | Date | Commit | Tests | Notes |
 |-------|--------|------|--------|-------|-------|
-| **1: Foundation & Pydantic Models** | ✅ Complete | 2026-07-23 | TBD | 29/29 | Models for all 4 asset types, dependency graph, impact report |
-| **2: Core Async API Methods** | ⏳ Pending | — | — | — | — |
+| **1: Foundation & Pydantic Models** | ✅ Complete | 2026-07-23 | 5aa98c2 | 29/29 | Models for all 4 asset types, dependency graph, impact report |
+| **2: Core Async API Methods** | ✅ Complete | 2026-07-23 | TBD | 21/21 | 6 new client methods, URL construction, error handling |
 | **3: Crawler Engine & Fuzzy Matching** | ⏳ Pending | — | — | — | — |
 | **4: CLI Presentation Layer** | ⏳ Pending | — | — | — | — |
 
@@ -20,6 +20,19 @@
 - **Models created**: `MatchType`, `AssetType`, `MatchMode` (StrEnums); `AssetDependency`, `AssetDependencyGraph`; `DatasetFieldReference`, `DatasetFieldAnalysisResult`; `DashboardFieldReference`, `DashboardFieldAnalysisResult`; `DataflowFieldReference`, `DataflowFieldAnalysisResult`; `ReplicatedDatasetField`, `ReplicatedDatasetFieldAnalysisResult`; `FieldImpactScope`, `FieldImpactSummary`, `FieldImpactDetail`, `FieldImpactReport`
 - **Graph methods**: `add_node`, `add_edge`, `get_children`, `get_parents`, `get_all_downstream`, `get_all_upstream`, `filter_by_type`
 - **Validation**: score bounds (0-100) enforced via Pydantic `Field(ge=0, le=100)`
+
+### Phase 2 Details
+- **Files modified**: `asftool/core/client.py` (added 6 new methods + `get_dataflow_definition`)
+- **Files added**: `tests/unit/test_client_field_impact.py` (21 tests)
+- **New client methods**:
+  - `list_applications()` → `GET /wave/applications`
+  - `get_application_dependencies(app_id)` → `GET /wave/applications/{id}/dependencies`
+  - `get_dashboard_full(dashboard_id)` → `GET /wave/dashboards/{id}` (full JSON for widget scanning)
+  - `get_dataflow_definition(dataflow_id)` → `GET /wave/dataflows/{id}` (full recipe JSON)
+  - `list_replicated_datasets()` → `GET /wave/replicatedDatasets`
+  - `get_replicated_dataset_fields(rep_id)` → `GET /wave/replicatedDatasets/{id}/fields`
+- **Resilience**: All methods inherit retry logic via `self._request` → `self.retry_client` (exponential jitter, 3 attempts, transient errors only)
+- **Test coverage**: success paths, empty results, 404/403/500 errors, URL construction, retry client configured
 
 ---
 
@@ -450,10 +463,10 @@ app.add_typer(fields_app, name="fields")
 - [x] `uv run ruff check` clean on changed files — **all passed**
 
 ### Phase 2 Complete When:
-- [ ] All 6 new client methods implemented with retry
-- [ ] Client methods handle errors gracefully
-- [ ] Unit tests pass for new client methods
-- [ ] `uv run mypy asftool` clean
+- [x] All 6 new client methods implemented with retry
+- [x] Client methods handle errors gracefully
+- [x] Unit tests pass for new client methods — **21/21 tests passing**
+- [x] `uv run mypy asftool` clean — **no issues**
 
 ### Phase 3 Complete When:
 - [ ] FieldMatcher handles exact + fuzzy with configurable threshold

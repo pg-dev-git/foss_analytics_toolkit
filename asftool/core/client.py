@@ -323,6 +323,44 @@ class SalesforceClient:
         response = await self.get(f"{self.wave_base_url}/dataflowjobs")
         return response.json()
 
+    async def get_dataflow_definition(self, dataflow_id: str) -> Any:
+        """Get full dataflow definition (JSON recipe) for field scanning."""
+        response = await self.get(f"{self.wave_base_url}/dataflows/{dataflow_id}")
+        return response.json()
+
+    # Field Impact Analysis methods
+    async def list_applications(self) -> Any:
+        """List all Analytics applications."""
+        response = await self.get(f"{self.wave_base_url}/applications")
+        return response.json()
+
+    async def get_application_dependencies(self, application_id: str) -> Any:
+        """Get asset dependencies for an application (builds the dependency graph)."""
+        response = await self.get(
+            f"{self.wave_base_url}/applications/{application_id}/dependencies"
+        )
+        return response.json()
+
+    async def get_dashboard_full(self, dashboard_id: str) -> Any:
+        """Get full dashboard JSON including widgets, steps, and field references."""
+        response = await self.get(f"{self.wave_base_url}/dashboards/{dashboard_id}")
+        return response.json()
+
+    async def list_replicated_datasets(self) -> Any:
+        """List all replicated datasets."""
+        response = await self.get(f"{self.wave_base_url}/replicatedDatasets")
+        return response.json()
+
+    async def get_replicated_dataset_fields(self, replicated_dataset_id: str) -> Any:
+        """Get fields for a replicated dataset (connected object fields).
+
+        Returns 404 for non-existent replicated datasets (caller must handle).
+        """
+        response = await self.get(
+            f"{self.wave_base_url}/replicatedDatasets/{replicated_dataset_id}/fields"
+        )
+        return response.json()
+
     # Data Manager / External Data methods
     async def create_insights_external_data(
         self,
