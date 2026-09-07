@@ -26,7 +26,7 @@ from asftool.core.models import (
     UploadProgress,
 )
 
-console = Console()
+console = Console(encoding="utf-8")
 
 
 def print_header(title: str, subtitle: str | None = None) -> None:
