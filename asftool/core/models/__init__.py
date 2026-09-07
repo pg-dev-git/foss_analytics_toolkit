@@ -6,6 +6,26 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from asftool.core.models.field_impact import (
+    AssetDependency,
+    AssetDependencyGraph,
+    AssetType,
+    DashboardFieldAnalysisResult,
+    DashboardFieldReference,
+    DataflowFieldAnalysisResult,
+    DataflowFieldReference,
+    DatasetFieldAnalysisResult,
+    DatasetFieldReference,
+    FieldImpactDetail,
+    FieldImpactReport,
+    FieldImpactScope,
+    FieldImpactSummary,
+    MatchMode,
+    MatchType,
+    ReplicatedDatasetField,
+    ReplicatedDatasetFieldAnalysisResult,
+)
+
 
 # Progress Models (used by UI)
 @dataclass
@@ -382,3 +402,58 @@ class DependenciesResponse(BaseModel):
     dependencies: list[Dependency]
 
     model_config = ConfigDict(extra="allow")
+
+
+__all__ = [
+    # Progress Models
+    "ExtractionProgress",
+    "UploadProgress",
+    # Auth Models
+    "OAuthToken",
+    "ConnectedAppConfig",
+    "WebOAuthConfig",
+    "DeviceFlowConfig",
+    "DeviceAuthorizationResponse",
+    # Dataset Models
+    "DatasetField",
+    "DatasetXMD",
+    "DatasetVersion",
+    "Dataset",
+    "DatasetListResponse",
+    "ExtractionJob",
+    "UploadJob",
+    # Dashboard Models
+    "Dashboard",
+    "DashboardListResponse",
+    "DashboardDataset",
+    "DashboardBackup",
+    # Dataflow Models
+    "Dataflow",
+    "DataflowListResponse",
+    "DataflowJob",
+    "DataflowJobListResponse",
+    # Limits Models
+    "APILimit",
+    "LimitsResponse",
+    # Dependency Models
+    "Dependency",
+    "DependenciesResponse",
+    # Field Impact Models
+    "AssetDependency",
+    "AssetDependencyGraph",
+    "AssetType",
+    "DashboardFieldAnalysisResult",
+    "DashboardFieldReference",
+    "DatasetFieldAnalysisResult",
+    "DatasetFieldReference",
+    "DataflowFieldAnalysisResult",
+    "DataflowFieldReference",
+    "FieldImpactDetail",
+    "FieldImpactReport",
+    "FieldImpactScope",
+    "FieldImpactSummary",
+    "MatchMode",
+    "MatchType",
+    "ReplicatedDatasetField",
+    "ReplicatedDatasetFieldAnalysisResult",
+]
