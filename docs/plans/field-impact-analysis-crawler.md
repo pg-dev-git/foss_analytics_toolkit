@@ -568,3 +568,12 @@ Once approved, I will:
 3. Export models from `__init__.py`
 4. Write model unit tests
 5. Run validation checks
+### Live Test (2026-09-07) — Dev Org `claritev6-dev-ed.develop.my.salesforce.com`
+
+- **Field tested**: `OpportunityID` (exact API name)
+- **Result**: 191 matches across 65 assets in ~5-8s
+  - 5 exact matches: 3 datasets (opportunity_products, products_opportunities, pipeline_trending) + 2 replicated datasets (OpportunityHistory, OpportunityLineItem)
+  - 186 fuzzy matches (datasets where fields contain "Opportunity.*" related paths)
+  - 0 errors; Daily API calls: 13/15000
+- **Verified endpoints**: /limits, /wave/datasets, /wave/datasets/{id}/versions/{v}/xmds/main, /wave/replicatedDatasets, /wave/replicatedDatasets/{id}/fields
+- **Test harness**: `scripts/test_field_live.py` reads .env, builds `SalesforceClient` directly, runs `FieldImpactService.analyze_field_impact()`, writes full report to `scripts/field_impact_<term>.json` (gitignored).

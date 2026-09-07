@@ -50,3 +50,6 @@ dmypy.json
 
 # PDF outputs
 *.pdf
+
+# Live test output (contains org-specific data — regenerate on demand)
+scripts/field_impact_*.json
