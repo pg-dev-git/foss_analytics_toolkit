@@ -485,6 +485,13 @@ app.add_typer(fields_app, name="fields")
 - [x] Menu registered (`cli/menu.py`)
 - [x] CLI file (`cli/commands/fields.py`) + menu file (`cli/menus/fields.py`)
 
+### Phase 4 Details
+- Files added: `asftool/cli/commands/fields.py`, `asftool/cli/menus/fields.py`
+- Files modified: `asftool/cli/main.py`, `asftool/cli/menu.py`, `asftool/core/services/__init__.py`
+- CLI commands: `fields analyze --search-term` with mode, threshold, app filter, output format
+- Menu entry: "Field Impact Analysis" submenu wired at key "6"/submenu number 7
+- Pattern: `*_async` wrapper + `_run()` shim; Session lifecycle preserved
+
 ---
 
 ## Implementation Notes
