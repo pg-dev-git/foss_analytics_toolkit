@@ -334,6 +334,23 @@ class SalesforceClient:
         response = await self.get(f"{self.wave_base_url}/applications")
         return response.json()
 
+    async def list_available_api_versions(self) -> list[str]:
+        """List Salesforce API versions available to this org.
+
+        Calls ``GET /services/data/`` (no version suffix) and returns
+        the list of version strings, e.g. ``['v60.0', 'v61.0', ...]``.
+
+        Note: this is a metadata-level call, not under the wave API. It
+        does NOT go through the wave_base_url.
+        """
+        url = f"{self.instance_url}/services/data/"
+        response = await self.get(url)
+        data = response.json()
+        # Salesforce returns a list of dicts, each with 'version' and 'url'.
+        if not isinstance(data, list):
+            return []
+        return [v["version"] for v in data if isinstance(v, dict) and "version" in v]
+
     async def get_application_dependencies(self, application_id: str) -> Any:
         """Get asset dependencies for an application (builds the dependency graph)."""
         response = await self.get(

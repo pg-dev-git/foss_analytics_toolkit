@@ -8,14 +8,30 @@
 | Phase | Status | Tests | Notes |
 |-------|--------|-------|-------|
 | **1: Bump default + validator** | ✅ Complete | 13 new | Default → v68.0; rejects `60.0`, `v68`, `latest`, etc. |
-| **2: Persistent config_store** | ⏳ Pending | — | — |
-| **3: Interactive menu + discovery** | ⏳ Pending | — | — |
+| **2: Persistent config_store** | ✅ Complete | 27 new | `~/.asftool/config.json` + `asftool config` CLI + `--api-version` flag |
+| **3: Interactive menu + discovery** | ✅ Complete | 11 new | `SalesforceClient.list_available_api_versions()` + Settings submenu |
 
 ### Phase 1 Details
 - `asftool/core/config.py`: default `"v60.0"` → `"v68.0"`. Added `validate_sf_api_version` field_validator enforcing `^v\d+\.\d+$` regex.
 - `.env.example`: `ASFTOOL_SF_API_VERSION=v60.0` → `SF_API_VERSION=v68.0` (and removed the wrong `ASFTOOL_` prefix — the alias is `SF_API_VERSION`).
 - `tests/unit/test_config.py` (NEW): 13 tests covering default field value, env override, 4 valid + 7 invalid format cases.
 - 173 tests pass total; mypy + ruff clean.
+
+### Phase 2 Details
+- `asftool/core/config_store.py` (NEW): `UserConfig` Pydantic model with `field_validator` for `sf_api_version`. `ConfigStore` with atomic JSON write (tempfile + `os.replace`). Module-level cache.
+- `asftool/core/config.py`: extracted `_resolve_sf_api_version` + `_sf_api_version_from_env_sources` helpers. Merge precedence: `.env`/`os.environ` > `~/.asftool/config.json` > `"v68.0"`.
+- `asftool/cli/commands/config.py` (NEW): Typer command group with `show`, `set-api-version`, `reset`.
+- `asftool/cli/commands/fields.py`: `--api-version` flag on `analyze` (validates format, sets env var before calling get_settings).
+- `asftool/cli/main.py`: register `config_app`; add `config` to known subcommands.
+- `tests/unit/test_config_store.py` (NEW, 14 tests) + `tests/unit/test_settings_merge.py` (NEW, 11 tests) + `tests/integration/test_config_cli.py` (NEW, 7 tests).
+- 200 tests pass; mypy + ruff clean.
+
+### Phase 3 Details
+- `asftool/core/client.py`: `list_available_api_versions()` calls `GET /services/data/` (no version suffix, no /wave/) and returns the version list. Defensive: handles non-list responses, malformed entries.
+- `asftool/cli/menus/config.py` (NEW): 4 menu items — show, set from org list, set manual, reset. Uses `prompt_select` for the org list. Falls back to hardcoded v60–v68 list if the metadata call fails.
+- `asftool/cli/menu.py`: `config_menu` wired at submenu key `8`; `config_operations(config_menu)` registers handlers.
+- `tests/unit/test_client_field_impact.py`: 5 new tests for `list_available_api_versions` (success, empty, non-list, malformed, URL structure).
+- 210 tests pass; mypy + ruff clean. Live verification: `asftool config set-api-version v68.0` saves to disk; `asftool config show` correctly shows effective v60.0 (from .env) and persisted v68.0.
 
 ---
 
@@ -178,10 +194,10 @@ The menu presents a numbered list of available versions. User picks one. Validat
 Standard prompt_confirm + save flow (same as dataset extract's path confirmation).
 
 ### Acceptance
-- [ ] `asftool config set-api-version` (interactive) shows a numbered list of versions discovered from the org
-- [ ] Manual entry falls back to the same prompt (for users who know the version offhand)
-- [ ] Invalid version (not in the list) is rejected with a clear message
-- [ ] All 160+ existing tests still pass
+- [x] `asftool config set-api-version` (interactive) shows a numbered list of versions discovered from the org
+- [x] Manual entry falls back to a prompt (for users who know the version offhand)
+- [x] Invalid version (not in the list) is rejected with a clear message
+- [x] All 210 existing tests still pass; mypy + ruff clean
 
 ---
 

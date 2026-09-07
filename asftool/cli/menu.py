@@ -70,6 +70,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     jobs_menu = main.add_submenu("4", "📋  Data Manager Jobs")
     auth_menu = main.add_submenu("5", "🔐  Authentication")
     fields_menu = main.add_submenu("7", "🔍  Field Impact Analysis")
+    config_menu = main.add_submenu("8", "⚙️  Configuration")
 
     async def _run_doctor() -> None:
         from asftool.cli.commands.doctor import run_diagnostics_async
@@ -90,6 +91,10 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     from asftool.cli.menus.fields import field_operations
     field_operations(fields_menu)
 
+    # Wire configuration submenu
+    from asftool.cli.menus.config import config_operations
+    config_operations(config_menu)
+
     all_menus: dict[str, Menu] = {
         "main": main,
         "datasets": datasets_menu,
@@ -98,5 +103,6 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
         "jobs": jobs_menu,
         "auth": auth_menu,
         "fields": fields_menu,
+        "config": config_menu,
     }
     return main, all_menus

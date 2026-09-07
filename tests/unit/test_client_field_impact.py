@@ -361,6 +361,59 @@ class TestURLConstruction:
         assert "/wave/dataflows/03C1" in call_args[0][1]
 
 
+class TestListAvailableApiVersions:
+    """Tests for SalesforceClient.list_available_api_versions (Phase 3)."""
+
+    @pytest.mark.asyncio
+    async def test_returns_version_list(self, mock_client):
+        mock_response = MockResponse([
+            {"version": "v60.0", "url": "/services/data/v60.0"},
+            {"version": "v65.0", "url": "/services/data/v65.0"},
+            {"version": "v68.0", "url": "/services/data/v68.0"},
+        ])
+        mock_client._client.request.return_value = mock_response
+
+        result = await mock_client.list_available_api_versions()
+        assert result == ["v60.0", "v65.0", "v68.0"]
+
+    @pytest.mark.asyncio
+    async def test_handles_empty_list(self, mock_client):
+        mock_response = MockResponse([])
+        mock_client._client.request.return_value = mock_response
+        assert await mock_client.list_available_api_versions() == []
+
+    @pytest.mark.asyncio
+    async def test_handles_non_list_response(self, mock_client):
+        """Defensive: if Salesforce returns something weird, return []."""
+        mock_response = MockResponse({"error": "unexpected"})
+        mock_client._client.request.return_value = mock_response
+        assert await mock_client.list_available_api_versions() == []
+
+    @pytest.mark.asyncio
+    async def test_skips_malformed_entries(self, mock_client):
+        mock_response = MockResponse([
+            {"version": "v60.0"},
+            "garbage",  # not a dict
+            {"no_version_key": "x"},  # dict but no version
+            {"version": "v68.0"},
+        ])
+        mock_client._client.request.return_value = mock_response
+        assert await mock_client.list_available_api_versions() == ["v60.0", "v68.0"]
+
+    @pytest.mark.asyncio
+    async def test_url_uses_instance_not_wave(self, mock_client):
+        """The endpoint is /services/data/ (no version, no wave prefix)."""
+        mock_response = MockResponse([])
+        mock_client._client.request.return_value = mock_response
+        await mock_client.list_available_api_versions()
+        call_args = mock_client._client.request.call_args
+        url = call_args[0][1]
+        # Should be the instance URL + /services/data/ (no version, no /wave/)
+        assert url.startswith("https://test.salesforce.com/services/data/")
+        assert "/wave/" not in url
+        assert url.endswith("/services/data/")
+
+
 class TestRetryOnTransientErrors:
     """Tests that retry handles transient errors via existing retry_client."""
 

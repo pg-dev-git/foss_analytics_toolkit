@@ -164,21 +164,51 @@ def get_settings() -> Settings:
     return settings
 
 
+def _sf_api_version_from_env_sources() -> str | None:
+    """Check if SF_API_VERSION is set in os.environ OR the project .env file.
+
+    Returns the value if found, None if neither source provides it.
+    pydantic-settings consumes these sources when constructing Settings,
+    but doesn't tell us *which* one it picked. For the merge precedence
+    we just need to know if any of them had a value.
+    """
+    # 1) Real env var.
+    if "SF_API_VERSION" in os.environ:
+        return os.environ["SF_API_VERSION"]
+    # 2) Project .env file. pydantic-settings already loaded it; we re-read
+    #    only to check for the key. This is a one-line parse, not a re-load.
+    env_file = Path(".env")
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            if k.strip() == "SF_API_VERSION":
+                return v.strip()
+    return None
+
+
 def _resolve_sf_api_version(
     from_settings: str | None,
     from_user_config: str | None,
 ) -> str:
     """Apply the merge rule: env > persisted > default.
 
-    Extracted so tests can exercise the logic without needing to
-    construct a full Settings instance (which requires the .env to
-    provide encryption keys).
+    Args:
+        from_settings: The value pydantic-settings resolved (from .env
+            or os.environ). May equal the hardcoded default if neither
+            source provided a value.
+        from_user_config: The value from ~/.asftool/config.json, or None.
+
+    The rule: if any env-level source provided a value, that wins.
+    Otherwise, the persisted config wins. Otherwise, the default.
     """
-    if "SF_API_VERSION" in os.environ:
-        return from_settings or "v68.0"  # Settings already validated env value.
+    if _sf_api_version_from_env_sources() is not None:
+        return from_settings or "v68.0"
     if from_user_config:
         return from_user_config
-    return from_settings or "v68.0"
+    return "v68.0"
 
 
 def generate_encryption_key() -> str:
