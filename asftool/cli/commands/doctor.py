@@ -120,10 +120,17 @@ def run_diagnostics(verbose: bool = False) -> bool:
     """Run the diagnostic table. Returns True if all checks pass.
 
     Reusable from the menu loop (asftool/cli/menu.py) and the CLI callback.
+    Sync wrapper: only for direct CLI invocation (not from a running event loop).
     """
+    result: bool = _run(run_diagnostics_async(verbose=verbose))  # type: ignore[no-any-return]
+    return result
+
+
+async def run_diagnostics_async(verbose: bool = False) -> bool:
+    """Async path: safe to call from a running event loop (menu handler)."""
     session = Session()
 
-    async def _doctor() -> None:
+    async def _doctor() -> bool:
         print_header("ASFTool Doctor Diagnostics")
         console.print()
 
@@ -150,11 +157,12 @@ def run_diagnostics(verbose: bool = False) -> bool:
             print_warning("Some checks failed — see above")
             if not verbose:
                 print_info("Run with --verbose for more details")
+        return all_pass
 
-    _run(_doctor())
-    # Re-derive all_pass to return it (simplified: re-check the same conditions
-    # would duplicate work; for the menu caller we just return True if no exit).
-    return True
+    try:
+        return await _doctor()
+    finally:
+        await session.close()
 
 
 @app.command("config")

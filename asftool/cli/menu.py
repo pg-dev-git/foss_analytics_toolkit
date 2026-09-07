@@ -72,9 +72,9 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     fields_menu = main.add_submenu("7", "🔍  Field Impact Analysis")
 
     async def _run_doctor() -> None:
-        from asftool.cli.commands.doctor import run_diagnostics
+        from asftool.cli.commands.doctor import run_diagnostics_async
 
-        run_diagnostics()
+        await run_diagnostics_async()
 
     main.add(MenuItem(key="6", label="🩺  Doctor / Diagnostics", handler=_run_doctor))
     main.add(MenuItem(key="q", label="❌  Exit"))
