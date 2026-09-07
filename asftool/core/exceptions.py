@@ -116,3 +116,9 @@ class UploadError(ASFToolError):
     """Raised when file upload fails."""
 
     pass
+
+
+class FieldImpactError(ASFToolError):
+    """Raised when field impact analysis fails."""
+
+    pass

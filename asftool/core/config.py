@@ -53,6 +53,17 @@ class Settings(BaseSettings):
     # Device Flow Settings
     sf_device_flow_client_id: str | None = Field(default=None, alias="SF_DEVICE_FLOW_CLIENT_ID")
 
+    # Field Impact Analysis Settings
+    field_impact_default_fuzzy_threshold: int = Field(
+        default=85, alias="FIELD_IMPACT_DEFAULT_FUZZY_THRESHOLD", ge=0, le=100
+    )
+    field_impact_max_concurrent_scans: int = Field(
+        default=10, alias="FIELD_IMPACT_MAX_CONCURRENT_SCANS", ge=1, le=50
+    )
+    field_impact_default_match_mode: Literal["exact", "fuzzy", "both"] = Field(
+        default="both", alias="FIELD_IMPACT_DEFAULT_MATCH_MODE"
+    )
+
     @field_validator("encryption_key")
     @classmethod
     def validate_encryption_key(cls, v: str) -> str:
