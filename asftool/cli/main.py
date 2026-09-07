@@ -180,6 +180,15 @@ def _has_subcommand(argv: list[str]) -> bool:
     return False
 
 
+# ponytail: PYTHONIOENCODING=utf-8 (in .env) handles UTF-8 at Python stdout layer.
+# On Windows cmd.exe, terminal locale is cp1252. If emoji still fail,
+# the ceiling is: user must run with PYTHONIOENCODING=utf-8 set in shell.
+# Upgrade path: preflight locale check + warning in cli/main.
+
+import os
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+
 def main() -> None:
     """Entry point: dispatch to subcommand or run interactive menu loop."""
     if not _has_subcommand(sys.argv):
