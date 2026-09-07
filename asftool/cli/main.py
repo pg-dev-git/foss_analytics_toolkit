@@ -180,10 +180,13 @@ def _has_subcommand(argv: list[str]) -> bool:
     return False
 
 
-# ponytail: PYTHONIOENCODING=utf-8 (in .env) handles UTF-8 at Python stdout layer.
-# On Windows cmd.exe, terminal locale is cp1252. If emoji still fail,
-# the ceiling is: user must run with PYTHONIOENCODING=utf-8 set in shell.
-# Upgrade path: preflight locale check + warning in cli/main.
+# ponytail: PYTHONIOENCODING (env layer) + python-dotenv loader.
+# The user must either have PYTHONIOENCODING set in shell or .env loaded
+# before console init. We load .env here (before any module creates
+# a console) and set the env var explicitly.
+
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=".env", override=False)
 
 import os
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
