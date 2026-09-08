@@ -78,14 +78,14 @@ async def generate_lineage() -> None:
             return
 
         # Step 3: Output path
-        output_path = await _prompt_output_path(search_term or impact_path or "lineage")
+        output_path = await _prompt_output_path(impact_path or "lineage" or "lineage")
         if not output_path:
             print_info("Cancelled.")
             return
 
         # Step 4: Confirm and execute
         formats_str = ", ".join(formats)
-        if not await _confirm_generation(search_term or impact_path or "lineage", formats_str, output_path):
+        if not await _confirm_generation(impact_path or "lineage" or "lineage", formats_str, output_path):
             print_info("Cancelled.")
             return
 
@@ -130,12 +130,12 @@ async def _prompt_formats() -> list[str] | None:
         return None
 
 
-async def _prompt_output_path(asset_id: str) -> str | None:
+async def _prompt_output_path(default_name: str = "lineage") -> str | None:
     """Prompt for output path with sensible default."""
     from asftool.cli.ui import prompt_text
 
     # Default: lineage_<asset_id> in current dir
-    default_path = f"lineage_{asset_id}"
+    default_path = f"lineage_{default_name}"
 
     output_path = prompt_text("Output path (without extension)", default=default_path)
     if output_path is None:
