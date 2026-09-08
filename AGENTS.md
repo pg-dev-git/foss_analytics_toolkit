@@ -374,6 +374,26 @@ sees a crash. Always add a test that drives the user-visible entry
 point (`_run_menu_loop` with mocked `console.input`, or the
 `typer.testing.CliRunner` for CLI commands).
 
+
+
+### Phase 9-10: SF CLI token handling and API response modeling
+
+**22. SF CLI's `org display --json` redacts the access token for security.**
+The `accessToken` field in the JSON output shows `REDACTED` instead of the actual token. The correct command to get the unredacted token is `sf org auth show-access-token -p` (with `-p` flag to bypass the confirmation prompt). The fix in `core/sf_cli.py` added a `get_access_token()` method that calls this command. The `login()` and `login_device()` methods in `sf_cli_auth.py` now **mandatorily** call this after the initial web/device login to get the real token. If this step fails, the login now fails with a clear error instead of silently continuing with a redacted token. Fixed in commits `f0c3d11` and `310ad4e`.
+
+**23. Salesforce Analytics REST API returns camelCase field names, not PascalCase.**
+The API returns fields like `createdDate`, `createdBy`, `lastModifiedDate`, `lastModifiedBy` (camelCase), NOT `CreatedDate`, `CreatedById`, `LastModifiedDate`, `LastModifiedById` (PascalCase). Additionally, `createdBy` and `lastModifiedBy` are objects with `id` and `name` properties, not simple string IDs. The Pydantic models in `core/models/__init__.py` must use camelCase aliases (e.g., `Field(alias="createdDate")`) and handle the nested objects. Added computed properties like `created_by_id` for backward compatibility. Fixed in commit `703f442`.
+
+**24. List response models need `populate_by_name=True` for nested model aliases to work.**
+Even when nested models (like `Dataset`) have correct `Field(alias="...")` definitions, the parent list response models (`DatasetListResponse`, `DashboardListResponse`, `DataflowListResponse`) must have `model_config = ConfigDict(extra="allow", populate_by_name=True)` for Pydantic to use the aliases when parsing the list items. Fixed in commit `90c0e7b`.
+
+**25. Always test against the actual API response, not just documentation.**
+The Salesforce documentation may show PascalCase field names, but the actual API returns camelCase. The error `76 validation errors for DatasetListResponse` with `Field required` for `CreatedDate`, `CreatedById`, etc. was caused by the model expecting PascalCase while the API returned camelCase. Always test against a live API response (or a captured real response) to verify field names. The fix was discovered by directly calling the API and inspecting the actual JSON response.
+
+**26. SAQL query syntax error in dataset extraction.**
+The extraction uses SAQL queries built in `DatasetService._build_saql_query()`. The error `Syntax Error at position after token count :: t() as "count"` suggests a malformed SAQL query. The query building logic in `DatasetService._build_saql_query()` needs to be reviewed and tested against the Salesforce SAQL syntax. This is a separate issue from the model/auth fixes and needs investigation.
+
+
 ### Workflow / collaboration
 
 **19. The branch `feature/asftool-refactor` is the work-in-progress

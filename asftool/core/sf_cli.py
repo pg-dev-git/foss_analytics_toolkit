@@ -302,8 +302,21 @@ class SFCLIManager:
         except json.JSONDecodeError as e:
             raise SFCLIError(f"Failed to parse SF CLI JSON output: {e}") from e
 
+        msg = output.get("message", "")
         if output.get("status") != 0:
-            raise SFCLIError(f"Failed to get org info: {output.get('message', 'Unknown error')}")
+            # Auth (option 3) is version-agnostic. If SF CLI rejects the
+            # version format, don't crash the login — fall back to token-only.
+            if "not a valid API version" in msg or "org-api-version" in msg:
+                logger.info("sf_cli_version_error_ignored", alias=alias, msg=msg)
+                # Return a partial result; caller (sf_cli_auth) will use
+                # the token from show-access-token separately.
+                return SFCLIAuthResult(
+                    access_token="",
+                    instance_url="",
+                    alias=alias,
+                    username=None,
+                )
+            raise SFCLIError(f"Failed to get org info: {msg}")
 
         result_data = output.get("result", {})
         return self._parse_auth_result(result_data, alias)

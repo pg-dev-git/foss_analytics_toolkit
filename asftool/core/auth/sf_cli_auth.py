@@ -91,11 +91,15 @@ class SFCLIAuthService:
             # This step is MANDATORY - the login_web token is often redacted/invalid.
             actual_token = await self.sf_cli.get_access_token(alias=alias)
 
-            # Get org info for metadata (instance_url, username, etc.)
+            # Get org info for metadata (instance_url, username, etc.).
+            # If SF CLI rejects version format, fall back to auth_result.
             org_info = await self.sf_cli.get_org_info(alias=alias)
+            # If version was rejected, org_info is partial; fall back to auth_result.
+            if not org_info.instance_url:
+                org_info = auth_result
             refreshed_token = StoredToken(
                 access_token=actual_token,
-                instance_url=org_info.instance_url,
+                instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
                 alias=org_info.alias,
@@ -164,11 +168,15 @@ class SFCLIAuthService:
             # This step is MANDATORY - the login_device token is often redacted/invalid.
             actual_token = await self.sf_cli.get_access_token(alias=alias)
 
-            # Get org info for metadata (instance_url, username, etc.)
+            # Get org info for metadata (instance_url, username, etc.).
+            # If SF CLI rejects version format, fall back to auth_result.
             org_info = await self.sf_cli.get_org_info(alias=alias)
+            # If version was rejected, org_info is partial; fall back to auth_result.
+            if not org_info.instance_url:
+                org_info = auth_result
             refreshed_token = StoredToken(
                 access_token=actual_token,
-                instance_url=org_info.instance_url,
+                instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
                 alias=org_info.alias,
