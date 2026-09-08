@@ -87,7 +87,7 @@ class LineageService:
             shape, fill = shapes_colors.get(node.asset_type, ("ellipse", "#f5f5f5"))
             dot.node(
                 node.id,
-                label=f"{node.name}\n({node.asset_type.value})",
+                label=f"{node.name}\n({node.asset_type.value if hasattr(node.asset_type, "value") else node.asset_type})",
                 shape=shape,
                 style="filled",
                 fillcolor=fill,
@@ -111,7 +111,7 @@ class LineageService:
         lines = ["flowchart TD"]
         for node in graph.nodes:
             safe_id = node.id.replace("-", "_").replace("/", "_")
-            lines.append(f"    {safe_id}[\"{node.name}\\n({node.asset_type.value})\"]")
+            lines.append(f"    {safe_id}[\"{node.name}\\n({node.asset_type.value if hasattr(node.asset_type, "value") else node.asset_type})\"]")
         for edge in graph.edges:
             src = edge.source.replace("-", "_").replace("/", "_")
             tgt = edge.target.replace("-", "_").replace("/", "_")
@@ -126,7 +126,7 @@ class LineageService:
                 {
                     "id": n.id,
                     "label": n.name,
-                    "asset_type": n.asset_type.value,
+                    "asset_type": n.asset_type.value if hasattr(n.asset_type, "value") else n.asset_type,
                     "url": n.url,
                     "metadata": n.metadata,
                 }
