@@ -16,16 +16,14 @@ async def generate_lineage() -> None:
     session = Session()
     try:
         print_info("=== Visual Lineage Mapping ===")
-
         # Step 1: User selects input source — either impact JSON file or live impact analysis
-        print_info("=== Visual Lineage Mapping ===")
         from asftool.cli.ui import prompt_text
 
-        # Offer two paths: from impact file or from field search
-        mode = prompt_text("Use impact file? (y/n) — enter 'y' to load a Field Impact JSON file, 'n' to run field search first", default="n")
+        # Offer two paths: load an existing impact file, or run a field search first
+        mode = prompt_text("Use an existing impact file? Type 'y' to load one, or 'n' to search a field first", default="n")
         impact_path: str | None = None
         if mode and mode.lower() in ("y", "yes", "1", "true"):
-            impact_path = prompt_text("Path to Field Impact Analysis JSON file")
+            impact_path = prompt_text("Path to the impact JSON file (short name is fine — e.g., 'opportunity_impact')")
             if not impact_path:
                 print_info("Cancelled.")
                 return
@@ -77,16 +75,23 @@ async def generate_lineage() -> None:
             print_info("Cancelled.")
             return
 
-        # Step 3: Output path
-        output_path = await _prompt_output_path(impact_path or "lineage" or "lineage")
+        # Step 3: Pick a clean output name — not a full path
+        print_info("Give this output a short name — like 'sales_lineage' or 'opportunity_map'. We'll add .svg / .mmd / .json automatically.")
+        output_path = await _prompt_output_path(search_term or impact_path or "lineage")
         if not output_path:
             print_info("Cancelled.")
             return
 
-        # Step 4: Confirm and execute
+        # Quick confirmation — tell them exactly what they're getting
         formats_str = ", ".join(formats)
-        if not await _confirm_generation(impact_path or "lineage" or "lineage", formats_str, output_path):
-            print_info("Cancelled.")
+        source_name = impact_path if impact_path else (search_term if 'search_term' in locals() else "lineage")
+        # Extract just the filename, not the full path, for a clean message
+        import os
+        clean_name = os.path.basename(str(source_name))
+        print_info(f"You'll get: {formats_str} files. Source: '{clean_name}'. Output name: '{output_path}'.")
+        proceed = await _confirm_continue()
+        if not proceed:
+            print_info("No problem — cancelled.")
             return
 
         # Step 5: Generate for each format
@@ -153,10 +158,10 @@ async def _confirm_generation(asset_id: str, formats: str, output_path: str) -> 
     from asftool.cli.ui import prompt_confirm
 
     return prompt_confirm(
-        f"Generate lineage for asset '{asset_id}'?\n"
+        f"Generate a visual lineage diagram from '{asset_id}'?\n"
         f"  Formats: {formats}\n"
-        f"  Output prefix: {output_path}\n"
-        f"Proceed?",
+        f"  Output name: {output_path}\n"
+        f"Looks good? (y/n)",
         default=True,
     )
 
