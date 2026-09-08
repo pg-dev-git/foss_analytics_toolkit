@@ -58,6 +58,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     from asftool.cli.menus.dataflows import dataflow_operations
     from asftool.cli.menus.datasets import dataset_operations
     from asftool.cli.menus.jobs import jobs_operations
+    from asftool.cli.menus.lineage import lineage_operations
 
     main = Menu(
         title="ASFTool — FOSS Analytics Tool for TCRM",
@@ -69,6 +70,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     dataflows_menu = main.add_submenu("3", "⚙️  Dataflows")
     jobs_menu = main.add_submenu("4", "📋  Data Manager Jobs")
     auth_menu = main.add_submenu("5", "🔐  Authentication")
+    lineage_menu = main.add_submenu("6", "📈  Visual Lineage")
     fields_menu = main.add_submenu("7", "🔍  Field Impact Analysis")
     config_menu = main.add_submenu("8", "⚙️  Configuration")
 
@@ -77,7 +79,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
 
         await run_diagnostics_async()
 
-    main.add(MenuItem(key="6", label="🩺  Doctor / Diagnostics", handler=_run_doctor))
+    main.add(MenuItem(key="9", label="🩺  Doctor / Diagnostics", handler=_run_doctor))
     main.add(MenuItem(key="q", label="❌  Exit"))
 
     # Wire submenu operations (phases 4-7 fill in handlers).
@@ -86,6 +88,9 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     dataflow_operations(dataflows_menu)
     jobs_operations(jobs_menu)
     auth_operations(auth_menu)
+
+    # Wire lineage submenu
+    lineage_operations(lineage_menu)
 
     # Wire field impact submenu
     from asftool.cli.menus.fields import field_operations
@@ -102,6 +107,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
         "dataflows": dataflows_menu,
         "jobs": jobs_menu,
         "auth": auth_menu,
+        "lineage": lineage_menu,
         "fields": fields_menu,
         "config": config_menu,
     }
