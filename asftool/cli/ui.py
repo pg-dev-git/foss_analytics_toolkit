@@ -45,6 +45,11 @@ def print_success(message: str) -> None:
     console.print(f"[green]✓[/green] {message}")
 
 
+def print_lineage_success(message: str) -> None:
+    """Print a lineage-specific success message with spinner context."""
+    console.print(f"[bold green]✓ Lineage:[/bold green] {message}")
+
+
 def print_error(message: str) -> None:
     """Print an error message."""
     console.print(f"[red]✗[/red] {message}")
