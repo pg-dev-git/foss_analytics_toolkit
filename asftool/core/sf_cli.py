@@ -148,7 +148,7 @@ class SFCLIManager:
             error_msg = result.stderr.strip() or result.stdout.strip()
             # SF CLI sometimes returns non-zero for warnings (e.g., update available)
             # Check if it's just a warning and the command actually succeeded
-            if error_msg and "warning" in error_msg.lower() and "update available" in error_msg.lower():
+            if error_msg and "warning" in error_msg.lower() and ("update available" in error_msg.lower() or "org-api-version" in error_msg.lower() or "overridden" in error_msg.lower()):
                 logger.warning("sf_cli_warning", command=cmd, warning=error_msg)
                 # Return the result anyway since the command likely succeeded
                 return result
@@ -198,7 +198,7 @@ class SFCLIManager:
             error_msg = result.stderr.strip() or result.stdout.strip()
             # SF CLI sometimes returns non-zero for warnings (e.g., update available)
             # Check if it's just a warning and the command actually succeeded
-            if error_msg and "warning" in error_msg.lower() and "update available" in error_msg.lower():
+            if error_msg and "warning" in error_msg.lower() and ("update available" in error_msg.lower() or "org-api-version" in error_msg.lower() or "overridden" in error_msg.lower()):
                 logger.warning("sf_cli_warning", command=cmd, warning=error_msg)
                 # Return the result anyway since the command likely succeeded
                 return result
