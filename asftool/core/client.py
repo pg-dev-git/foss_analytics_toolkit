@@ -329,6 +329,11 @@ class SalesforceClient:
         return response.json()
 
     # Field Impact Analysis methods
+    async def get_dependencies(self, asset_id: str) -> Any:
+        """Query the Wave Dependencies API for upstream/downstream links."""
+        response = await self.get(f"{self.wave_base_url}/dependencies/{asset_id}")
+        return response.json()
+
     async def list_applications(self) -> Any:
         """List all Analytics applications."""
         response = await self.get(f"{self.wave_base_url}/applications")
