@@ -103,7 +103,7 @@ class ConfigStore:
         )
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2)
+                json.dump(payload, f, indent=2, ensure_ascii=False)
             os.replace(tmp_path, self.path)
             logger.info("config_store_saved", path=str(self.path), keys=list(payload.keys()))
         except Exception:

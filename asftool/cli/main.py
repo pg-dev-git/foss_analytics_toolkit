@@ -14,12 +14,21 @@ calling Typer so we can run the async menu in a fresh event loop.
 # If emoji (real TCRM label: 'Canadian Sales 🇨🇦') causes encoding errors,
 # root fix = force UTF-8 at CLI startup, not filter the data.
 import os
-try:
-    import sys
-    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
-except (AttributeError, TypeError):
-    pass  # Python < 3.7: PYTHONIOENCODING handles it.
+import sys
 
+from dotenv import load_dotenv
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except (AttributeError, TypeError):
+        pass  # Python < 3.7: PYTHONIOENCODING handles it.
+
+# Load .env and set PYTHONIOENCODING before any module creates a console
+load_dotenv(dotenv_path=".env", override=False)
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+# ruff: noqa: E402 - imports below must come after encoding setup
 import asyncio
 
 import typer
@@ -187,18 +196,6 @@ def _has_subcommand(argv: list[str]) -> bool:
             # First non-flag arg that's not a known subcommand = treat as menu
             return False
     return False
-
-
-# ponytail: PYTHONIOENCODING (env layer) + python-dotenv loader.
-# The user must either have PYTHONIOENCODING set in shell or .env loaded
-# before console init. We load .env here (before any module creates
-# a console) and set the env var explicitly.
-
-from dotenv import load_dotenv
-load_dotenv(dotenv_path=".env", override=False)
-
-import os
-os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 
 def main() -> None:

@@ -18,6 +18,13 @@ from asftool.core.config import get_settings
 from asftool.core.services import FieldImpactService
 from asftool.core.storage import get_storage_manager
 
+# ponytail: sanitize non-ASCII (emoji) for CLI display only; JSON report preserves UTF-8.
+
+
+def _sanitize_for_display(text: str) -> str:
+    # Replace emoji and non-standard chars with '?' for safe terminal display.
+    return re.sub(r"[^\w\s.,;:!?\-@=+/()\[\]{}<>\$\%\'\"]", "?", text)
+
 app = typer.Typer(help="Field impact analysis across TCRM assets")
 
 
@@ -114,7 +121,7 @@ async def analyze_field_async(
                 alias=session.alias, search_term=search_term
             )
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(report.model_dump_json(indent=2))
+            output_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
 
             # Summary block.
             summary = report.to_summary_dict()
@@ -145,21 +152,27 @@ async def analyze_field_async(
                             f"  Dataset [{ds.dataset_name}]: {ds.match_count} match(es)"
                         )
                         for m in ds.matches[:5]:
-                            print_info(f"    - {m.field_api_name}")
+                            safe_name = _sanitize_for_display(str(m.field_api_name))
+                            safe_type = str(getattr(m, "match_type", "unknown"))
+                            score_display = getattr(m, "match_score", 0)
+                            print_info(f"    - {safe_name}  (match={safe_type}, score={score_display})")
                 for db in report.details.dashboards:
                     if db.match_count > 0:
+                        safe_name = _sanitize_for_display(str(db.dashboard_name))
                         print_info(
-                            f"  Dashboard [{db.dashboard_name}]: {db.match_count} match(es)"
+                            f"  Dashboard [{safe_name}]: {db.match_count} match(es)"
                         )
                 for df in report.details.dataflows:
                     if df.match_count > 0:
+                        safe_name = _sanitize_for_display(str(df.dataflow_name))
                         print_info(
-                            f"  Dataflow [{df.dataflow_name}]: {df.match_count} match(es)"
+                            f"  Dataflow [{safe_name}]: {df.match_count} match(es)"
                         )
                 for rd in report.details.replicated_datasets:
                     if rd.match_count > 0:
+                        safe_name = _sanitize_for_display(str(rd.object_name))
                         print_info(
-                            f"  Replicated [{rd.object_name}]: {rd.match_count} match(es)"
+                            f"  Replicated [{safe_name}]: {rd.match_count} match(es)"
                         )
             return output_path
     except typer.Exit:

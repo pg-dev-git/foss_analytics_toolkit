@@ -136,7 +136,7 @@ class DataflowService:
             )
 
         import json
-        output_path.write_text(json.dumps(definition, indent=2))
+        output_path.write_text(json.dumps(definition, indent=2, ensure_ascii=False), encoding="utf-8")
         logger.info("dataflow_backup_saved", path=str(output_path))
 
         return definition

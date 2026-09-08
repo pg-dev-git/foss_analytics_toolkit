@@ -410,7 +410,7 @@ class DatasetService:
         external_data_id = job_response["id"]
 
         # Count total rows
-        total_rows = sum(1 for _ in open(file_path)) - 1  # Subtract header
+        total_rows = sum(1 for _ in open(file_path, encoding="utf-8")) - 1  # Subtract header
         total_parts = math.ceil(total_rows / chunk_size)
 
         job = UploadJob(
@@ -514,7 +514,7 @@ class DatasetService:
         )
         external_data_id = job_response["id"]
 
-        total_rows = sum(1 for _ in open(file_path)) - 1
+        total_rows = sum(1 for _ in open(file_path, encoding="utf-8")) - 1
         total_parts = math.ceil(total_rows / chunk_size)
 
         part_number = 1

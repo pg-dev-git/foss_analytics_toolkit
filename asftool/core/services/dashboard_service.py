@@ -107,7 +107,7 @@ class DashboardService:
                 dashboard_id=dashboard_id,
             )
 
-        output_path.write_text(json.dumps(json_definition, indent=2))
+        output_path.write_text(json.dumps(json_definition, indent=2, ensure_ascii=False), encoding="utf-8")
         logger.info("dashboard_backup_saved", path=str(output_path))
 
         return backup
@@ -118,7 +118,7 @@ class DashboardService:
         new_name: str | None = None,
     ) -> Dashboard:
         """Restore dashboard from backup file."""
-        json_definition = json.loads(backup_path.read_text())
+        json_definition = json.loads(backup_path.read_text(encoding="utf-8"))
 
         if new_name:
             json_definition["name"] = new_name

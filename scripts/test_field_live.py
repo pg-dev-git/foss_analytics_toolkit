@@ -33,7 +33,7 @@ from asftool.core.client import SalesforceClient
 # Load .env manually so we don't depend on pydantic-settings.
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 env: dict[str, str] = {}
-for line in ENV_PATH.read_text().splitlines():
+for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
     line = line.strip()
     if not line or line.startswith("#") or "=" not in line:
         continue
