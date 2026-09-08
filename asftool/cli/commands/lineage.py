@@ -12,7 +12,6 @@ from asftool.cli.ui import (
     print_error,
     print_info,
     print_lineage_success,
-    print_success,
 )
 from asftool.core.services.lineage_service import LineageService
 
@@ -24,22 +23,12 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-@app.command("generate")
-def generate(
-    asset_id: str = typer.Argument(..., help="Root TCRM asset ID"),
-    format: str = typer.Option(
-        "svg", "--format", "-f", help="Output format: svg | mermaid | json"
-    ),
-    output: str = typer.Option(
-        "lineage_output", "--output", "-o", help="Output file path (without extension)"
-    ),
-):
+async def generate_async(asset_id: str, fmt: str = "svg", out: str = "lineage_output") -> None:
     """Generate dependency diagram for a TCRM asset."""
-
-    async def generate_async(asset_id: str, fmt: str, out: str) -> None:
-        session = Session()
-        try:
-            service = LineageService(session)
+    session = Session()
+    try:
+        async with session.client_context() as client:
+            service = LineageService(client)
             print_info(f"Fetching dependencies for asset: {asset_id}")
             graph = await service.build_graph(asset_id)
             if fmt == "svg":
@@ -58,10 +47,20 @@ def generate(
             else:
                 print_error(f"Unknown format: {fmt}")
                 raise typer.Exit(1)
-        except Exception as exc:
-            print_error(f"Lineage generation failed: {exc}")
-            raise typer.Exit(1) from exc
-        finally:
-            await session.close()
+    except Exception as exc:
+        print_error(f"Lineage generation failed: {exc}")
+        raise typer.Exit(1) from exc
+    finally:
+        await session.close()
 
+
+@app.command("generate")
+def generate(
+    asset_id: str = typer.Argument(..., help="Root TCRM asset ID"),
+    format: str = typer.Option("svg", "--format", "-f", help="Output format: svg | mermaid | json"),
+    output: str = typer.Option(
+        "lineage_output", "--output", "-o", help="Output file path (without extension)"
+    ),
+):
+    """Generate dependency diagram for a TCRM asset."""
     _run(generate_async(asset_id, format, output))

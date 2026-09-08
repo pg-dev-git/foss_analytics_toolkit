@@ -64,6 +64,16 @@ async def analyze_full() -> None:
 
 
 def field_operations(menu: Menu) -> None:
-    """Wire up the field impact analysis submenu."""
+    """Wire up the Field Impact Analysis submenu.
+
+    Visual Lineage lives under here so all relationship/dependency tooling
+    is in one place in the interactive menu.
+    """
     menu.add(MenuItem("1", "Analyze field impact (all assets)", handler=analyze_full))
+
+    from asftool.cli.menus.lineage import lineage_operations
+
+    lineage_submenu = menu.add_submenu("2", "🗂  Visual Lineage")
+    lineage_operations(lineage_submenu)
+
     menu.add(MenuItem("b", "Back", exit_after=True))

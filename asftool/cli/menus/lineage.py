@@ -11,9 +11,7 @@ from asftool.cli.ui import print_error, print_info, print_lineage_success, print
 
 async def generate_lineage() -> None:
     """Interactive lineage generation with format multi-select."""
-    from asftool.cli.commands.lineage import generate_async
     from asftool.cli.session import Session
-    from asftool.cli.ui import print_error, print_info
 
     session = Session()
     try:
@@ -72,6 +70,7 @@ async def _prompt_asset_id(session: Session) -> str | None:
             client = await session.get_client()
             # Try to get dependencies; if 404, asset doesn't exist
             from asftool.core.exceptions import SalesforceNotFoundError
+
             try:
                 await client.get_dependencies(asset_id)
             except SalesforceNotFoundError:
@@ -150,6 +149,7 @@ async def _confirm_generation(asset_id: str, formats: str, output_path: str) -> 
 async def _confirm_continue() -> bool:
     """Simple yes/no confirmation."""
     from asftool.cli.ui import prompt_confirm
+
     return prompt_confirm("Continue?", default=True)
 
 
@@ -204,6 +204,7 @@ async def _execute_generation(
 
             elif fmt == "json":
                 import json
+
                 payload = service.to_node_edge_json(graph)
                 out_path = f"{out}.json"
                 Path(out_path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -216,6 +217,7 @@ async def _execute_generation(
 def _check_graphviz_available() -> bool:
     """Check if Graphviz 'dot' binary is available."""
     import shutil
+
     return shutil.which("dot") is not None
 
 
