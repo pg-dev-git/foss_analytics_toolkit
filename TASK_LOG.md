@@ -24,3 +24,26 @@
 ## Phase 5: Testing & Verification
 - [ ] 5.1 Add unit tests for crypto, authentication schemas, and client retry logic under `tests/unit/`.
 - [ ] 5.2 Add integration tests using `pytest-asyncio` and mocked API responses under `tests/integration/`.
+
+---
+
+## Phase 6: Visual Data Lineage & Dependency Mapping
+### Phase 1: Data Models & API Dependency Integration
+- [x] 1.1 Update `pyproject.toml` to add `graphviz` dependency and verify OS installation bindings.
+- [ ] 1.2 Create Pydantic graph models in `asftool/core/models/lineage.py` (`LineageNode`, `LineageEdge`, `LineageGraph`).
+- [ ] 1.3 Add dependency API methods to `asftool/core/client.py` targeting `/wave/dependencies`.
+
+### Phase 2: Core Lineage Service & Rendering Engines
+- [ ] 2.1 Build `asftool/core/services/lineage_service.py` to recursively construct `LineageGraph` objects from TCRM responses.
+- [ ] 2.2 Implement `render_svg()` in `lineage_service.py` using Graphviz with customized styles per asset type.
+- [ ] 2.3 Implement `render_mermaid()` in `lineage_service.py` to produce Mermaid flowcharts.
+- [ ] 2.4 Implement `to_node_edge_json()` for standardized frontend graph payloads.
+
+### Phase 3: CLI Commands & Exporters
+- [ ] 3.1 Create `asftool/cli/commands/lineage.py` with `generate` command (`--format`, `--output`).
+- [ ] 3.2 Add interactive progress spinners and success messaging in `asftool/cli/ui.py`.
+- [ ] 3.3 Register `lineage` commands in `asftool/cli/main.py`.
+
+### Phase 4: Testing & Validation
+- [ ] 4.1 Write unit tests in `tests/unit/test_lineage.py`.
+- [ ] 4.2 Write integration tests in `tests/integration/test_lineage_cli.py`.
