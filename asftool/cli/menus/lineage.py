@@ -17,11 +17,59 @@ async def generate_lineage() -> None:
     try:
         print_info("=== Visual Lineage Mapping ===")
 
-        # Step 1: Get asset ID with validation
-        asset_id = await _prompt_asset_id(session)
-        if not asset_id:
-            print_info("Cancelled.")
-            return
+        # Step 1: User selects input source — either impact JSON file or live impact analysis
+        print_info("=== Visual Lineage Mapping ===")
+        from asftool.cli.ui import prompt_text
+
+        # Offer two paths: from impact file or from field search
+        mode = prompt_text("Use impact file? (y/n) — enter 'y' to load a Field Impact JSON file, 'n' to run field search first", default="n")
+        impact_path: str | None = None
+        if mode and mode.lower() in ("y", "yes", "1", "true"):
+            impact_path = prompt_text("Path to Field Impact Analysis JSON file")
+            if not impact_path:
+                print_info("Cancelled.")
+                return
+            impact_path = impact_path.strip()
+        else:
+            # Run field impact analysis interactively
+            search_term = prompt_text("Field API name or label to analyze (e.g., 'revenue', 'customer_id')")
+            if not search_term:
+                print_info("Cancelled.")
+                return
+            search_term = search_term.strip()
+
+            # Build impact report via service
+            from asftool.cli.commands.fields import analyze_field_async
+            try:
+                print_info(f"Running field impact analysis for: '{search_term}'...")
+                # Call the async analysis command directly
+                await analyze_field_async(
+                    search_term=search_term,
+                    mode="both",
+                    fmt="json",
+                )
+                # After analysis completes, prompt for output file
+                # Note: analyze_field_async writes to a default path; for simplicity,
+                # we guide the user to provide the file they just created.
+                impact_path = prompt_text(
+                    f"Enter the impact JSON file path created by the analysis (default: impact_{search_term}.json)",
+                    default=f"impact_{search_term}.json",
+                )
+                if impact_path is None or (isinstance(impact_path, str) and not impact_path.strip()):
+                    # Try to infer from session settings / storage
+                    from asftool.core.config import get_settings
+                    from asftool.core.storage import get_storage_manager
+                    alias = session.alias
+                    settings = get_settings()
+                    storage = get_storage_manager(settings)
+                    default_impact_path = storage.field_impact_path(alias=alias, search_term=search_term)
+                    impact_path = str(default_impact_path)
+                    print_info(f"Using default impact path: {impact_path}")
+                else:
+                    impact_path = impact_path.strip()
+            except Exception as exc:
+                print_error(f"Field impact analysis failed: {exc}")
+                return
 
         # Step 2: Multi-select format
         formats = await _prompt_formats()
@@ -30,60 +78,27 @@ async def generate_lineage() -> None:
             return
 
         # Step 3: Output path
-        output_path = await _prompt_output_path(asset_id)
+        output_path = await _prompt_output_path(search_term or impact_path or "lineage")
         if not output_path:
             print_info("Cancelled.")
             return
 
         # Step 4: Confirm and execute
         formats_str = ", ".join(formats)
-        if not await _confirm_generation(asset_id, formats_str, output_path):
+        if not await _confirm_generation(search_term or impact_path or "lineage", formats_str, output_path):
             print_info("Cancelled.")
             return
 
         # Step 5: Generate for each format
-        await _execute_generation(session, asset_id, formats, output_path)
+        if not impact_path:
+            print_error("No impact file or search term provided. Please select a source.")
+            return
+        await _execute_generation(session, impact_path, formats, output_path)
 
     except Exception as e:
         print_error(f"Lineage generation failed: {e}")
     finally:
         await session.close()
-
-
-async def _prompt_asset_id(session: Session) -> str | None:
-    """Prompt for and validate asset ID."""
-    from asftool.cli.ui import prompt_text
-
-    while True:
-        asset_id = prompt_text("Enter TCRM Asset ID (Dataset/Dashboard/Dataflow/Recipe/Lens ID)")
-        if not asset_id:
-            return None
-
-        # Basic validation: non-empty, reasonable length
-        asset_id = asset_id.strip()
-        if len(asset_id) < 5:
-            print_error("Asset ID too short. Please enter a valid Salesforce ID (15 or 18 chars).")
-            continue
-
-        # Optional: verify asset exists via API (lightweight check)
-        try:
-            client = await session.get_client()
-            # Try to get dependencies; if 404, asset doesn't exist
-            from asftool.core.exceptions import SalesforceNotFoundError
-
-            try:
-                await client.get_dependencies(asset_id)
-            except SalesforceNotFoundError:
-                print_warning(f"Asset '{asset_id}' not found or no dependencies. Continue anyway?")
-                if not await _confirm_continue():
-                    continue
-        except Exception as e:
-            # Network/auth issues - warn but allow continuing
-            print_warning(f"Could not verify asset ({e}). Continue anyway?")
-            if not await _confirm_continue():
-                continue
-
-        return asset_id
 
 
 async def _prompt_formats() -> list[str] | None:
@@ -155,19 +170,23 @@ async def _confirm_continue() -> bool:
 
 async def _execute_generation(
     session: Session,
-    asset_id: str,
+    impact_path: str,
     formats: list[str],
     output_path: str,
 ) -> None:
-    """Execute lineage generation for each selected format."""
+    """Execute lineage generation from impact JSON file."""
     from asftool.core.services.lineage_service import LineageService
 
-    # Build graph once
-    print_info("Fetching dependencies and building graph...")
+    # Check impact file exists
+    if not Path(impact_path).exists():
+        print_error(f"Impact file not found: {impact_path}")
+        print_info("To create an impact file, run: asftool fields analyze-field-impact")
+        return
+
+    # Build graph from impact file (no API dependency needed)
     try:
-        client = await session.get_client()
-        service = LineageService(client)
-        graph = await service.build_graph(asset_id)
+        service = LineageService(None)
+        graph = service.build_graph_from_impact(impact_path)
 
         if not graph.nodes:
             print_warning("No dependencies found for this asset.")
@@ -175,8 +194,15 @@ async def _execute_generation(
 
         print_info(f"Graph built: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
 
-    except Exception as e:
-        print_error(f"Failed to build dependency graph: {e}")
+    except FileNotFoundError as exc:
+        print_error(str(exc))
+        return
+    except ValueError as exc:
+        print_error(f"Invalid impact data: {exc}")
+        print_info("The file may not be a valid Field Impact Analysis JSON output.")
+        return
+    except Exception as exc:
+        print_error(f"Failed to build lineage graph from impact: {exc}")
         return
 
     # Generate each format
