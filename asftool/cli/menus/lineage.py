@@ -23,11 +23,28 @@ async def generate_lineage() -> None:
         mode = prompt_text("Use an existing impact file? Type 'y' to load one, or 'n' to search a field first", default="n")
         impact_path: str | None = None
         if mode and mode.lower() in ("y", "yes", "1", "true"):
-            impact_path = prompt_text("Path to the impact JSON file (short name is fine — e.g., 'opportunity_impact')")
-            if not impact_path:
+            impact_path_raw = prompt_text("Path to the impact JSON file (short name is fine — e.g., 'opportunity_impact')")
+            if not impact_path_raw:
                 print_info("Cancelled.")
                 return
-            impact_path = impact_path.strip()
+            impact_path_raw = impact_path_raw.strip()
+            # Smart resolve: try as-is, then against known download directory
+            p = Path(impact_path_raw)
+            if not p.exists():
+                # Try resolving in the standard downloads area
+                download_dir = Path("asftool_downloads/default/field_impact")
+                alt = download_dir / impact_path_raw
+                if alt.exists():
+                    impact_path = str(alt)
+                else:
+                    # Check if the basename exists anywhere in downloads
+                    alt2 = download_dir / p.name
+                    if alt2.exists():
+                        impact_path = str(alt2)
+                    else:
+                        impact_path = impact_path_raw
+            else:
+                impact_path = impact_path_raw
         else:
             # Run field impact analysis interactively
             search_term = prompt_text("Field API name or label to analyze (e.g., 'revenue', 'customer_id')")
@@ -46,25 +63,16 @@ async def generate_lineage() -> None:
                     mode="both",
                     fmt="json",
                 )
-                # After analysis completes, prompt for output file
-                # Note: analyze_field_async writes to a default path; for simplicity,
-                # we guide the user to provide the file they just created.
-                impact_path = prompt_text(
-                    f"Enter the impact JSON file path created by the analysis (default: impact_{search_term}.json)",
-                    default=f"impact_{search_term}.json",
-                )
-                if impact_path is None or (isinstance(impact_path, str) and not impact_path.strip()):
-                    # Try to infer from session settings / storage
-                    from asftool.core.config import get_settings
-                    from asftool.core.storage import get_storage_manager
-                    alias = session.alias
-                    settings = get_settings()
-                    storage = get_storage_manager(settings)
-                    default_impact_path = storage.field_impact_path(alias=alias, search_term=search_term)
-                    impact_path = str(default_impact_path)
-                    print_info(f"Using default impact path: {impact_path}")
-                else:
-                    impact_path = impact_path.strip()
+                # After analysis completes, infer the output path from session storage
+                # (No extra prompt — the user just gave a search term; we'll use the default path automatically)
+                # Note: analyze_field_async writes to a default path; we resolve it here.
+                from asftool.core.config import get_settings
+                from asftool.core.storage import get_storage_manager
+                alias = session.alias
+                settings = get_settings()
+                storage = get_storage_manager(settings)
+                impact_path = str(storage.field_impact_path(alias=alias, search_term=search_term))
+                print_info(f"Using generated impact file: {impact_path}")
             except Exception as exc:
                 print_error(f"Field impact analysis failed: {exc}")
                 return
