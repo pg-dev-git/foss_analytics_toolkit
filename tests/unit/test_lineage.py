@@ -52,8 +52,14 @@ class TestLineageRendering:
         graph.add_edge(LineageEdge(source="ds_01", target="db_01"))
         mmd = service.render_mermaid(graph)
         assert "flowchart TD" in mmd
-        assert "ds_01" in mmd
-        assert "db_01" in mmd
+        # Human-readable IDs derived from asset names, grouped in subgraphs
+        assert "ds_DS" in mmd
+        assert "db_DB" in mmd
+        assert "subgraph DATASET[Dataset]" in mmd
+        assert "subgraph DASHBOARD[Dashboard]" in mmd
+        # Style classes applied per type
+        assert "classDef datasetStyle" in mmd
+        assert 'ds_DS -->|"depends_on"| db_DB' in mmd
 
     def test_to_node_edge_json_schema(self):
         service = LineageService(None)

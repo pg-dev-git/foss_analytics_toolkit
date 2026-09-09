@@ -174,7 +174,9 @@ class LineageService:
                 source_ref = match.get("dataset_id") or match.get("node_id")
                 if source_ref and df_id:
                     if not any(n.id == str(source_ref) for n in graph.nodes):
-                        source_name = str(match.get("dataset_name", match.get("field_name", source_ref)))
+                        source_name = str(
+                            match.get("dataset_name", match.get("field_name", source_ref))
+                        )
                         source_node = LineageNode(
                             id=str(source_ref),
                             name=source_name,
@@ -200,7 +202,7 @@ class LineageService:
     def render_svg(self, graph: LineageGraph, output_path: str) -> str:
         """Generate a clean SVG vector file using Graphviz with improved layout."""
         dot = graphviz.Digraph(format="svg", engine="dot")
-        
+
         # Graph-level attributes for better layout
         dot.attr(
             rankdir="TB",
@@ -219,18 +221,20 @@ class LineageService:
             # Pad to prevent clipping
             pad="0.5",
         )
-        
+
         # Node attributes
-        dot.attr("node", 
+        dot.attr(
+            "node",
             fontname="Helvetica",
             fontsize="11",
             fontcolor="#333333",
             margin="0.15,0.08",
             penwidth="1.2",
         )
-        
+
         # Edge attributes
-        dot.attr("edge",
+        dot.attr(
+            "edge",
             fontname="Helvetica",
             fontsize="9",
             fontcolor="#555555",
@@ -256,11 +260,15 @@ class LineageService:
         # Create subgraphs (clusters) for each asset type
         for asset_type, nodes in nodes_by_type.items():
             shape, fill, border = shapes_colors.get(asset_type, ("ellipse", "#f5f5f5", "#333333"))
-            cluster_name = f"cluster_{asset_type.value if hasattr(asset_type, 'value') else asset_type}"
-            
+            cluster_name = (
+                f"cluster_{asset_type.value if hasattr(asset_type, 'value') else asset_type}"
+            )
+
             with dot.subgraph(name=cluster_name) as c:
                 c.attr(
-                    label=(asset_type.value if hasattr(asset_type, 'value') else asset_type).title(),
+                    label=(
+                        asset_type.value if hasattr(asset_type, "value") else asset_type
+                    ).title(),
                     style="dashed,rounded",
                     color=border,
                     fontname="Helvetica-Bold",
@@ -270,7 +278,7 @@ class LineageService:
                     margin="10",
                     penwidth="1.5",
                 )
-                
+
                 for node in nodes:
                     c.node(
                         node.id,
@@ -291,7 +299,7 @@ class LineageService:
             label = edge.label or edge.relation
             if len(label) > 35:
                 label = label[:32] + "..."
-            
+
             dot.edge(
                 edge.source,
                 edge.target,
@@ -312,17 +320,100 @@ class LineageService:
         return output_path if output_path.endswith(".svg") else f"{output_path}.svg"
 
     def render_mermaid(self, graph: LineageGraph) -> str:
-        """Produce raw Mermaid flowchart string (.mmd)."""
-        lines = ["flowchart TD"]
+        """Produce a clean, readable Mermaid flowchart string (.mmd).
+
+        Follows Mermaid best practices:
+        - Subgraphs group nodes by asset type (datasets, dashboards, dataflows).
+        - ``classDef`` color-coding per asset type.
+        - Human-friendly node IDs derived from asset names (not long SF ids).
+        - Self-referencing field edges are skipped to reduce visual clutter
+          (the field matches are still visible in the JSON export).
+        """
+        import re
+
+        lines = [
+            "%%{init: {'theme':'base', 'themeVariables': {",
+            "  'primaryColor': '#e1f5fe', 'primaryTextColor': '#01579b',",
+            "  'primaryBorderColor': '#01579b', 'lineColor': '#6b7280',",
+            "  'secondaryColor': '#e8f5e9', 'tertiaryColor': '#fff3e0'",
+            "}}}%%",
+            "flowchart TD",
+        ]
+
+        # Prefix + classDef style per asset type
+        type_map = {
+            AssetType.DATASET: ("ds", "datasetStyle"),
+            AssetType.RECIPE: ("rcp", "recipeStyle"),
+            AssetType.DATAFLOW: ("df", "dataflowStyle"),
+            AssetType.DASHBOARD: ("db", "dashboardStyle"),
+            AssetType.LENS: ("lens", "lensStyle"),
+        }
+
+        def _safe_name(name: str) -> str:
+            safe = re.sub(r"[^A-Za-z0-9_]", "_", str(name))
+            safe = re.sub(r"_+", "_", safe).strip("_")
+            return safe[:40] or "asset"
+
+        # Assign stable human-readable ids from asset names.
+        id_map: dict[str, str] = {}
+        used: set[str] = set()
+        labels: dict[str, str] = {}
+        node_style: dict[str, str] = {}
+
         for node in graph.nodes:
-            safe_id = node.id.replace("-", "_").replace("/", "_")
-            at_type_str = node.asset_type.value if hasattr(node.asset_type, "value") else node.asset_type
-            lines.append(f"    {safe_id}[\"{node.name}\n({at_type_str})\"]")
+            prefix, style = type_map.get(node.asset_type, ("as", "datasetStyle"))
+            base = _safe_name(node.name)
+            candidate = f"{prefix}_{base}"
+            i = 2
+            while candidate in used:
+                candidate = f"{prefix}_{base}_{i}"
+                i += 1
+            used.add(candidate)
+            id_map[node.id] = candidate
+            labels[candidate] = node.name
+            node_style[candidate] = style
+
+        # Group node ids by asset type for subgraphs.
+        groups: dict[str, list[str]] = {}
+        for node in graph.nodes:
+            key = (
+                node.asset_type.value if hasattr(node.asset_type, "value") else str(node.asset_type)
+            )
+            groups.setdefault(key, []).append(id_map[node.id])
+
+        # class definitions (styled per skill guidance: color only, no emoji)
+        lines.append("    classDef datasetStyle fill:#e1f5fe,stroke:#01579b,color:#01579b")
+        lines.append("    classDef dashboardStyle fill:#ede7f6,stroke:#4a148c,color:#4a148c")
+        lines.append("    classDef dataflowStyle fill:#e8f5e9,stroke:#1b5e20,color:#1b5e20")
+        lines.append("    classDef recipeStyle fill:#fff3e0,stroke:#e65100,color:#e65100")
+        lines.append("    classDef lensStyle fill:#fce4ec,stroke:#880e4f,color:#880e4f")
+
+        # Emit one subgraph per asset type (stable order).
+        for tkey in (t.value for t in AssetType):
+            ids = groups.get(tkey, [])
+            if not ids:
+                continue
+            lines.append(f"    subgraph {tkey.upper()}[{tkey.title()}]")
+            for nid in ids:
+                lines.append(f'        {nid}["{labels[nid]}"]')
+            lines.append("    end")
+
+        # Edges between distinct assets; skip self-references (node->itself).
         for edge in graph.edges:
-            src = edge.source.replace("-", "_").replace("/", "_")
-            tgt = edge.target.replace("-", "_").replace("/", "_")
-            label = (edge.label or edge.relation).replace('"', '\\"')
-            lines.append(f"    {src} -->|\"{label}\"| {tgt}")
+            src = id_map.get(edge.source)
+            tgt = id_map.get(edge.target)
+            if not src or not tgt or src == tgt:
+                continue
+            label = edge.label or edge.relation or ""
+            if label.startswith("Field: "):
+                label = label[len("Field: ") :]
+            label = label.replace('"', '\\"')
+            lines.append(f'    {src} -->|"{label}"| {tgt}')
+
+        # Apply style classes.
+        for nid, style in node_style.items():
+            lines.append(f"    class {nid} {style}")
+
         return "\n".join(lines)
 
     def to_node_edge_json(self, graph: LineageGraph) -> dict[str, Any]:
@@ -332,7 +423,9 @@ class LineageService:
                 {
                     "id": n.id,
                     "label": n.name,
-                    "asset_type": n.asset_type.value if hasattr(n.asset_type, "value") else n.asset_type,
+                    "asset_type": n.asset_type.value
+                    if hasattr(n.asset_type, "value")
+                    else n.asset_type,
                     "url": n.url,
                     "metadata": n.metadata,
                 }
