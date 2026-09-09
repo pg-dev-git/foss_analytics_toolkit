@@ -198,38 +198,113 @@ class LineageService:
         return graph
 
     def render_svg(self, graph: LineageGraph, output_path: str) -> str:
-        """Generate a clean SVG vector file using Graphviz."""
+        """Generate a clean SVG vector file using Graphviz with improved layout."""
         dot = graphviz.Digraph(format="svg", engine="dot")
-        dot.attr(rankdir="TB", bgcolor="white", fontname="Helvetica")
-        dot.attr("node", fontname="Helvetica", fontsize="10")
+        
+        # Graph-level attributes for better layout
+        dot.attr(
+            rankdir="TB",
+            bgcolor="white",
+            fontname="Helvetica",
+            fontsize="14",
+            # Better spacing between ranks
+            ranksep="1.5",
+            nodesep="0.8",
+            # Allow edges to cross fewer nodes
+            splines="ortho",
+            # Prevent overlapping
+            overlap="scale",
+            # Margin around the graph
+            margin="0.5",
+            # Pad to prevent clipping
+            pad="0.5",
+        )
+        
+        # Node attributes
+        dot.attr("node", 
+            fontname="Helvetica",
+            fontsize="11",
+            fontcolor="#333333",
+            margin="0.15,0.08",
+            penwidth="1.2",
+        )
+        
+        # Edge attributes
+        dot.attr("edge",
+            fontname="Helvetica",
+            fontsize="9",
+            fontcolor="#555555",
+            color="#666666",
+            penwidth="1.0",
+            arrowsize="0.8",
+        )
 
         # Node styling by asset type
         shapes_colors = {
-            AssetType.DATASET: ("cylinder", "#e1f5fe"),
-            AssetType.RECIPE: ("ellipse", "#fff3e0"),
-            AssetType.DATAFLOW: ("box3d", "#e8f5e9"),
-            AssetType.DASHBOARD: ("rect", "#ede7f6"),
-            AssetType.LENS: ("diamond", "#fce4ec"),
+            AssetType.DATASET: ("cylinder", "#e1f5fe", "#01579b"),
+            AssetType.RECIPE: ("ellipse", "#fff3e0", "#e65100"),
+            AssetType.DATAFLOW: ("box3d", "#e8f5e9", "#1b5e20"),
+            AssetType.DASHBOARD: ("rect", "#ede7f6", "#4a148c"),
+            AssetType.LENS: ("diamond", "#fce4ec", "#880e4f"),
         }
 
+        # Group nodes by type for subgraph clustering
+        nodes_by_type: dict[AssetType, list[LineageNode]] = {}
         for node in graph.nodes:
-            shape, fill = shapes_colors.get(node.asset_type, ("ellipse", "#f5f5f5"))
-            at_str = node.asset_type.value if hasattr(node.asset_type, "value") else node.asset_type
-            dot.node(
-                node.id,
-                label=f"{node.name}\n({at_str})",
-                shape=shape,
-                style="filled",
-                fillcolor=fill,
-                color="#333333",
-                url=node.url or "",
-            )
+            nodes_by_type.setdefault(node.asset_type, []).append(node)
 
+        # Create subgraphs (clusters) for each asset type
+        for asset_type, nodes in nodes_by_type.items():
+            shape, fill, border = shapes_colors.get(asset_type, ("ellipse", "#f5f5f5", "#333333"))
+            cluster_name = f"cluster_{asset_type.value if hasattr(asset_type, 'value') else asset_type}"
+            
+            with dot.subgraph(name=cluster_name) as c:
+                c.attr(
+                    label=(asset_type.value if hasattr(asset_type, 'value') else asset_type).title(),
+                    style="dashed,rounded",
+                    color=border,
+                    fontname="Helvetica-Bold",
+                    fontsize="12",
+                    fontcolor=border,
+                    bgcolor="#fafafa",
+                    margin="10",
+                    penwidth="1.5",
+                )
+                
+                for node in nodes:
+                    c.node(
+                        node.id,
+                        label=f"{node.name}\n({asset_type.value if hasattr(asset_type, 'value') else asset_type})",
+                        shape=shape,
+                        style="filled,rounded",
+                        fillcolor=fill,
+                        color=border,
+                        fontname="Helvetica",
+                        fontsize="10",
+                        penwidth="1.5",
+                        tooltip=node.url or "",
+                    )
+
+        # Add edges with better formatting
         for edge in graph.edges:
+            # Truncate long labels for readability
+            label = edge.label or edge.relation
+            if len(label) > 35:
+                label = label[:32] + "..."
+            
             dot.edge(
                 edge.source,
                 edge.target,
-                label=edge.label or edge.relation,
+                label=label,
+                fontname="Helvetica",
+                fontsize="9",
+                fontcolor="#555555",
+                color="#777777",
+                penwidth="1.0",
+                arrowsize="0.7",
+                # Add some spacing around edge labels
+                labeldistance="2.5",
+                labelangle="-25",
             )
 
         dot.render(output_path, cleanup=False)

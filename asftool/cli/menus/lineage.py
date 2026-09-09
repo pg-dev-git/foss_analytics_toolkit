@@ -189,6 +189,7 @@ async def _execute_generation(
 ) -> None:
     """Execute lineage generation from impact JSON file."""
     from asftool.core.services.lineage_service import LineageService
+    from asftool.core.storage import get_storage_manager
 
     # Check impact file exists
     if not Path(impact_path).exists():
@@ -218,9 +219,13 @@ async def _execute_generation(
         print_error(f"Failed to build lineage graph from impact: {exc}")
         return
 
-    # Generate each format
+    # Resolve output paths using StorageManager
+    settings = session.settings
+    storage = get_storage_manager(settings)
+    alias = session.alias
+
+    # Generate each format with proper organized paths
     for fmt in formats:
-        out = f"{output_path}"
         try:
             if fmt == "svg":
                 # Check for dot binary before attempting
@@ -232,21 +237,21 @@ async def _execute_generation(
                     )
                     continue
 
-                path = service.render_svg(graph, out)
+                out_path = storage.lineage_path(alias=alias, output_name=output_path, extension="svg")
+                path = service.render_svg(graph, str(out_path))
                 print_lineage_success(f"SVG exported: {path}")
 
             elif fmt == "mermaid":
+                out_path = storage.lineage_path(alias=alias, output_name=output_path, extension="mmd")
                 mmd = service.render_mermaid(graph)
-                out_path = f"{out}.mmd"
-                Path(out_path).write_text(mmd, encoding="utf-8")
+                out_path.write_text(mmd, encoding="utf-8")
                 print_lineage_success(f"Mermaid exported: {out_path}")
 
             elif fmt == "json":
                 import json
-
+                out_path = storage.lineage_path(alias=alias, output_name=output_path, extension="json")
                 payload = service.to_node_edge_json(graph)
-                out_path = f"{out}.json"
-                Path(out_path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+                out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
                 print_lineage_success(f"JSON exported: {out_path}")
 
         except Exception as e:

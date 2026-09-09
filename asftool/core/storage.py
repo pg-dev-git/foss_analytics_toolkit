@@ -65,6 +65,18 @@ class StorageManager:
         filename = f"{timestamp}_{safe_term}.{extension}"
         return self._type_dir(alias, "field_impact") / filename
 
+    def lineage_path(
+        self,
+        alias: str,
+        output_name: str,
+        extension: str = "svg",
+    ) -> Path:
+        """Generate path for a visual lineage diagram."""
+        timestamp = self._timestamp()
+        safe_name = self._sanitize(output_name) or "lineage"
+        filename = f"{timestamp}_{safe_name}.{extension}"
+        return self._type_dir(alias, "lineage") / filename
+
     def dataset_path(
         self,
         alias: str,
@@ -123,7 +135,7 @@ class StorageManager:
         """List all downloads for an org, organized by type."""
         org_dir = self._org_dir(alias)
         result = {}
-        for type_ in ["datasets", "dashboards", "dataflows", "backups"]:
+        for type_ in ["datasets", "dashboards", "dataflows", "backups", "lineage", "field_impact"]:
             type_dir = org_dir / type_
             if type_dir.exists():
                 files = sorted(type_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -142,7 +154,7 @@ class StorageManager:
     def cleanup_old_downloads(self, alias: str, keep_last: int = 10) -> int:
         """Remove old downloads, keeping only the most recent N per type."""
         removed = 0
-        for type_ in ["datasets", "dashboards", "dataflows", "backups"]:
+        for type_ in ["datasets", "dashboards", "dataflows", "backups", "lineage", "field_impact"]:
             type_dir = self._org_dir(alias) / type_
             if not type_dir.exists():
                 continue
