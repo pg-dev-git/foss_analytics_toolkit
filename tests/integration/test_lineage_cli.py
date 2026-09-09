@@ -13,6 +13,9 @@ def test_lineage_help():
     )
     assert result.returncode == 0
     assert "generate" in result.stdout
+    assert "Mermaid" in result.stdout or "mermaid" in result.stdout
+    assert "json" in result.stdout.lower()
+    assert "svg" not in result.stdout.lower()
 
 
 def test_lineage_generate_invalid_format():

@@ -84,7 +84,7 @@ async def generate_lineage() -> None:
             return
 
         # Step 3: Pick a clean output name — not a full path
-        print_info("Give this output a short name — like 'sales_lineage' or 'opportunity_map'. We'll add .svg / .mmd / .json automatically.")
+        print_info("Give this output a short name — like 'sales_lineage' or 'opportunity_map'. We'll add .mmd / .json automatically.")
         output_path = await _prompt_output_path(search_term or impact_path or "lineage")
         if not output_path:
             print_info("Cancelled.")
@@ -118,7 +118,6 @@ async def _prompt_formats() -> list[str] | None:
     """Multi-select format picker using questionary checkboxes."""
     try:
         choices = [
-            questionary.Choice("SVG (vector diagram)", value="svg"),
             questionary.Choice("Mermaid (.mmd for Markdown)", value="mermaid"),
             questionary.Choice("JSON (nodes/edges for React Flow/D3.js)", value="json"),
         ]
@@ -136,7 +135,7 @@ async def _prompt_formats() -> list[str] | None:
             print_error("No format selected. Please choose at least one.")
             return await _prompt_formats()
 
-        return selected
+        return list(selected)  # type: ignore[return-value]
 
     except Exception as e:
         print_error(f"Format selection failed: {e}")
@@ -227,21 +226,7 @@ async def _execute_generation(
     # Generate each format with proper organized paths
     for fmt in formats:
         try:
-            if fmt == "svg":
-                # Check for dot binary before attempting
-                if not _check_graphviz_available():
-                    print_error(
-                        "Graphviz 'dot' binary not found. SVG generation requires Graphviz.\n"
-                        "  Install: sudo apt install graphviz (Ubuntu) / brew install graphviz (macOS)\n"
-                        "  Skipping SVG. Mermaid/JSON still available."
-                    )
-                    continue
-
-                out_path = storage.lineage_path(alias=alias, output_name=output_path, extension="svg")
-                path = service.render_svg(graph, str(out_path))
-                print_lineage_success(f"SVG exported: {path}")
-
-            elif fmt == "mermaid":
+            if fmt == "mermaid":
                 out_path = storage.lineage_path(alias=alias, output_name=output_path, extension="mmd")
                 mmd = service.render_mermaid(graph)
                 out_path.write_text(mmd, encoding="utf-8")
@@ -256,13 +241,6 @@ async def _execute_generation(
 
         except Exception as e:
             print_error(f"Failed to generate {fmt.upper()}: {e}")
-
-
-def _check_graphviz_available() -> bool:
-    """Check if Graphviz 'dot' binary is available."""
-    import shutil
-
-    return shutil.which("dot") is not None
 
 
 def lineage_operations(menu: Menu) -> None:

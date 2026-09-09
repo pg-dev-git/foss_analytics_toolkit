@@ -46,7 +46,7 @@ class StorageManager:
     def _type_dir(
         self,
         alias: str,
-        type_: Literal["datasets", "dashboards", "dataflows", "backups", "field_impact"],
+        type_: Literal["datasets", "dashboards", "dataflows", "backups", "field_impact", "lineage"],
     ) -> Path:
         """Get the type-specific directory within org directory."""
         type_dir = self._org_dir(alias) / type_
@@ -69,7 +69,7 @@ class StorageManager:
         self,
         alias: str,
         output_name: str,
-        extension: str = "svg",
+        extension: str = "mmd",
     ) -> Path:
         """Generate path for a visual lineage diagram."""
         timestamp = self._timestamp()

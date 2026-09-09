@@ -1,4 +1,4 @@
-"""Lineage CLI commands — SVG, Mermaid, and JSON exports."""
+"""Lineage CLI commands — Mermaid and JSON exports."""
 
 import asyncio
 import json
@@ -15,7 +15,7 @@ from asftool.cli.ui import (
 )
 from asftool.core.services.lineage_service import LineageService
 
-app = typer.Typer(help="Visual lineage mapping & SVG diagram generation")
+app = typer.Typer(help="Visual lineage mapping (Mermaid/JSON)")
 console = Console()
 
 
@@ -23,7 +23,7 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-async def generate_async(asset_id: str, fmt: str = "svg", out: str = "lineage_output") -> None:
+async def generate_async(asset_id: str, fmt: str = "mermaid", out: str = "lineage_output") -> None:
     """Generate dependency diagram for a TCRM asset."""
     session = Session()
     try:
@@ -31,10 +31,7 @@ async def generate_async(asset_id: str, fmt: str = "svg", out: str = "lineage_ou
             service = LineageService(client)
             print_info(f"Fetching dependencies for asset: {asset_id}")
             graph = await service.build_graph(asset_id)
-            if fmt == "svg":
-                path = service.render_svg(graph, out)
-                print_lineage_success(f"SVG exported: {path}")
-            elif fmt == "mermaid":
+            if fmt == "mermaid":
                 mmd = service.render_mermaid(graph)
                 out_path = f"{out}.mmd"
                 Path(out_path).write_text(mmd, encoding="utf-8")
@@ -57,7 +54,7 @@ async def generate_async(asset_id: str, fmt: str = "svg", out: str = "lineage_ou
 @app.command("generate")
 def generate(
     asset_id: str = typer.Argument(..., help="Root TCRM asset ID"),
-    format: str = typer.Option("svg", "--format", "-f", help="Output format: svg | mermaid | json"),
+    format: str = typer.Option("mermaid", "--format", "-f", help="Output format: mermaid | json"),
     output: str = typer.Option(
         "lineage_output", "--output", "-o", help="Output file path (without extension)"
     ),
