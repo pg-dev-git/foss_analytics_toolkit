@@ -291,15 +291,16 @@ class FieldImpactService:
     async def _scan_one_dataset(
         self, dataset: dict, search_term: str, mode: MatchMode
     ) -> DatasetFieldAnalysisResult:
-        dataset_id = dataset.get("id", "")
-        dataset_name = dataset.get("name", "")
+        dataset_id = dataset.get("id") or ""
+        dataset_name = dataset.get("name") or ""
+        dataset_label = dataset.get("label") or None
         version_id = dataset.get("currentVersionId")
 
         start = time.monotonic()
         result = DatasetFieldAnalysisResult(
             dataset_id=dataset_id,
             dataset_name=dataset_name,
-            dataset_label=dataset.get("label"),
+            dataset_label=dataset_label,
             version_id=version_id,
         )
 
@@ -390,14 +391,15 @@ class FieldImpactService:
     async def _scan_one_dashboard(
         self, dashboard: dict, search_term: str, mode: MatchMode
     ) -> DashboardFieldAnalysisResult:
-        dashboard_id = dashboard.get("id", "")
-        dashboard_name = dashboard.get("name", "")
+        dashboard_id = dashboard.get("id") or ""
+        dashboard_name = dashboard.get("name") or ""
+        dashboard_label = dashboard.get("label") or None
 
         start = time.monotonic()
         result = DashboardFieldAnalysisResult(
             dashboard_id=dashboard_id,
             dashboard_name=dashboard_name,
-            dashboard_label=dashboard.get("label"),
+            dashboard_label=dashboard_label,
         )
 
         try:
@@ -497,14 +499,15 @@ class FieldImpactService:
     async def _scan_one_dataflow(
         self, dataflow: dict, search_term: str, mode: MatchMode
     ) -> DataflowFieldAnalysisResult:
-        dataflow_id = dataflow.get("id", "")
-        dataflow_name = dataflow.get("name", "")
+        dataflow_id = dataflow.get("id") or ""
+        dataflow_name = dataflow.get("name") or ""
+        dataflow_label = dataflow.get("label") or None
 
         start = time.monotonic()
         result = DataflowFieldAnalysisResult(
             dataflow_id=dataflow_id,
             dataflow_name=dataflow_name,
-            dataflow_label=dataflow.get("label"),
+            dataflow_label=dataflow_label,
         )
 
         try:
@@ -603,14 +606,15 @@ class FieldImpactService:
     async def _scan_one_replicated(
         self, dataset: dict, search_term: str, mode: MatchMode
     ) -> ReplicatedDatasetFieldAnalysisResult:
-        rd_id = dataset.get("id", "")
-        object_name = dataset.get("name", "")
+        rd_id = dataset.get("id") or ""
+        object_name = dataset.get("name") or ""
+        object_label = dataset.get("label") or None
 
         start = time.monotonic()
         result = ReplicatedDatasetFieldAnalysisResult(
             replicated_dataset_id=rd_id,
             object_name=object_name,
-            object_label=dataset.get("label"),
+            object_label=object_label,
         )
 
         try:

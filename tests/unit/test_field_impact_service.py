@@ -474,3 +474,63 @@ async def test_analyze_with_application_id_builds_graph():
     # Only ds_in should be scanned.
     assert report.summary.datasets_scanned == 1
     assert report.summary.total_matches == 1
+
+
+# ----------------------------------------------------------------------------
+# Edge cases: missing/None fields in API responses
+# ----------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_dataset_scan_handles_missing_name_and_label():
+    """Scan should handle datasets with missing/None name and label fields."""
+    settings = _settings()
+    client = _client(settings)
+
+    client.list_datasets = AsyncMock(
+        return_value={
+            "datasets": [
+                {"id": "ds1", "currentVersionId": "v1"},  # Missing name and label
+                {"id": "ds2", "name": "", "label": "", "currentVersionId": "v2"},  # Empty strings
+                {"id": "ds3", "name": "ValidDS", "label": "Valid Label", "currentVersionId": "v3"},
+            ],
+            "nextPageUrl": None,
+        }
+    )
+    client.get_dataset_xmd = AsyncMock(
+        return_value={
+            "measures": [{"field": "Amount", "label": "Amount", "type": "Numeric"}],
+            "dimensions": [],
+            "dates": [],
+        }
+    )
+    client.list_dashboards = AsyncMock(return_value={"dashboards": [], "nextPageUrl": None})
+    client.list_dataflows = AsyncMock(return_value={"dataflows": []})
+    client.list_replicated_datasets = AsyncMock(return_value={"replicatedDatasets": []})
+
+    service = FieldImpactService(client, settings, max_concurrent=5)
+    report = await service.analyze_field_impact(search_term="Amount", match_mode=MatchMode.EXACT)
+
+    # All 3 datasets should be scanned (no exceptions)
+    assert report.summary.datasets_scanned == 3
+
+    # First dataset: missing name and label -> should use dataset_id as display_name
+    ds1 = report.details.datasets[0]
+    assert ds1.dataset_id == "ds1"
+    assert ds1.dataset_name == ""
+    assert ds1.dataset_label is None
+    assert ds1.display_name == "ds1"
+
+    # Second dataset: empty strings -> converted to None by service, display_name falls back to id
+    ds2 = report.details.datasets[1]
+    assert ds2.dataset_id == "ds2"
+    assert ds2.dataset_name == ""
+    assert ds2.dataset_label is None  # Empty string converted to None by service
+    assert ds2.display_name == "ds2"
+
+    # Third dataset: valid name and label -> should use label as display_name
+    ds3 = report.details.datasets[2]
+    assert ds3.dataset_id == "ds3"
+    assert ds3.dataset_name == "ValidDS"
+    assert ds3.dataset_label == "Valid Label"
+    assert ds3.display_name == "Valid Label"

@@ -148,8 +148,9 @@ async def analyze_field_async(
             if fmt == "table":
                 for ds in report.details.datasets:
                     if ds.match_count > 0:
+                        display_name = _sanitize_for_display(ds.display_name)
                         print_info(
-                            f"  Dataset [{ds.dataset_name}]: {ds.match_count} match(es)"
+                            f"  Dataset '{display_name}': {ds.match_count} match(es)"
                         )
                         for m in ds.matches[:5]:
                             safe_name = _sanitize_for_display(str(m.field_api_name))
@@ -158,21 +159,21 @@ async def analyze_field_async(
                             print_info(f"    - {safe_name}  (match={safe_type}, score={score_display})")
                 for db in report.details.dashboards:
                     if db.match_count > 0:
-                        safe_name = _sanitize_for_display(str(db.dashboard_name))
+                        display_name = _sanitize_for_display(db.display_name)
                         print_info(
-                            f"  Dashboard [{safe_name}]: {db.match_count} match(es)"
+                            f"  Dashboard '{display_name}': {db.match_count} match(es)"
                         )
                 for df in report.details.dataflows:
                     if df.match_count > 0:
-                        safe_name = _sanitize_for_display(str(df.dataflow_name))
+                        display_name = _sanitize_for_display(df.display_name)
                         print_info(
-                            f"  Dataflow [{safe_name}]: {df.match_count} match(es)"
+                            f"  Dataflow '{display_name}': {df.match_count} match(es)"
                         )
                 for rd in report.details.replicated_datasets:
                     if rd.match_count > 0:
-                        safe_name = _sanitize_for_display(str(rd.object_name))
+                        display_name = _sanitize_for_display(rd.display_name)
                         print_info(
-                            f"  Replicated [{safe_name}]: {rd.match_count} match(es)"
+                            f"  Replicated '{display_name}': {rd.match_count} match(es)"
                         )
             return output_path
     except typer.Exit:

@@ -7,7 +7,9 @@ from asftool.core.models import (
     AssetDependency,
     AssetDependencyGraph,
     AssetType,
+    DashboardFieldAnalysisResult,
     DashboardFieldReference,
+    DataflowFieldAnalysisResult,
     DataflowFieldReference,
     DatasetFieldAnalysisResult,
     DatasetFieldReference,
@@ -18,6 +20,7 @@ from asftool.core.models import (
     MatchMode,
     MatchType,
     ReplicatedDatasetField,
+    ReplicatedDatasetFieldAnalysisResult,
 )
 
 
@@ -227,6 +230,58 @@ class TestDatasetFieldAnalysisResult:
         assert result.exact_match_count == 1
         assert result.fuzzy_match_count == 1
 
+    def test_display_name_prefers_label(self):
+        """display_name should use dataset_label when present."""
+        result = DatasetFieldAnalysisResult(
+            dataset_id="ds1",
+            dataset_name="SalesData",
+            dataset_label="Sales Data Label",
+        )
+        assert result.display_name == "Sales Data Label"
+
+    def test_display_name_falls_back_to_name(self):
+        """display_name should fall back to dataset_name when label is None/empty."""
+        result = DatasetFieldAnalysisResult(
+            dataset_id="ds1",
+            dataset_name="SalesData",
+            dataset_label=None,
+        )
+        assert result.display_name == "SalesData"
+
+        # Empty string label should also fall back
+        result2 = DatasetFieldAnalysisResult(
+            dataset_id="ds1",
+            dataset_name="SalesData",
+            dataset_label="",
+        )
+        assert result2.display_name == "SalesData"
+
+    def test_display_name_falls_back_to_id(self):
+        """display_name should fall back to dataset_id when label and name are empty."""
+        result = DatasetFieldAnalysisResult(
+            dataset_id="ds1",
+            dataset_name="",
+            dataset_label=None,
+        )
+        assert result.display_name == "ds1"
+
+        # Both empty strings
+        result2 = DatasetFieldAnalysisResult(
+            dataset_id="ds1",
+            dataset_name="",
+            dataset_label="",
+        )
+        assert result2.display_name == "ds1"
+
+    def test_display_name_unknown_when_all_empty(self):
+        """display_name should return 'Unknown Dataset' when all fields are empty."""
+        result = DatasetFieldAnalysisResult(
+            dataset_id="",
+            dataset_name="",
+            dataset_label=None,
+        )
+        assert result.display_name == "Unknown Dataset"
+
 
 class TestDashboardFieldReference:
     """Tests for DashboardFieldReference model."""
@@ -249,6 +304,54 @@ class TestDashboardFieldReference:
         assert ref.match_type == MatchType.EXACT
 
 
+class TestDashboardFieldAnalysisResult:
+    """Tests for DashboardFieldAnalysisResult model."""
+
+    def test_display_name_prefers_label(self):
+        """display_name should use dashboard_label when present."""
+        result = DashboardFieldAnalysisResult(
+            dashboard_id="db1",
+            dashboard_name="Sales Dashboard",
+            dashboard_label="Sales Dashboard Label",
+        )
+        assert result.display_name == "Sales Dashboard Label"
+
+    def test_display_name_falls_back_to_name(self):
+        """display_name should fall back to dashboard_name when label is None/empty."""
+        result = DashboardFieldAnalysisResult(
+            dashboard_id="db1",
+            dashboard_name="Sales Dashboard",
+            dashboard_label=None,
+        )
+        assert result.display_name == "Sales Dashboard"
+
+        # Empty string label should also fall back
+        result2 = DashboardFieldAnalysisResult(
+            dashboard_id="db1",
+            dashboard_name="Sales Dashboard",
+            dashboard_label="",
+        )
+        assert result2.display_name == "Sales Dashboard"
+
+    def test_display_name_falls_back_to_id(self):
+        """display_name should fall back to dashboard_id when label and name are empty."""
+        result = DashboardFieldAnalysisResult(
+            dashboard_id="db1",
+            dashboard_name="",
+            dashboard_label=None,
+        )
+        assert result.display_name == "db1"
+
+    def test_display_name_unknown_when_all_empty(self):
+        """display_name should return 'Unknown Dashboard' when all fields are empty."""
+        result = DashboardFieldAnalysisResult(
+            dashboard_id="",
+            dashboard_name="",
+            dashboard_label=None,
+        )
+        assert result.display_name == "Unknown Dashboard"
+
+
 class TestDataflowFieldReference:
     """Tests for DataflowFieldReference model."""
 
@@ -266,6 +369,54 @@ class TestDataflowFieldReference:
         assert ref.node_type == "sfdcDigest"
         assert ref.field_context == "sourceField"
         assert ref.match_score == 90
+
+
+class TestDataflowFieldAnalysisResult:
+    """Tests for DataflowFieldAnalysisResult model."""
+
+    def test_display_name_prefers_label(self):
+        """display_name should use dataflow_label when present."""
+        result = DataflowFieldAnalysisResult(
+            dataflow_id="df1",
+            dataflow_name="ETL Pipeline",
+            dataflow_label="ETL Pipeline Label",
+        )
+        assert result.display_name == "ETL Pipeline Label"
+
+    def test_display_name_falls_back_to_name(self):
+        """display_name should fall back to dataflow_name when label is None/empty."""
+        result = DataflowFieldAnalysisResult(
+            dataflow_id="df1",
+            dataflow_name="ETL Pipeline",
+            dataflow_label=None,
+        )
+        assert result.display_name == "ETL Pipeline"
+
+        # Empty string label should also fall back
+        result2 = DataflowFieldAnalysisResult(
+            dataflow_id="df1",
+            dataflow_name="ETL Pipeline",
+            dataflow_label="",
+        )
+        assert result2.display_name == "ETL Pipeline"
+
+    def test_display_name_falls_back_to_id(self):
+        """display_name should fall back to dataflow_id when label and name are empty."""
+        result = DataflowFieldAnalysisResult(
+            dataflow_id="df1",
+            dataflow_name="",
+            dataflow_label=None,
+        )
+        assert result.display_name == "df1"
+
+    def test_display_name_unknown_when_all_empty(self):
+        """display_name should return 'Unknown Dataflow' when all fields are empty."""
+        result = DataflowFieldAnalysisResult(
+            dataflow_id="",
+            dataflow_name="",
+            dataflow_label=None,
+        )
+        assert result.display_name == "Unknown Dataflow"
 
 
 class TestReplicatedDatasetField:
@@ -286,6 +437,54 @@ class TestReplicatedDatasetField:
         assert field.object_name == "Account"
         assert field.is_nillable is True
         assert field.match_type == MatchType.EXACT
+
+
+class TestReplicatedDatasetFieldAnalysisResult:
+    """Tests for ReplicatedDatasetFieldAnalysisResult model."""
+
+    def test_display_name_prefers_label(self):
+        """display_name should use object_label when present."""
+        result = ReplicatedDatasetFieldAnalysisResult(
+            replicated_dataset_id="rd1",
+            object_name="Account",
+            object_label="Account Label",
+        )
+        assert result.display_name == "Account Label"
+
+    def test_display_name_falls_back_to_name(self):
+        """display_name should fall back to object_name when label is None/empty."""
+        result = ReplicatedDatasetFieldAnalysisResult(
+            replicated_dataset_id="rd1",
+            object_name="Account",
+            object_label=None,
+        )
+        assert result.display_name == "Account"
+
+        # Empty string label should also fall back
+        result2 = ReplicatedDatasetFieldAnalysisResult(
+            replicated_dataset_id="rd1",
+            object_name="Account",
+            object_label="",
+        )
+        assert result2.display_name == "Account"
+
+    def test_display_name_falls_back_to_id(self):
+        """display_name should fall back to replicated_dataset_id when label and name are empty."""
+        result = ReplicatedDatasetFieldAnalysisResult(
+            replicated_dataset_id="rd1",
+            object_name="",
+            object_label=None,
+        )
+        assert result.display_name == "rd1"
+
+    def test_display_name_unknown_when_all_empty(self):
+        """display_name should return 'Unknown Replicated Dataset' when all fields are empty."""
+        result = ReplicatedDatasetFieldAnalysisResult(
+            replicated_dataset_id="",
+            object_name="",
+            object_label=None,
+        )
+        assert result.display_name == "Unknown Replicated Dataset"
 
 
 class TestFieldImpactScope:

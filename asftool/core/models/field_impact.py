@@ -155,6 +155,16 @@ class DatasetFieldAnalysisResult(BaseModel):
     def fuzzy_match_count(self) -> int:
         return sum(1 for m in self.matches if m.match_type == MatchType.FUZZY)
 
+    @property
+    def display_name(self) -> str:
+        """Return a user-friendly display name with cascading fallback."""
+        return (
+            self.dataset_label
+            or self.dataset_name
+            or self.dataset_id
+            or "Unknown Dataset"
+        )
+
 
 # =============================================================================
 # Dashboard Field Analysis Models
@@ -200,6 +210,16 @@ class DashboardFieldAnalysisResult(BaseModel):
     def fuzzy_match_count(self) -> int:
         return sum(1 for m in self.matches if m.match_type == MatchType.FUZZY)
 
+    @property
+    def display_name(self) -> str:
+        """Return a user-friendly display name with cascading fallback."""
+        return (
+            self.dashboard_label
+            or self.dashboard_name
+            or self.dashboard_id
+            or "Unknown Dashboard"
+        )
+
 
 # =============================================================================
 # Dataflow Field Analysis Models
@@ -241,6 +261,16 @@ class DataflowFieldAnalysisResult(BaseModel):
     @property
     def fuzzy_match_count(self) -> int:
         return sum(1 for m in self.matches if m.match_type == MatchType.FUZZY)
+
+    @property
+    def display_name(self) -> str:
+        """Return a user-friendly display name with cascading fallback."""
+        return (
+            self.dataflow_label
+            or self.dataflow_name
+            or self.dataflow_id
+            or "Unknown Dataflow"
+        )
 
 
 # =============================================================================
@@ -284,6 +314,16 @@ class ReplicatedDatasetFieldAnalysisResult(BaseModel):
     @property
     def fuzzy_match_count(self) -> int:
         return sum(1 for m in self.matches if m.match_type == MatchType.FUZZY)
+
+    @property
+    def display_name(self) -> str:
+        """Return a user-friendly display name with cascading fallback."""
+        return (
+            self.object_label
+            or self.object_name
+            or self.replicated_dataset_id
+            or "Unknown Replicated Dataset"
+        )
 
 
 # =============================================================================
