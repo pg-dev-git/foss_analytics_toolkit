@@ -170,22 +170,53 @@ class SFCLIManager:
         cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli_async", command=cmd)
 
-        try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(),
-                timeout=timeout,
-            )
-        except TimeoutError as e:
-            raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
-        except FileNotFoundError as e:
-            raise SFCLINotFoundError(f"SF CLI not found: {self.cli_command}") from e
-        except Exception as e:
-            raise SFCLIError(f"Failed to run SF CLI: {e}") from e
+        import sys
+        # On Windows, SF CLI is often a .cmd file which needs shell execution.
+        # Use create_subprocess_shell with a properly quoted command string on Windows.
+        if sys.platform == "win32":
+            # Build a shell command string with proper quoting
+            # Each arg needs to be quoted if it contains spaces
+            def _quote(arg: str) -> str:
+                if " " in arg or "\t" in arg:
+                    return f'"{arg}"'
+                return arg
+            shell_cmd = " ".join(_quote(c) for c in cmd)
+            logger.debug("running_sf_cli_async_windows", shell_command=shell_cmd)
+
+            try:
+                process = await asyncio.create_subprocess_shell(
+                    shell_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout,
+                )
+            except TimeoutError as e:
+                raise SFCLIError(f"SF CLI command timed out after {timeout}s: {shell_cmd}") from e
+            except FileNotFoundError as e:
+                raise SFCLINotFoundError(f"SF CLI not found: {self.cli_command}") from e
+            except Exception as e:
+                raise SFCLIError(f"Failed to run SF CLI: {e}") from e
+        else:
+            # Unix-like systems can use create_subprocess_exec directly
+            try:
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout,
+                )
+            except TimeoutError as e:
+                raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
+            except FileNotFoundError as e:
+                raise SFCLINotFoundError(f"SF CLI not found: {self.cli_command}") from e
+            except Exception as e:
+                raise SFCLIError(f"Failed to run SF CLI: {e}") from e
 
         result = subprocess.CompletedProcess(
             args=cmd,  # type: ignore[arg-type]
