@@ -56,3 +56,6 @@ scripts/field_impact_*.json
 
 # Download artifacts (auto-generated per org — regenerate on demand)
 asftool_downloads/
+.gitignore
+AGENTS.md
+TASK_LOG.md
