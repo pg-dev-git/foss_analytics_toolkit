@@ -201,3 +201,23 @@ def status(
 def list_orgs():
     """List all authorized orgs."""
     _run(list_orgs_async())
+
+@app.command("import-sf")
+def import_sf(alias: str = typer.Option("default", "--alias", "-a", help="SF CLI alias")):
+    _run(import_sf_async(alias=alias))
+
+async def import_sf_async(alias: str = "default") -> None:
+    session = Session(alias=alias)
+    try:
+        # Import from SF CLI session
+        from asftool.core.sf_cli import SFCLIManager
+        manager = SFCLIManager()
+        info = await manager.get_org_info(alias=alias)
+        print_success(f"Imported SF CLI session for '{alias}'")
+        print_info(f"Instance: {info.instance_url}")
+    except Exception as e:
+        print_error(f"Import failed: {e}")
+        raise typer.Exit(1) from e
+    finally:
+        await session.close()
+
