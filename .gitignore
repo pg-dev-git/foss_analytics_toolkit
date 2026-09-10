@@ -59,3 +59,5 @@ asftool_downloads/
 .gitignore
 AGENTS.md
 TASK_LOG.md
+/docs/
+/asftool_downloads/
