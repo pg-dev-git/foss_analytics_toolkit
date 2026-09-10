@@ -1,4 +1,4 @@
-# Fix Plan: 'charmap' encoding crash (emoji in TCRM data output)
+# Fix Plan: 'charmap' encoding crash (emoji in Analytics REST API response data output)
 
 **Branch**: `feature/asftool-refactor`
 **Bug**: Interactive mode crashes with `charmap codec can't encode ...` when displaying results containing non-ASCII characters (emoji from real dashboard labels like `🇨🇦`).
@@ -30,7 +30,7 @@ This is stdlib (`sys.stdout.reconfigure` available since Python 3.7). No depende
 2. `asftool/cli/commands/fields.py` — add exception handler for `UnicodeEncodeError` and show a user-friendly message:
 ```python
 except UnicodeEncodeError as ue:
-    # ponytail: terminal encoding issue (emoji in real TCRM data, cp1252 on Windows cmd)
+    # ponytail: terminal encoding issue (emoji in Analytics REST API response data, cp1252 on Windows cmd)
     print_error("Encoding error: your terminal uses cp1252 which can't display real TCRM data (emoji from labels).")
     print_info("Full analysis completed — save the JSON report using --output or --format json.")
 ```

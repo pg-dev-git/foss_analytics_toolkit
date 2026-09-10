@@ -1,4 +1,4 @@
-"""Field Impact Analysis Service - crawls TCRM assets to find where a field is used."""
+"""Field Impact Analysis Service - crawls ASFT assets to find where a field is used."""
 
 import asyncio
 import time
@@ -41,7 +41,7 @@ ProgressCallback = Callable[[str, int, int], Awaitable[None]]
 
 
 class FieldImpactService:
-    """Orchestrates field impact analysis across TCRM assets.
+    """Orchestrates field impact analysis across ASFT assets.
 
     Scans datasets (via XMD), dashboards (via widget/step JSON), dataflows
     (via recipe JSON), and replicated datasets (via /fields endpoint) for
@@ -449,7 +449,7 @@ class FieldImpactService:
     def _walk_for_widgets(self, dashboard_json: Any) -> list[dict]:
         """Extract widget-like dicts from a dashboard JSON.
 
-        The TCRM dashboard schema nests widgets under state.widgets or directly
+        The Analytics REST API dashboard schema nests widgets under state.widgets or directly
         under widgets. We accept both shapes.
         """
         candidates: list[dict] = []
@@ -549,7 +549,7 @@ class FieldImpactService:
     def _extract_dataflow_nodes(self, definition: Any) -> list[dict]:
         """Extract node-like dicts from a dataflow recipe.
 
-        TCRM recipes can nest nodes under definition.nodes, transformations,
+        Analytics REST API recipes can nest nodes under definition.nodes, transformations,
         or as a top-level list. We grab all of them.
         """
         candidates: list[dict] = []
@@ -565,7 +565,7 @@ class FieldImpactService:
             if isinstance(node, list):
                 candidates.extend([n for n in node if isinstance(n, dict)])
             elif isinstance(node, dict):
-                # Some TCRM recipes nest under "nodes" with subkeys.
+                # Some Analytics REST API recipes nest under "nodes" with subkeys.
                 for v in node.values():
                     if isinstance(v, dict):
                         candidates.append(v)

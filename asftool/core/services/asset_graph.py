@@ -1,4 +1,4 @@
-"""Build and traverse the asset dependency graph from TCRM applications."""
+"""Build and traverse the asset dependency graph from Analytics REST API applications."""
 
 import structlog
 
@@ -8,12 +8,12 @@ from asftool.core.models import AssetDependency, AssetDependencyGraph, AssetType
 logger = structlog.get_logger(__name__)
 
 
-# Map TCRM dependency type strings to our AssetType enum.
-_TCRM_TYPE_MAP: dict[str, AssetType] = {
+# Map Analytics REST API dependency type strings to our AssetType enum.
+_ASFT_TYPE_MAP: dict[str, AssetType] = {
     "dataset": AssetType.DATASET,
     "xdataset": AssetType.DATASET,
     "dashboard": AssetType.DASHBOARD,
-    "lens": AssetType.DASHBOARD,  # lenses are dashboards in TCRM
+    "lens": AssetType.DASHBOARD,  # lenses are dashboards in the Analytics REST API
     "dataflow": AssetType.DATAFLOW,
     "replicateddataset": AssetType.REPLICATED_DATASET,
     "replicated_dataset": AssetType.REPLICATED_DATASET,
@@ -21,14 +21,14 @@ _TCRM_TYPE_MAP: dict[str, AssetType] = {
 
 
 def _to_asset_type(t: str) -> AssetType | None:
-    """Map a TCRM dependency type string to AssetType, or None if unknown."""
+    """Map an Analytics REST API dependency type string to AssetType, or None if unknown."""
     if not t:
         return None
-    return _TCRM_TYPE_MAP.get(t.lower().replace(" ", ""))
+    return _ASFT_TYPE_MAP.get(t.lower().replace(" ", ""))
 
 
 def _build_node_from_dependency(raw: dict) -> AssetDependency | None:
-    """Convert a raw TCRM dependency dict into an AssetDependency node."""
+    """Convert a raw Analytics REST API dependency dict into an AssetDependency node."""
     asset_type = _to_asset_type(raw.get("type", ""))
     if asset_type is None:
         return None
@@ -42,7 +42,7 @@ def _build_node_from_dependency(raw: dict) -> AssetDependency | None:
 
 
 class AssetGraphBuilder:
-    """Builds an AssetDependencyGraph from a TCRM application."""
+    """Builds an AssetDependencyGraph from an Analytics REST API application."""
 
     MAX_DEPTH = 5  # Guard against pathological cycles in upstream recursion
 
@@ -52,7 +52,7 @@ class AssetGraphBuilder:
     async def build_from_application(self, application_id: str) -> AssetDependencyGraph:
         """Fetch the dependency tree for an application and build a graph.
 
-        The TCRM API returns dependencies recursively (each node has its own
+        The Analytics REST API returns dependencies recursively (each node has its own
         `dependencies` array). We walk that tree up to MAX_DEPTH.
         """
         graph = AssetDependencyGraph()

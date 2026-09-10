@@ -81,7 +81,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     from asftool.cli.menus.auth import auth_operations
 
     main = Menu(
-        title="ASFTool — FOSS Analytics Tool for TCRM",
+        title="ASFTool — Analytics REST API Software Tool (ASFT)",
         subtitle="Select an operation",
     )
 
@@ -134,7 +134,7 @@ from asftool.cli.ui import console, print_error, print_header, print_info
 
 app = typer.Typer(
     name="asftool",
-    help="FOSS Analytics Tool for Salesforce TCRM",
+    help="FOSS Analytics Tool for the Salesforce Analytics REST API",
     add_completion=False,
     no_args_is_help=False,  # We handle no-args ourselves
 )
@@ -171,7 +171,7 @@ def _show_session_header(session: Session) -> None:
         status_text = "[dim]Loading...[/dim]"
 
     console.print(Panel.fit(
-        f"[bold]ASFTool[/bold] — FOSS Analytics Tool for TCRM\n"
+        f"[bold]ASFTool[/bold] — Analytics REST API Software Tool (ASFT)\n"
         f"Session: {status_text}\n"
         f"Org alias: {session.alias}",
         title="[cyan]Session[/cyan]",
@@ -245,7 +245,7 @@ def main(
     ctx: typer.Context,
     alias: str = typer.Option("default", "--alias", "-a", help="Default org alias"),
 ) -> None:
-    """ASFTool — FOSS Analytics Tool for TCRM."""
+    """ASFTool — Analytics REST API Software Tool (ASFT)."""
     if ctx.invoked_subcommand:
         return  # Let Typer handle subcommands
 

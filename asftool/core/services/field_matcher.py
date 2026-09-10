@@ -1,4 +1,4 @@
-"""Field matching: exact and fuzzy comparison for TCRM field names/labels."""
+"""Field matching: exact and fuzzy comparison for Analytics REST API field names/labels."""
 
 import difflib
 from typing import Any
@@ -175,7 +175,7 @@ def extract_field_strings(obj: Any, path: str = "") -> list[tuple[str, str]]:
 
 
 def _looks_like_field_name(key: str) -> bool:
-    """Heuristic: keys that typically hold field names in TCRM JSON."""
+    """Heuristic: keys that typically hold field names in Analytics REST API JSON."""
     k = key.lower()
     return k in {
         "field", "fieldname", "name", "column",

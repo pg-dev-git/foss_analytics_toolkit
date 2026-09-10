@@ -252,9 +252,9 @@ if __name__ == "__main__":
 ## Step 9.3: Update `README.md`
 
 ```markdown
-# ASFTool — FOSS Analytics Tool for Salesforce TCRM
+# ASFTool — Analytics REST API Software Tool (ASFT)
 
-Modern async Python CLI for Salesforce Tableau CRM (TCRM) Analytics.
+Modern async Python CLI for the Salesforce Analytics REST API.
 
 ## Features
 

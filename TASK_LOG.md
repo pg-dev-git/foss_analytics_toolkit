@@ -1,4 +1,6 @@
-# TASK LOG - Greenfield Rebuild of Salesforce TCRM Toolkit
+# TASK LOG — ASFTool / Analytics REST API Software Tool Rebuild
+
+Rebuild of the legacy FOSS Analytics Toolkit using modern async Python. The goal: a clean, product-agnostic interface to the Salesforce Analytics REST API, branded as ASFT (Analytics REST API Software Tool).
 
 ## Phase 1: Environment & Setup
 - [x] 1.1 Create `_legacy/` folder and move legacy root files into it.
@@ -34,7 +36,7 @@
 - [ ] 1.3 Add dependency API methods to `asftool/core/client.py` targeting `/wave/dependencies`.
 
 ### Phase 2: Core Lineage Service & Rendering Engines
-- [ ] 2.1 Build `asftool/core/services/lineage_service.py` to recursively construct `LineageGraph` objects from TCRM responses.
+- [ ] 2.1 Build `asftool/core/services/lineage_service.py` to recursively construct `LineageGraph` objects from Analytics REST API responses.
 - [ ] 2.2 Implement `render_svg()` in `lineage_service.py` using Graphviz with customized styles per asset type.
 - [ ] 2.3 Implement `render_mermaid()` in `lineage_service.py` to produce Mermaid flowcharts.
 - [ ] 2.4 Implement `to_node_edge_json()` for standardized frontend graph payloads.

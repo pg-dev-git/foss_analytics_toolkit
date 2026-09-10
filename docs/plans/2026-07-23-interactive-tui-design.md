@@ -394,10 +394,10 @@ interactive = [
 
 ```bash
 # .env additions for TUI
-TCRM_TUI_THEME=dark                    # dark | light | auto
-TCRM_TUI_KEYBINDINGS=vim               # vim | standard
-TCRM_TUI_REFRESH_INTERVAL=10           # Job monitor poll interval (seconds)
-TCRM_TUI_MAX_HISTORY=100               # Task history entries to keep
+ASFT_TUI_THEME=dark                    # dark | light | auto
+ASFT_TUI_KEYBINDINGS=vim               # vim | standard
+ASFT_TUI_REFRESH_INTERVAL=10           # Job monitor poll interval (seconds)
+ASFT_TUI_MAX_HISTORY=100               # Task history entries to keep
 
 # Safety Monitor (Section 5.5.6)
 SAFETY_CHECK_ENABLED=true

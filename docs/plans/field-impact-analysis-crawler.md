@@ -346,7 +346,7 @@ uv add thefuzz[speedup]
 ```python
 """Field Impact Analysis CLI commands."""
 
-app = typer.Typer(help="Field impact analysis across TCRM assets")
+app = typer.Typer(help="Field impact analysis across ASFT assets")
 
 @app.command("analyze")
 def analyze_field(
@@ -361,7 +361,7 @@ def analyze_field(
     include_dataflows: bool = typer.Option(True, "--dataflows/--no-dataflows"),
     include_replicated: bool = typer.Option(True, "--replicated/--no-replicated"),
 ):
-    """Analyze field impact across all TCRM assets."""
+    """Analyze field impact across all ASFT assets."""
     _run(analyze_field_async(...))
 
 @app.command("scan-dataset")

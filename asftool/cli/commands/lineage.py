@@ -24,7 +24,7 @@ def _run(coro):
 
 
 async def generate_async(asset_id: str, fmt: str = "mermaid", out: str = "lineage_output") -> None:
-    """Generate dependency diagram for a TCRM asset."""
+    """Generate dependency diagram for an ASFT asset."""
     session = Session()
     try:
         async with session.client_context() as client:
@@ -53,11 +53,11 @@ async def generate_async(asset_id: str, fmt: str = "mermaid", out: str = "lineag
 
 @app.command("generate")
 def generate(
-    asset_id: str = typer.Argument(..., help="Root TCRM asset ID"),
+    asset_id: str = typer.Argument(..., help="Root ASFT asset ID"),
     format: str = typer.Option("mermaid", "--format", "-f", help="Output format: mermaid | json"),
     output: str = typer.Option(
         "lineage_output", "--output", "-o", help="Output file path (without extension)"
     ),
 ):
-    """Generate dependency diagram for a TCRM asset."""
+    """Generate dependency diagram for an ASFT asset."""
     _run(generate_async(asset_id, format, output))

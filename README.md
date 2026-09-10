@@ -1,8 +1,6 @@
-# ASFTool — FOSS Analytics Tool for Salesforce TCRM
+# ASFTool — Analytics REST API Software Tool (ASFT)
 
-Modern async Python CLI for Salesforce Tableau CRM (TCRM) Analytics. Rebuilds the legacy
-`FOSS_Toolkit.py` with a `typer` CLI plus an interactive "always running OS" menu — no TUI
-framework needed.
+ASFTool is a lightweight, high-performance async Python CLI for the Salesforce Analytics REST API. It rebuilds the legacy `FOSS_Toolkit.py` with a `typer` CLI plus an interactive "always running OS" menu — no TUI framework needed.
 
 ## Features
 
@@ -26,6 +24,8 @@ uv sync --extra dev       # install with dev extras (tests, lint, typecheck)
 ```
 
 Requires Python 3.11+ and the [Salesforce CLI](https://developer.salesforce.com/tools/sfdxcli) (`sf`).
+
+ASFT is designed to be product-agnostic: it talks to the Salesforce Analytics REST API directly, without binding to any specific Salesforce product brand (Tableau CRM, Einstein Analytics, or otherwise).
 
 ## Quick Start
 

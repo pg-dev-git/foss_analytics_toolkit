@@ -6,7 +6,7 @@ Implements Phase 6 of the ASFTool refactor: Visual Data Lineage & Dependency Map
 - **Models** (`core/models/lineage.py`): `LineageNode`, `LineageEdge`, `LineageGraph` with traversal helpers (upstream/downstream)
 - **Client** (`core/client.py`): Added `get_dependencies(asset_id)` targeting Salesforce Wave `/wave/dependencies/{asset_id}` endpoint
 - **Service** (`core/services/lineage_service.py`): 
-  - Recursive `build_graph()` traverses TCRM dependency API
+  - Recursive `build_graph()` traverses Analytics REST API dependency endpoints
   - `render_svg()` — Graphviz with custom node shapes/colors per asset type (Dataset=cylinder, Recipe=ellipse, Dataflow=box3d, Dashboard=rect, Lens=diamond)
   - `render_mermaid()` — Raw `.mmd` flowchart markup
   - `to_node_edge_json()` — Standardized `{nodes, edges}` payload for React Flow/D3.js frontends

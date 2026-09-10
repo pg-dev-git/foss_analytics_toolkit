@@ -11,7 +11,7 @@ calling Typer so we can run the async menu in a fresh event loop.
 """
 
 # ponytail: PYTHONIOENCODING (env layer) + sys.stdout.reconfigure (stdlib).
-# If emoji (real TCRM label: 'Canadian Sales 🇨🇦') causes encoding errors,
+# If emoji (Analytics REST API response label: 'Canadian Sales 🇨🇦') causes encoding errors,
 # root fix = force UTF-8 at CLI startup, not filter the data.
 import os
 import sys
@@ -50,7 +50,7 @@ from asftool.cli.ui import console, print_error, print_header, print_info
 
 app = typer.Typer(
     name="asftool",
-    help="FOSS Analytics Tool for Salesforce TCRM",
+    help="ASFTool — Analytics REST API Software Tool (ASFT): lightweight CLI for Salesforce Analytics REST API",
     add_completion=False,
     no_args_is_help=True,  # subcommands-only when no menu loop
 )
@@ -89,7 +89,7 @@ def _render_session_header(status_text: str, alias: str) -> None:
     """Print the session panel. (Sync — no I/O.)"""
     console.print(
         Panel.fit(
-            f"[bold]ASFTool[/bold] — FOSS Analytics Tool for TCRM\n"
+            f"[bold]ASFTool[/bold] — Analytics REST API Software Tool (ASFT)\n"
             f"Session: {status_text}\n"
             f"Org alias: [cyan]{alias}[/cyan]",
             title="[cyan]Session[/cyan]",

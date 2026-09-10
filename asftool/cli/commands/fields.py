@@ -25,7 +25,7 @@ def _sanitize_for_display(text: str) -> str:
     # Replace emoji and non-standard chars with '?' for safe terminal display.
     return re.sub(r"[^\w\s.,;:!?\-@=+/()\[\]{}<>\$\%\'\"]", "?", text)
 
-app = typer.Typer(help="Field impact analysis across TCRM assets")
+app = typer.Typer(help="Field impact analysis across ASFT assets — Analytics REST API Software Tool")
 
 
 def _run(coro):
@@ -179,7 +179,7 @@ async def analyze_field_async(
     except typer.Exit:
         return None
     except Exception as e:
-        # ponytail: terminal encoding ceiling (emoji from real TCRM data)
+        # ponytail: terminal encoding ceiling (emoji from Analytics REST API response data)
         print_error(f"Analysis failed: {e}")
         import sys
         if isinstance(e, UnicodeEncodeError):
@@ -227,7 +227,7 @@ def analyze(
     no_dataflows: bool = typer.Option(False, "--no-dataflows", help="Skip dataflow scanning"),
     no_replicated: bool = typer.Option(False, "--no-replicated", help="Skip replicated dataset scanning"),
 ) -> None:
-    """Analyze where a field is used across all TCRM assets."""
+    """Analyze where a field is used across all ASFT assets."""
     _apply_api_version_override(api_version)
     _run(
         analyze_field_async(

@@ -60,7 +60,7 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
     from asftool.cli.menus.jobs import jobs_operations
 
     main = Menu(
-        title="ASFTool — FOSS Analytics Tool for TCRM",
+        title="ASFTool — Analytics REST API Software Tool (ASFT)",
         subtitle="Select an operation",
     )
 

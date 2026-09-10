@@ -14,7 +14,7 @@ class MatchType(StrEnum):
 
 
 class AssetType(StrEnum):
-    """Type of TCRM asset."""
+    """Type of ASFT asset."""
     DATASET = "dataset"
     DASHBOARD = "dashboard"
     DATAFLOW = "dataflow"

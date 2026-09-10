@@ -4,13 +4,13 @@ Guidance for agents working in this repository. Read before editing.
 
 ## Project
 
-Modern async Python CLI for Salesforce Tableau CRM (TCRM) Analytics. Rebuilds the
+Modern async Python CLI for the Salesforce Analytics REST API. Rebuilds the
 legacy `FOSS_Toolkit.py` (preserved under `_legacy/`) with a `typer` CLI +
 `rich` interactive menus. The original "always running OS" menu approach is
 preserved — no TUI framework, no Textual.
 
-**Slug:** `asftool` (Analytics Salesforce FOSS Tool)
-**Display name:** FOSS Analytics Tool for TCRM
+**Slug:** `asftool` (Analytics REST API Software Tool)
+**Display name:** ASFTool — Analytics REST API Software Tool (ASFT)
 **Current branch:** `feature/asftool-refactor` (refactor of `main`)
 
 ---
@@ -44,9 +44,9 @@ Use the format `<type>(<scope>): <short description>`:
 - Use **uv**, not pip. Run everything via `uv run ...`.
 - Install deps: `uv sync --extra dev`
 - Tests: `uv run pytest -v --tb=short` (expect 36+ passing)
-- Lint: `uv run ruff check .`  ·  Typecheck: `uv run mypy tcrm_toolkit`
+- Lint: `uv run ruff check .`    Typecheck: `uv run mypy asftool`
 - Cross-platform check: `uv run python scripts/verify-cross-platform.py`
-- CLI entrypoint: `tcrm` (Phase 1 will rename to `asftool`) (`tcrm --help`, `tcrm auth login`)
+- CLI entrypoint: `asftool` (`asftool --help`, `asftool auth login`)
 - Tests need real encryption keys — `conftest.py` provides them; copy
   `.env.example` → `.env` only if you need live settings.
 
@@ -100,11 +100,11 @@ wrapper (`core/sf_cli.py`) does exactly what the legacy did and works.
   (deprecated, flagged in CI warnings).
 - **Error Logging**: Centralized structured JSON logging via `core/logger.py`
   writes concurrently to `stderr` and persistent log file
-  `~/.tcrm/tcrm.log` (will become `~/.asftool/asftool.log` in Phase 1).
+  `~/.asftool/asftool.log`.
 - Keep it simple: no special-case glue, no dead stubs. Prefer eliminating a branch
   over guarding it.
-- **Package name**: `tcrm_toolkit` (Phase 1 will rename to `asftool`). Config:
-  `TCRM_*` env vars (Phase 1 will become `ASFTOOL_*`). Config dir: `~/.tcrm/`
+- **Package name**: `asftool`. Config:
+  `ASFTOOL_*` env vars. Config dir: `~/.asftool/`
   (Phase 1 will become `~/.asftool/`).
 
 ---
@@ -119,7 +119,7 @@ wrapper (`core/sf_cli.py`) does exactly what the legacy did and works.
 - **Live Session Seeding & E2E Testing**:
   - To test against a live Salesforce org without interactive browser login, use `scripts/seed_session.py`:
     ```bash
-    TCRM_ACCESS_TOKEN="..." TCRM_INSTANCE_URL="..." TCRM_USERNAME="..." \
+    ASFTOOL_ACCESS_TOKEN="..." ASFTOOL_INSTANCE_URL="..." ASFTOOL_USERNAME="..." \
     uv run python scripts/seed_session.py
     ```
   - **Token Expiry**: If a live session token expires or encounters authentication
@@ -157,15 +157,15 @@ the phase document and the current branch.
 
 - **Phases are sequential.** Phases 0-2 are foundational — don't skip them.
   Phases 4-7 can be done in parallel once phase 3 is complete.
-- **CLI write commands used to be stubs.** After phase 2, `tcrm auth login`
+- **CLI write commands** work after phase 2: `asftool auth login`
   is the entry point — it captures the token via SF CLI and stores in keyring.
   All subcommands (datasets, dashboards, etc.) work after their respective phases.
 - **TUI is intentionally absent.** Don't add Textual or any TUI framework. The
   menu loop in `cli/main.py` is the entry point for interactive use.
 - **No pure Python OAuth.** The old `core/services/auth_service.py` was deleted
   in phase 0. Only SF CLI auth is supported.
-- **Config paths will change in Phase 1.** `~/.tcrm/` → `~/.asftool/`.
-  `TCRM_*` env vars → `ASFTOOL_*` env vars. Migration is not provided — clean start.
+- **Config paths** are `~/.asftool/`.
+  Env vars use `ASFTOOL_*`. Migration is not provided — clean start.
 - **CI on `main` does not run** (workflow targets `main`/`refactor/**`/`feature/**`;
   `main` holds only the legacy toolkit). Update CI to target the new branches
   in phase 9.
@@ -207,10 +207,10 @@ correct way to use the client. Don't instantiate a bare
 ### Phase 0-1: the rename and what it broke
 
 **4. Mechanical renames miss string content.** Phase 1 renamed
-`tcrm_toolkit` → `asftool` and `tcrm` → `asftool` in code paths
+All code paths use `asftool`.
 (imports, pyproject, entry points) but not in user-facing strings
 inside `f-strings` and exception messages. The result: 3 hardcoded
-`"Run 'tcrm auth login'"` strings stayed in
+old `tcrm` references (like "Run 'asftool auth login'") stayed in
 `core/auth/sf_cli_auth.py`. Tests didn't catch it because no test
 asserted the message text. Always grep for the old name as a string
 literal — not just as an identifier — after a rename. Fixed in
@@ -338,14 +338,11 @@ value, masking the bug. The fix: use
 `datetime.now(timezone.utc)` when the parsed expiry has a tzinfo,
 so both sides of the comparison are tz-aware.
 
-**15. Stale `tcrm` binaries on user laptops are an environment
-issue, not a code issue.** When the user types `tcrm auth login`
+**15. Stale binaries.** When a leftover `tcrm` binary is present
 and it fails with `ModuleNotFoundError: No module named
-'tcrm_toolkit.cli.main'`, that's a leftover `tcrm` shim from
+'asftool.cli.main' expected. A leftover `tcrm` binary is from
 before the refactor. The fix is environment-level: `where.exe
-tcrm` then delete the shim, or
-`py -3.13 -m pip uninstall tcrm-toolkit`. If the error message
-mentions `tcrm` from *inside* `asftool`, that's a different bug
+asftool` then delete the shim, or `py -3.13 -m pip uninstall asftool-toolkit`. If the error message mentions `asftool` incorrectly, that's a different bug
 (hardcoded user-facing string — fixed in `bdf94cb`).
 
 ### Cross-cutting patterns
@@ -412,7 +409,7 @@ adding in a future phase.
 **21. Stale state on user laptops is invisible to CI.** When a
 user reports a bug that doesn't reproduce on the dev machine,
 first suspect environment-level state: leftover binaries on PATH,
-old `~/.tcrm/` configs, `~/.sfdx/`, `~/.sf/`, keyring backends.
+old `~/.asftool/` configs, `~/.sfdx/`, `~/.sf/`, keyring backends.
 The `asftool doctor` command is the first-line diagnostic — it
 checks all of these in one table. If the user says "doctor passes
 and the bug still happens", then it's a real code bug. Otherwise

@@ -20,7 +20,7 @@ class LineageService:
         self.client = client
 
     async def build_graph(self, root_asset_id: str) -> LineageGraph:
-        """Recursively traverse TCRM dependency API and build a LineageGraph."""
+        """Recursively traverse Analytics REST API dependency endpoints and build a LineageGraph."""
         graph = LineageGraph(root_asset_id=root_asset_id)
         visited: set[str] = set()
 

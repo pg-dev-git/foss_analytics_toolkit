@@ -1,4 +1,4 @@
-"""Regression test for the encoding crash fix (emoji from real TCRM data).
+"""Regression test for the encoding crash fix (emoji from Analytics REST API response data).
 
 Bug: interactive mode crashes with 'charmap codec can't encode' when
 real Salesforce data (e.g. dashboard label: 'Canadian Sales 🇨🇦')
@@ -89,7 +89,7 @@ def test_storage_manager_persists_emoji_utf8():
                 extension="json",
             )
 
-            # Create a report-like dict with emoji (simulating real TCRM data)
+            # Create a report-like dict with emoji (simulating Analytics REST API response data)
             report_data = {
                 "scope": {"search_term": "OpportunityID"},
                 "summary": {"total_matches": 1},

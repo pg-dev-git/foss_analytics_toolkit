@@ -183,7 +183,7 @@ class TestBuildFromDataset:
 
 
 class TestTypeMapping:
-    """Tests for TCRM type string mapping."""
+    """Tests for Analytics REST API type mapping."""
 
     @pytest.mark.asyncio
     async def test_lens_mapped_to_dashboard(self, mock_client):
