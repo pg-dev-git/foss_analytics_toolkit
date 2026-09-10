@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "ASFTool — Analytics REST API Software Tool (ASFT) — Lightweight, high-performance async Python CLI for the Salesforce Analytics REST API"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "GNU Affero General Public License v3.0"}
+license = {text = "Apache License 2.0"}
 authors = [
     {name = "Pedro Gagliardi", email = "pg-dev-git@users.noreply.github.com"}
 ]
