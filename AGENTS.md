@@ -5,7 +5,7 @@ Guidance for agents working in this repository. Read before editing.
 ## Project
 
 Modern async Python CLI for the Salesforce Analytics REST API. Rebuilds the
-legacy `FOSS_Toolkit.py` (preserved under `_legacy/`) with a `typer` CLI +
+legacy `FOSS_Toolkit.py`. with a `typer` CLI +
 `rich` interactive menus. The original "always running OS" menu approach is
 preserved — no TUI framework, no Textual.
 
