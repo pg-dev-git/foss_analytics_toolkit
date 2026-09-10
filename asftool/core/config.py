@@ -1,0 +1,221 @@
+"""Configuration management using Pydantic Settings."""
+
+import base64
+import os
+from functools import lru_cache
+from pathlib import Path
+from typing import Literal
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+    # Application Settings
+    app_name: str = "asftool"
+    app_version: str = "0.1.0"
+    debug: bool = False
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    # Salesforce API Settings.
+    # Default = current latest stable (Winter '27 = v68.0). Override via
+    # SF_API_VERSION env var, ~/.asftool/config.json (Phase 2), or
+    # --api-version CLI flag.
+    sf_api_version: str = Field(default="v68.0", alias="SF_API_VERSION")
+    sf_default_domain: str = Field(default="login.salesforce.com", alias="SF_DEFAULT_DOMAIN")
+
+    # Encryption Settings
+    encryption_key: str = Field(alias="ENCRYPTION_KEY")
+
+    # JWT Settings
+    jwt_secret_key: str = Field(alias="JWT_SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
+    refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+
+    # Connected App Credentials (JWT Bearer flow)
+    sf_connected_app_client_id: str | None = Field(default=None, alias="SF_CONNECTED_APP_CLIENT_ID")
+    sf_connected_app_client_secret: str | None = Field(default=None, alias="SF_CONNECTED_APP_CLIENT_SECRET")
+    sf_connected_app_username: str | None = Field(default=None, alias="SF_CONNECTED_APP_USERNAME")
+
+    # Web OAuth Settings (PKCE flow)
+    sf_web_oauth_client_id: str | None = Field(default=None, alias="SF_WEB_OAUTH_CLIENT_ID")
+    sf_web_oauth_client_secret: str | None = Field(default=None, alias="SF_WEB_OAUTH_CLIENT_SECRET")
+    sf_web_oauth_redirect_uri: str = Field(default="http://localhost:8080/callback", alias="SF_WEB_OAUTH_REDIRECT_URI")
+
+    # Device Flow Settings
+    sf_device_flow_client_id: str | None = Field(default=None, alias="SF_DEVICE_FLOW_CLIENT_ID")
+
+    # Field Impact Analysis Settings
+    field_impact_default_fuzzy_threshold: int = Field(
+        default=85, alias="FIELD_IMPACT_DEFAULT_FUZZY_THRESHOLD", ge=0, le=100
+    )
+    field_impact_max_concurrent_scans: int = Field(
+        default=10, alias="FIELD_IMPACT_MAX_CONCURRENT_SCANS", ge=1, le=50
+    )
+    field_impact_default_match_mode: Literal["exact", "fuzzy", "both"] = Field(
+        default="both", alias="FIELD_IMPACT_DEFAULT_MATCH_MODE"
+    )
+
+    @field_validator("sf_api_version")
+    @classmethod
+    def validate_sf_api_version(cls, v: str) -> str:
+        """Validate Salesforce API version format (v<major>.<minor>)."""
+        import re
+        if not re.match(r"^v\d+\.\d+$", v):
+            raise ValueError(
+                f"Invalid SF_API_VERSION {v!r}: must match v<major>.<minor> "
+                f"(e.g. 'v60.0', 'v68.0')"
+            )
+        return v
+
+    @field_validator("encryption_key")
+    @classmethod
+    def validate_encryption_key(cls, v: str) -> str:
+        """Validate that encryption key is a valid base64-encoded 32-byte key."""
+        try:
+            decoded = base64.urlsafe_b64decode(v + "=" * (-len(v) % 4))
+            if len(decoded) != 32:
+                raise ValueError("Encryption key must decode to exactly 32 bytes")
+        except Exception as e:
+            raise ValueError(f"Invalid encryption key: {e}") from e
+        return v
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        """Validate JWT secret key length."""
+        if len(v) < 32:
+            raise ValueError("JWT secret key must be at least 32 characters")
+        return v
+
+    @property
+    def sf_base_url(self) -> str:
+        """Get the base Salesforce API URL."""
+        return f"https://{self.sf_default_domain}/services/data/{self.sf_api_version}"
+
+    @property
+    def wave_base_url(self) -> str:
+        """Get the Wave/Analytics API base URL."""
+        return f"{self.sf_base_url}/wave"
+
+    @property
+    def has_connected_app_credentials(self) -> bool:
+        """Check if Connected App credentials are configured."""
+        return all([
+            self.sf_connected_app_client_id,
+            self.sf_connected_app_client_secret,
+            self.sf_connected_app_username,
+        ])
+
+    @property
+    def has_web_oauth_credentials(self) -> bool:
+        """Check if Web OAuth credentials are configured."""
+        return all([
+            self.sf_web_oauth_client_id,
+            self.sf_web_oauth_client_secret,
+        ])
+
+    @property
+    def has_device_flow_credentials(self) -> bool:
+        """Check if Device Flow credentials are configured."""
+        return self.sf_device_flow_client_id is not None
+
+    @property
+    def config_dir(self) -> Path:
+        """Get the user config directory (`~/.asftool/`)."""
+        return Path.home() / ".asftool"
+
+    @property
+    def log_file(self) -> Path:
+        """Get the log file path (`~/.asftool/asftool.log`)."""
+        return self.config_dir / "asftool.log"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Get cached settings instance.
+
+    Precedence (highest first):
+      1. Environment variable (SF_API_VERSION, ENCRYPTION_KEY, ...)
+      2. Persisted user config at ~/.asftool/config.json (sf_api_version only)
+      3. Hardcoded default
+
+    The persisted config is applied AFTER pydantic-settings has read
+    the env vars, so env vars always win.
+    """
+    from asftool.core.config_store import get_user_config  # avoid circular
+
+    settings = Settings()  # type: ignore[call-arg]
+    settings.sf_api_version = _resolve_sf_api_version(
+        from_settings=settings.sf_api_version,
+        from_user_config=get_user_config().sf_api_version,
+    )
+    return settings
+
+
+def _sf_api_version_from_env_sources() -> str | None:
+    """Check if SF_API_VERSION is set in os.environ OR the project .env file.
+
+    Returns the value if found, None if neither source provides it.
+    pydantic-settings consumes these sources when constructing Settings,
+    but doesn't tell us *which* one it picked. For the merge precedence
+    we just need to know if any of them had a value.
+    """
+    # 1) Real env var.
+    if "SF_API_VERSION" in os.environ:
+        return os.environ["SF_API_VERSION"]
+    # 2) Project .env file. pydantic-settings already loaded it; we re-read
+    #    only to check for the key. This is a one-line parse, not a re-load.
+    env_file = Path(".env")
+    if env_file.is_file():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            if k.strip() == "SF_API_VERSION":
+                return v.strip()
+    return None
+
+
+def _resolve_sf_api_version(
+    from_settings: str | None,
+    from_user_config: str | None,
+) -> str:
+    """Apply the merge rule: env > persisted > default.
+
+    Args:
+        from_settings: The value pydantic-settings resolved (from .env
+            or os.environ). May equal the hardcoded default if neither
+            source provided a value.
+        from_user_config: The value from ~/.asftool/config.json, or None.
+
+    The rule: if any env-level source provided a value, that wins.
+    Otherwise, the persisted config wins. Otherwise, the default.
+    """
+    if _sf_api_version_from_env_sources() is not None:
+        return from_settings or "v68.0"
+    if from_user_config:
+        return from_user_config
+    return "v68.0"
+
+
+def generate_encryption_key() -> str:
+    """Generate a new secure encryption key."""
+    return base64.urlsafe_b64encode(os.urandom(32)).decode()
+
+
+def generate_jwt_secret() -> str:
+    """Generate a new JWT secret key."""
+    return base64.urlsafe_b64encode(os.urandom(32)).decode()

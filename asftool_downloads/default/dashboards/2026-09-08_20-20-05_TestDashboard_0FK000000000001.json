@@ -1,0 +1,12 @@
+{
+  "id": "0FK000000000001",
+  "name": "TestDashboard",
+  "label": "Test Dashboard",
+  "state": {
+    "widgets": []
+  },
+  "created_date": "2026-09-08T20:20:05.857954",
+  "created_by_id": "005000000000001",
+  "last_modified_date": "2026-09-08T20:20:05.857976",
+  "last_modified_by_id": "005000000000001"
+}

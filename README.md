@@ -1,75 +1,161 @@
-### First things first: 
+# ASFTool — Analytics REST API Software Tool (ASFT)
 
-### This is a FOSS tool, not an official Salesforce or Tableau product. This toolkit hasn't been officially tested or documented by Salesforce or Tableau. Salesforce support is not available. Use at your own risk. It's provided as is and without any type of warranties.
+ASFTool is a lightweight, high-performance async Python CLI for the Salesforce Analytics REST API. It rebuilds the legacy `FOSS_Toolkit.py` with a `typer` CLI plus an interactive "always running OS" menu — no TUI framework needed.
 
-This toolkit has the purpose of expand the usability of TCRM. There are many tasks that are difficult to do using the UI like uploading CSVs or backing up data. The goal is to make those tasks easy to complete.
+## Features
 
-#### ----------------------------------------------------------------------------------------------------------------
+- **SF CLI Authentication** — web login (opens browser) or device flow for headless/SSH; token auto-refresh and multi-org support
+- **Interactive Menu** — `asftool` alone drops you into a menu loop, like the original toolkit
+- **Dataset Operations** — list, extract to CSV, upload CSV, delete, show details
+- **Dashboard Operations** — list, backup JSON, show details
+- **Dataflow Operations** — list, backup, start, stop, show details
+- **Data Manager Jobs** — list, show job details
+- **Diagnostics** — `asftool doctor` runs a full environment check
+- **Cross-Platform** — Windows, Linux, macOS
+- **Production Ready** — structured JSON logging, retries, async + multiprocessing parallelism
 
-### Dependencies:
-You need to have Salesforce CLI installed. Get it from here: https://developer.salesforce.com/tools/sfdxcli
+## Installation
 
-#### Notes for Win10: 
-You need to install *Windows Terminal* from the Microsoft App Store. There are colors and functions in the app that won't work in command prompt. You can get it here: https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701
+```bash
+git clone https://github.com/pg-dev-git/foss_analytics_toolkit
+cd foss_analytics_toolkit
 
-After installing Windows Terminal, reboot and now you should have an option to open the terminal when you right click inside a directory.
-Navigate to the folder you extracted the tool, right click and launch Windows Terminal.
-Then just launch TCRM_toolkit.exe from it.
+uv sync --extra dev       # install with dev extras (tests, lint, typecheck)
+```
 
-Also, make sure you have the Visual C++ Redist installed. Get it from here: https://aka.ms/vs/16/release/vc_redist.x64.exe
+Requires Python 3.11+ and the [Salesforce CLI](https://developer.salesforce.com/tools/sfdxcli) (`sf`).
 
-### Python:
-The recommended version of Python is 3.9 but you can use 3.8 too. Python 3.10 won't work at the moment.
+ASFT is designed to be product-agnostic: it talks to the Salesforce Analytics REST API directly, without binding to any specific Salesforce product brand (Tableau CRM, Einstein Analytics, or otherwise).
 
-You can run "python3.9 -m pip install -r requirements.txt" to install the required dependencies for the tool to run properly.
+## Quick Start
 
-#### ----------------------------------------------------------------------------------------------------------------
+```bash
+# Authenticate (opens a browser)
+asftool auth login
 
-### Compatibility:
-This tool is able to run on Windows/Linux/MacOS without any issues. If you find a bug, please report it.
+# Headless / SSH? Use the device flow
+asftool auth login --device
 
-#### ----------------------------------------------------------------------------------------------------------------
+# Check the current session
+asftool auth status
 
-### At this time, the only date format supported when uploading CSV files is: yyyy/mm/dd. If another format is used, the field will be formatted as text.
+# Interactive menu (always-running style)
+asftool
 
-#### ----------------------------------------------------------------------------------------------------------------
+# Or run single commands
+asftool datasets list
+asftool datasets extract 0FbXXX -o data.csv
+asftool datasets upload 0FbXXX data.csv
+asftool dashboards list
+asftool dashboards backup 0FKXXX -o dashboard.json
+asftool dataflows list
+asftool dataflows start 03CXXX
+asftool jobs list
 
-## Login instructions
+# Environment diagnostics
+asftool doctor
+asftool doctor config
+```
 
-There are two ways how to authenticate. Web Login and via a Connected app. The Web Login is the easier and recommended way.
+## How Authentication Works
 
-You will need the server id from the Company Information section of your instance and also the domain name.
+ASFTool uses the **Salesforce CLI** (`sf`) as its only auth path — no Connected App, no
+manual OAuth callback server. This mirrors the approach that worked reliably in the legacy
+toolkit:
 
-### Instructions for Web Login:
+1. `asftool auth login` runs `sf org login web --alias default` (opens the browser).
+2. The access token, instance URL, and username are captured from
+   `sf org display --target-org default --json`.
+3. Credentials are encrypted and stored in the OS keyring (with encryption-key file
+   fallback for headless containers).
 
-When you select this option on the console, enter your instance username and the server id. Your browser will open up the Salesforce login screen. Enter your credentials and you should be good to go. You can close the browser afterwards. *Make sure your user has a TCRM license and access to the Wave API*
+Because SF CLI owns the refresh token, ASFTool gets a fresh token on demand with
+`sf org display` whenever the stored one is expired.
 
-### Instructions for Connected App: https://github.com/pg-dev-git/foss_analytics_toolkit/blob/master/conn-app.md
+## Configuration
 
-#### ----------------------------------------------------------------------------------------------------------------
+Copy `.env.example` to `.env` for local development. ASFTool reads these environment
+variables (with `ASFTOOL_` prefix):
 
-## Security
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ASFTOOL_APP_NAME` | Application name | `asftool` |
+| `ASFTOOL_APP_VERSION` | Application version | `0.1.0` |
+| `ASFTOOL_LOG_LEVEL` | Log level | `INFO` |
+| `ASFTOOL_DEBUG` | Debug mode | `false` |
+| `ASFTOOL_SF_API_VERSION` | Salesforce API version | `v60.0` |
+| `ASFTOOL_SF_DEFAULT_DOMAIN` | Login domain | `login.salesforce.com` |
+| `ENCRYPTION_KEY` | Base64 32-byte key for token encryption | required |
+| `JWT_SECRET_KEY` | Internal token signing secret (≥32 chars) | required |
 
-All config files will be encrypted with a password that you set up on the first run. If you forget the password, just delete the config files in the data folder and start from scratch.
+Generate keys:
 
-#### ----------------------------------------------------------------------------------------------------------------
+```bash
+python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+```
 
-## Contact
+Persistent state lives under `~/.asftool/`: configuration directory, log file
+(`asftool.log`), and (optionally) an encryption-key fallback file.
 
-You can reach out via LinkedIn: https://www.linkedin.com/in/pedro-gagliardi-a9b95638/
-Or submit a PR here on GitHub
+## Architecture
 
-#### ----------------------------------------------------------------------------------------------------------------
+```
+asftool/
+├── cli/                    # Presentation: Typer commands + Rich menus
+│   ├── main.py             # Entry point: subcommand dispatch or menu loop
+│   ├── session.py          # Session bridge (auth + client lifecycle)
+│   ├── commands/           # auth, datasets, dashboards, dataflows, jobs, doctor
+│   ├── menus/              # Interactive menu wiring (one module per domain)
+│   └── ui.py               # Rich helpers (tables, prompts, progress)
+├── core/                   # Reusable, UI-agnostic layer
+│   ├── auth/               # SF CLI auth (sf_cli, sf_cli_auth, token_store)
+│   ├── services/           # Business logic (dataset, dashboard, dataflow)
+│   ├── tasks/              # TaskRunner + parallel helpers (ProcessPoolExecutor)
+│   ├── client.py           # Async HTTP client (httpx + tenacity retries)
+│   ├── config.py           # Pydantic settings
+│   ├── crypto.py           # Dynamic-salt encryption + keyring
+│   ├── logger.py           # structlog JSON → stderr + ~/.asftool/asftool.log
+│   └── models/             # Pydantic models
+├── tests/                  # Unit + mocked integration tests
+├── scripts/                # Dev tooling (cross-platform verification, …)
+└── pyproject.toml
+```
 
-## Data Extraction and Upload Performance
+Dependency direction: `cli/ → core/tasks/ → core/services/ → core/`. Nothing below
+`core/` may import from `cli/`.
 
-When this tool is not targeted to execute massive "ETL" jobs, it can perform decent extractions/uploads. 
-If you want to download big datasets, you will need a lot of RAM.
-The following numbers were obtained on Windows Desktop with 16 cores and 32gb of RAM and a Ubuntu Desktop with 8 cores and 16gb of RAM.
-The tool will automatically try to use disk space in case you run out of RAM but it could also help if you manually increase the size of your SWAP.
+## Parallelism
 
-![alt text](https://i.ibb.co/CMptHth/perf-table.jpg)
+Dataset extraction/upload pipelines mix async I/O with CPU-bound work:
 
-![alt text](https://i.ibb.co/vQnwHNg/16.jpg)
+- **SAQL queries / upload parts** — `asyncio.Semaphore` + `httpx` for concurrent I/O
+- **CSV merge / base64 encode** — `ProcessPoolExecutor` (true multiprocessing) via `TaskRunner`
+- **Progress** — non-blocking callbacks that feed Rich progress bars
 
-![alt text](https://i.ibb.co/kGtNx3g/32.jpg)
+The helpers live in `asftool/core/tasks/` and are picklable, so they are safe to pass to
+process pools.
+
+## Development
+
+```bash
+uv run pytest -v --tb=short        # run all tests
+uv run pytest tests/unit/ -v       # unit tests only
+uv run pytest tests/integration/ -v  # mocked integration tests
+uv run ruff check .                # lint
+uv run mypy asftool                # typecheck
+uv run python scripts/verify-cross-platform.py  # platform sanity checks
+```
+
+### Live testing against a real org
+
+```bash
+# Option A — recommended: authenticate via SF CLI
+sf org login web --alias myorg
+asftool auth login --alias myorg
+
+# Option B — seed a session from existing env credentials (scripts/seed_session.py)
+```
+
+## License
+
+GNU Affero General Public License v3.0

@@ -1,0 +1,68 @@
+"""Core SDK module for ASFTool."""
+
+from asftool.core.auth import (
+    SFCLIAuthError,
+    SFCLIAuthResult,
+    SFCLIAuthService,
+    SFCLIError,
+    SFCLIManager,
+    SFCLINotFoundError,
+    StoredToken,
+    TokenStore,
+)
+from asftool.core.client import SalesforceClient, create_client, create_client_from_sf_cli
+from asftool.core.config import Settings, get_settings
+from asftool.core.crypto import CryptoManager, EncryptedData
+from asftool.core.exceptions import (
+    ASFToolError,
+    ConfigurationError,
+    CryptoError,
+    DashboardError,
+    DataflowError,
+    DatasetError,
+    OAuthError,
+    SalesforceAPIError,
+    SalesforceAuthError,
+    SalesforceNotFoundError,
+    SalesforceRateLimitError,
+    TokenExpiredError,
+    TokenNotFoundError,
+    UploadError,
+    ValidationError,
+)
+from asftool.core.storage import StorageManager, get_storage_manager
+
+__all__ = [
+    "Settings",
+    "get_settings",
+    "CryptoManager",
+    "EncryptedData",
+    "StorageManager",
+    "get_storage_manager",
+    "SalesforceClient",
+    "create_client",
+    "create_client_from_sf_cli",
+    "ASFToolError",
+    "ConfigurationError",
+    "CryptoError",
+    "SalesforceAPIError",
+    "SalesforceAuthError",
+    "SalesforceRateLimitError",
+    "SalesforceNotFoundError",
+    "OAuthError",
+    "TokenExpiredError",
+    "TokenNotFoundError",
+    "ValidationError",
+    "DatasetError",
+    "DashboardError",
+    "DataflowError",
+    "UploadError",
+    "SFCLIAuthService",
+    "SFCLIAuthError",
+    "TokenStore",
+    "StoredToken",
+    "SFCLIManager",
+    "SFCLIAuthResult",
+    "SFCLIError",
+    "SFCLINotFoundError",
+]
