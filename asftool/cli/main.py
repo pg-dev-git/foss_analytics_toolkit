@@ -45,6 +45,7 @@ from asftool.cli.commands.fields import app as fields_app
 from asftool.cli.commands.init import init as init_command
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
+from asftool.cli.commands.mcp import app as mcp_app
 from asftool.cli.menu import Menu, create_menus
 from asftool.cli.session import Session
 from asftool.cli.ui import console, print_error, print_header, print_info
@@ -67,6 +68,7 @@ app.add_typer(fields_app, name="fields")
 app.add_typer(config_app, name="config")
 app.add_typer(lineage_app, name="lineage")
 app.command("init")(init_command)
+app.add_typer(mcp_app, name="mcp")
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +206,7 @@ def _has_subcommand(argv: list[str]) -> bool:
         "config",
         "lineage",
         "init",
+        "mcp",
     }
     for arg in argv[1:]:
         if arg in known:
