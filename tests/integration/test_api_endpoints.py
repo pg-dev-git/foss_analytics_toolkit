@@ -248,15 +248,15 @@ class TestDashboardServiceIntegration:
         """Test dashboard backup."""
         service = DashboardService(mock_client, settings=settings)
 
-        from datetime import datetime
+        from datetime import datetime, UTC
         mock_response = MockResponse({
             "id": "0FK000000000001",
             "name": "TestDashboard",
             "label": "Test Dashboard",
             "state": {"widgets": []},
-            "created_date": datetime.utcnow().isoformat(),
+            "created_date": datetime.now(UTC).isoformat(),
             "created_by_id": "005000000000001",
-            "last_modified_date": datetime.utcnow().isoformat(),
+            "last_modified_date": datetime.now(UTC).isoformat(),
             "last_modified_by_id": "005000000000001",
         })
         mock_client._client.request.return_value = mock_response
