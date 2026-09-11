@@ -1,0 +1,9 @@
+{
+  "asftool": {
+    "command": "uv",
+    "args": ["run", "--directory", ".", "asftool", "mcp", "start"],
+    "env": {
+      "PYTHONIOENCODING": "utf-8"
+    }
+  }
+}
