@@ -27,7 +27,7 @@ class StoredToken:
     updated_at: str = ""  # ISO format string
 
     def __post_init__(self):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         if not self.created_at:
             self.created_at = now
         if not self.updated_at:
@@ -57,19 +57,15 @@ class StoredToken:
             return False
         try:
             expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
-            # ``datetime.utcnow()`` is deprecated and returns a NAIVE
-            # datetime; if ``expires`` carries a tzinfo (which it does
-            # for any Z-suffixed or +00:00-suffixed string) comparing
-            # naive vs aware raises TypeError. Use datetime.now(UTC)
-            # so both sides are timezone-aware and the comparison works.
-            now = datetime.now(UTC) if expires.tzinfo is not None else datetime.utcnow()
+            # Both sides are now timezone-aware
+            now = datetime.now(UTC)
             return now >= (expires - timedelta(seconds=buffer_seconds))
         except (ValueError, TypeError):
             return False
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow().isoformat()
+        self.updated_at = datetime.now(UTC).isoformat()
 
 
 class TokenStore:

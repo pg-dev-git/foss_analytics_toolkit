@@ -85,6 +85,38 @@ async def _collect_checks(session: Session, verbose: bool) -> list[tuple[str, st
     except Exception as e:
         checks.append(("Salesforce connectivity", f"ERROR: {e}", False))
 
+
+    # Agent readiness diagnostics
+    try:
+        import keyring  # already imported above, but check for accessibility
+        kr = keyring.get_keyring()
+        checks.append(("Agent keyring access", kr.__class__.__name__, True))
+    except Exception as e:
+        checks.append(("Agent keyring access", f"FAIL: {e}", False))
+
+    # MCP server dependency check
+    try:
+        import mcp  # optional dependency
+        checks.append(("MCP server module", "AVAILABLE", True))
+    except ImportError:
+        checks.append(("MCP server module", "NOT INSTALLED (optional)", True))
+
+    # SDK import check
+    try:
+        from asftool.sdk.engine import ASFToolSDK
+        checks.append(("SDK import", "OK", True))
+    except Exception as e:
+        checks.append(("SDK import", f"FAIL: {e}", False))
+
+    # UTF-8 encoding audit
+    try:
+        import locale
+        enc = locale.getpreferredencoding()
+        utf_ok = enc.lower() in ("utf-8", "utf8", "utf-8", "utf_8")
+        checks.append(("UTF-8 encoding", enc, utf_ok))
+    except Exception as e:
+        checks.append(("UTF-8 encoding", f"ERROR: {e}", False))
+
     # Auth status
     try:
         auth_status = await session.auth_service.status("default")

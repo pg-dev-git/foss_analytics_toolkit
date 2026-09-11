@@ -523,3 +523,18 @@ async def create_client_from_sf_cli(
         yield client
     finally:
         await client.close()
+
+
+class SalesforceAuthTransport(httpx.AsyncHTTPTransport):
+    """Custom transport that refreshes tokens before expiry."""
+
+    def __init__(self, resolver, alias: str = "default", **kwargs):
+        super().__init__(**kwargs)
+        self.resolver = resolver
+        self.alias = alias
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        token = await self.resolver.resolve_token(self.alias)
+        if token:
+            request.headers["Authorization"] = f"Bearer {token}"
+        return await super().handle_async_request(request)
