@@ -42,6 +42,7 @@ from asftool.cli.commands.dataflows import app as dataflows_app
 from asftool.cli.commands.datasets import app as datasets_app
 from asftool.cli.commands.doctor import app as doctor_app
 from asftool.cli.commands.fields import app as fields_app
+from asftool.cli.commands.git_auth import app as git_auth_app
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
 from asftool.cli.commands.mcp import app as mcp_app
@@ -66,6 +67,7 @@ app.add_typer(fields_app, name="fields")
 app.add_typer(config_app, name="config")
 app.add_typer(lineage_app, name="lineage")
 app.add_typer(mcp_app, name="mcp")
+app.add_typer(git_auth_app, name="git-auth")
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +194,7 @@ async def _run_menu_loop(main_menu: Menu) -> None:
 
 def _has_subcommand(argv: list[str]) -> bool:
     """True if argv contains a known subcommand (not just --flags)."""
-    known = {"auth", "datasets", "dashboards", "dataflows", "jobs", "doctor", "fields", "config", "lineage", "mcp"}
+    known = {"auth", "datasets", "dashboards", "dataflows", "jobs", "doctor", "fields", "config", "lineage", "mcp", "git-auth"}
     for arg in argv[1:]:
         if arg in known:
             return True
