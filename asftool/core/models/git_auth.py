@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, PrivateAttr, SecretStr
 
 
 class GitProvider(str, Enum):
@@ -114,10 +114,11 @@ class GitCredentials(BaseModel):
         description="Token scopes/permissions (for validation/auditing)",
     )
 
-    # Environment variable fallbacks (not stored, used at runtime)
-    _env_token: Optional[str] = Field(default=None, exclude=True)
-    _env_username: Optional[str] = Field(default=None, exclude=True)
-    _env_ssh_key: Optional[str] = Field(default=None, exclude=True)
+    # Environment variable fallbacks are handled at runtime via methods
+    # not stored as model fields (using PrivateAttr)
+    _env_token: Optional[str] = PrivateAttr(default=None)
+    _env_username: Optional[str] = PrivateAttr(default=None)
+    _env_ssh_key: Optional[str] = PrivateAttr(default=None)
 
     def get_effective_token(self) -> Optional[str]:
         """Get token with environment variable fallback.
