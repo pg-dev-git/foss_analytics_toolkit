@@ -42,6 +42,7 @@ from asftool.cli.commands.dataflows import app as dataflows_app
 from asftool.cli.commands.datasets import app as datasets_app
 from asftool.cli.commands.doctor import app as doctor_app
 from asftool.cli.commands.fields import app as fields_app
+from asftool.cli.commands.git_auth import app as git_auth_app
 from asftool.cli.commands.init import init as init_command
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
@@ -69,6 +70,7 @@ app.add_typer(config_app, name="config")
 app.add_typer(lineage_app, name="lineage")
 app.command("init")(init_command)
 app.add_typer(mcp_app, name="mcp")
+app.add_typer(git_auth_app, name="git-auth")
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +209,7 @@ def _has_subcommand(argv: list[str]) -> bool:
         "lineage",
         "init",
         "mcp",
+        "git-auth",
     }
     for arg in argv[1:]:
         if arg in known:
