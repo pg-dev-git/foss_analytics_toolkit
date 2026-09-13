@@ -7,7 +7,7 @@ or logic changes.
 
 import json
 from copy import deepcopy
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
