@@ -21,6 +21,7 @@ from asftool.core.git import (
     CRMAGitSyncService,
     RepoMappingConfig,
     RepoMappingResolver,
+    WorkspaceManager,
     create_default_config,
 )
 from asftool.core.git.resolver import RepoMappingRule
