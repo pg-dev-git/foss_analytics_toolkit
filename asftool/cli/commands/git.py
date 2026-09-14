@@ -34,6 +34,11 @@ app = typer.Typer(help="Git version control for CRMA assets")
 console = Console()
 
 
+def _run(coro):
+    """Run async coroutine in a fresh event loop."""
+    return asyncio.run(coro)
+
+
 @app.command("init-config")
 def init_config(
     provider: str = typer.Option("github", "--provider", "-p"),
@@ -75,7 +80,7 @@ def init_config(
 
 
 @app.command("sync")
-async def sync(
+def sync(
     ctx: typer.Context,
     asset_type: str = typer.Option("all", "--type", "-t", help="Asset type or 'all'"),
     dry_run: bool = typer.Option(False, "--dry-run", "-d"),
@@ -95,75 +100,85 @@ async def sync(
 
     resolver = RepoMappingResolver.from_file(config_path)
 
-    # Get SF auth tokens from session
-    async with Session(alias=alias) as session:
-        auth_tokens = await session.get_auth_tokens()
+    async def _run_sync():
+        # Get SF auth tokens from session
+        async with Session(alias=alias) as session:
+            auth_tokens = await session.get_auth_tokens()
 
-    if not verbose and not quiet:
-        print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
+        if not verbose and not quiet:
+            print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
 
-    service = CRMAGitSyncService(
-        resolver=resolver,
-        instance_url=auth_tokens.instance_url,
-        access_token=auth_tokens.access_token,
-    )
+        service = CRMAGitSyncService(
+            resolver=resolver,
+            instance_url=auth_tokens.instance_url,
+            access_token=auth_tokens.access_token,
+        )
 
-    if asset_type == "all":
-        asset_types = None
-    else:
-        asset_types = [asset_type]
+        if asset_type == "all":
+            asset_types = None
+        else:
+            asset_types = [asset_type]
 
-    if dry_run:
-        # Show dry-run preview
-        print_info("Dry-run mode: showing planned changes without syncing")
-        plan = await service.dry_run(asset_types=asset_types)
-        _print_sync_plan(plan, console)
-        return
+        if dry_run:
+            # Show dry-run preview
+            print_info("Dry-run mode: showing planned changes without syncing")
+            plan = await service.dry_run(asset_types=asset_types)
+            _print_sync_plan(plan, console)
+            return
 
-    if not quiet:
-        print_info("Starting synchronization...")
+        if not quiet:
+            print_info("Starting synchronization...")
 
-    # Run sync with progress tracking
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        console=console,
-        disable=quiet,
-    ) as progress:
-        # This is a simplified version - full progress would need service callback support
-        task = progress.add_task("Syncing assets...", total=None)
+        # Run sync with progress tracking
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            console=console,
+            disable=quiet,
+        ) as progress:
+            task = progress.add_task("Syncing assets...", total=None)
 
-        try:
-            result: SyncResult = await service.sync_all(asset_types=asset_types)
-            progress.update(task, completed=100)
-        except Exception as e:
-            progress.update(task, completed=100)
-            print_error(f"Sync failed: {e}")
-            if verbose:
-                import traceback
-                console.print_exception()
+            try:
+                result: SyncResult = await service.sync_all(asset_types=asset_types)
+                progress.update(task, completed=100)
+            except Exception as e:
+                progress.update(task, completed=100)
+                print_error(f"Sync failed: {e}")
+                if verbose:
+                    import traceback
+                    console.print_exception()
+                raise typer.Exit(1)
+
+        # Print results
+        if not quiet:
+            if result.success:
+                print_success(f"Sync completed in {result.duration_seconds:.1f}s")
+                print_info(f"Repositories synced: {result.repositories_synced}")
+                print_info(f"Assets synced: {result.assets_synced}")
+                print_info(f"Assets skipped: {result.assets_skipped}")
+                if result.commit_hashes:
+                    for repo_slug, commit_hash in result.commit_hashes.items():
+                        print_info(f"  {repo_slug}: {commit_hash[:8]}")
+            else:
+                print_warning("Sync completed with errors:")
+                for err in result.errors:
+                    print_error(f"  - {err}")
+
+        if not result.success:
             raise typer.Exit(1)
 
-    # Print results
-    if not quiet:
-        if result.success:
-            print_success(f"Sync completed in {result.duration_seconds:.1f}s")
-            print_info(f"Repositories synced: {result.repositories_synced}")
-            print_info(f"Assets synced: {result.assets_synced}")
-            print_info(f"Assets skipped: {result.assets_skipped}")
-            if result.commit_hashes:
-                for repo_slug, commit_hash in result.commit_hashes.items():
-                    print_info(f"  {repo_slug}: {commit_hash[:8]}")
-        else:
-            print_warning("Sync completed with errors:")
-            for err in result.errors:
-                print_error(f"  - {err}")
-
-    if not result.success:
-        raise typer.Exit(1)
+    # Run async sync using the standard pattern: create new loop if needed
+    try:
+        return asyncio.run(_run_sync())
+    except RuntimeError:
+        # If there is already a running loop, just await directly using nest_asyncio
+        import nest_asyncio
+        nest_asyncio.apply()
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(_run_sync())
 
 
 def _print_sync_plan(plan: dict, console: Console) -> None:
