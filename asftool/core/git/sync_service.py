@@ -159,6 +159,70 @@ class CRMAGitSyncService:
             duration_seconds=duration,
         )
 
+    async def dry_run(
+        self,
+        asset_types: Optional[list[str]] = None,
+    ) -> dict:
+        """Generate a dry-run plan showing what would be synced without making changes.
+
+        Args:
+            asset_types: Optional list of asset types to sync (default: all)
+
+        Returns:
+            Dictionary with plan details for each repository and asset
+        """
+        types_to_sync = asset_types or list(self.ASSET_TYPES.keys())
+        plan = {"repositories": {}}
+
+        async with self._get_sf_client() as client:
+            for asset_type in types_to_sync:
+                endpoint = self.ASSET_TYPES.get(asset_type)
+                if not endpoint:
+                    continue
+
+                assets = await self._fetch_all_assets(client, endpoint, asset_type)
+
+                for asset in assets:
+                    context = self._asset_to_context(asset, asset_type)
+                    target = self.resolver.resolve_repository(context)
+                    repo_slug = self.workspace_manager.get_workspace_slug(target)
+
+                    if repo_slug not in plan["repositories"]:
+                        plan["repositories"][repo_slug] = {
+                            "target": target,
+                            "assets": [],
+                        }
+
+                    # Check if asset exists in workspace and compare content
+                    workspace_path = self.workspace_manager.ensure_workspace(target)
+                    file_name = f"{context.name}.json"
+                    if context.folder:
+                        folder = self._sanitize_path(context.folder)
+                        file_path = Path(target.path_prefix) / folder / asset_type / file_name
+                    else:
+                        file_path = Path(target.path_prefix) / asset_type / file_name
+
+                    full_path = workspace_path / file_path
+                    action = "create"
+                    if full_path.exists():
+                        normalized = self.normalizer.normalize(asset, asset_type)
+                        with open(full_path, "r", encoding="utf-8") as f:
+                            existing = f.read()
+                        if existing == normalized.normalized_json:
+                            action = "skip"
+                        else:
+                            action = "update"
+
+                    plan["repositories"][repo_slug]["assets"].append({
+                        "asset_type": asset_type,
+                        "name": context.name,
+                        "id": context.asset_id,
+                        "folder": context.folder,
+                        "action": action,
+                    })
+
+        return plan
+
     async def _sync_asset_type(
         self,
         client: httpx.AsyncClient,
