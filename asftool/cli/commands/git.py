@@ -25,6 +25,7 @@ from asftool.core.git import (
     RepoMappingConfig,
     RepoMappingResolver,
     SyncResult,
+    WorkspaceManager,
     create_default_config,
 )
 from asftool.core.git.resolver import RepoMappingRule
@@ -103,7 +104,12 @@ def sync(
     async def _run_sync():
         # Get SF auth tokens from session
         async with Session(alias=alias) as session:
-            auth_tokens = await session.get_auth_tokens()
+            try:
+                auth_tokens = await session.get_auth_tokens()
+            except Exception as e:
+                print_error(f"Failed to get auth tokens: {e}")
+                print_info("Run 'asftool auth login --alias {alias}' first")
+                raise typer.Exit(1)
 
         if not verbose and not quiet:
             print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
@@ -170,15 +176,17 @@ def sync(
         if not result.success:
             raise typer.Exit(1)
 
-    # Run async sync using the standard pattern: create new loop if needed
+    # Run async sync using fresh event loop (works with or without existing loop)
     try:
         return asyncio.run(_run_sync())
     except RuntimeError:
-        # If there is already a running loop, just await directly using nest_asyncio
         import nest_asyncio
         nest_asyncio.apply()
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(_run_sync())
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(_run_sync())
+        finally:
+            loop.close()
 
 
 def _print_sync_plan(plan: dict, console: Console) -> None:
