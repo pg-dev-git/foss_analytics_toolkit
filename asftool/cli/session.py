@@ -12,6 +12,7 @@ from asftool.core.auth import SFCLIAuthService
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
 from asftool.core.crypto import CryptoManager, create_crypto_manager
+from asftool.core.models.auth_tokens import AuthTokens
 
 logger = structlog.get_logger(__name__)
 
@@ -79,3 +80,7 @@ class Session:
             yield client
         finally:
             await self.close()
+
+    async def get_auth_tokens(self) -> AuthTokens:
+        """Get typed authentication tokens for the session alias."""
+        return await self.auth_service.get_auth_tokens(alias=self.alias)

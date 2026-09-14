@@ -5,6 +5,7 @@ from typing import Any
 import structlog
 
 from asftool.core.auth.token_store import StoredToken, TokenStore
+from asftool.core.models.auth_tokens import AuthTokens
 from asftool.core.config import Settings
 from asftool.core.crypto import CryptoManager
 from asftool.core.sf_cli import SFCLIError, SFCLIManager, SFCLINotFoundError
@@ -324,3 +325,29 @@ class SFCLIAuthService:
         except Exception as e:
             logger.error("list_orgs_failed", error=str(e))
             return []
+
+    async def get_auth_tokens(self, alias: str = "default") -> AuthTokens:
+        """
+        Get typed authentication tokens for an alias.
+
+        Args:
+            alias: Org alias
+
+        Returns:
+            AuthTokens with access_token, instance_url, username
+
+        Raises:
+            SFCLIAuthError: If no valid token available
+        """
+        access_token = await self.get_access_token(alias=alias)
+        instance_url = await self.get_instance_url(alias=alias)
+        username = await self.get_username(alias=alias)
+        status = await self.status(alias=alias)
+
+        return AuthTokens(
+            access_token=access_token,
+            instance_url=instance_url,
+            username=username,
+            alias=alias,
+            token_expired=status.get("token_expired", False),
+        )

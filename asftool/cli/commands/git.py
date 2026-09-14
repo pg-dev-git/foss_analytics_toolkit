@@ -8,20 +8,23 @@ Commands:
 """
 
 import asyncio
+from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
 
+from asftool.cli.session import Session
 from asftool.cli.ui import print_error, print_info, print_success, print_warning
 from asftool.core.git import (
     AssetContext,
     CRMAGitSyncService,
     RepoMappingConfig,
     RepoMappingResolver,
-    WorkspaceManager,
+    SyncResult,
     create_default_config,
 )
 from asftool.core.git.resolver import RepoMappingRule
@@ -72,10 +75,14 @@ def init_config(
 
 
 @app.command("sync")
-def sync(
+async def sync(
+    ctx: typer.Context,
     asset_type: str = typer.Option("all", "--type", "-t", help="Asset type or 'all'"),
     dry_run: bool = typer.Option(False, "--dry-run", "-d"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+    quiet: bool = typer.Option(False, "--quiet", "-q"),
     config: str = typer.Option(".asftool-git.yml", "--config", "-c"),
+    alias: str = typer.Option("default", "--alias", "-a", help="SF CLI alias to use"),
 ):
     """Sync CRMA assets to their target Git repositories."""
     from pathlib import Path
@@ -88,14 +95,17 @@ def sync(
 
     resolver = RepoMappingResolver.from_file(config_path)
 
-    # Get instance URL and token from environment or settings
-    instance_url = "https://test.salesforce.com"
-    access_token = "test-token"
+    # Get SF auth tokens from session
+    async with Session(alias=alias) as session:
+        auth_tokens = await session.get_auth_tokens()
+
+    if not verbose and not quiet:
+        print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
 
     service = CRMAGitSyncService(
         resolver=resolver,
-        instance_url=instance_url,
-        access_token=access_token,
+        instance_url=auth_tokens.instance_url,
+        access_token=auth_tokens.access_token,
     )
 
     if asset_type == "all":
@@ -103,10 +113,87 @@ def sync(
     else:
         asset_types = [asset_type]
 
-    print_info("Starting synchronization...")
-    # Note: sync_all is async, would need to run in async context
-    print_info("Sync workflow initialized (would run async in production)")
-    print_info(f"Configuration loaded: {len(resolver.get_all_targets())} repositories configured")
+    if dry_run:
+        # Show dry-run preview
+        print_info("Dry-run mode: showing planned changes without syncing")
+        plan = await service.dry_run(asset_types=asset_types)
+        _print_sync_plan(plan, console)
+        return
+
+    if not quiet:
+        print_info("Starting synchronization...")
+
+    # Run sync with progress tracking
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        console=console,
+        disable=quiet,
+    ) as progress:
+        # This is a simplified version - full progress would need service callback support
+        task = progress.add_task("Syncing assets...", total=None)
+
+        try:
+            result: SyncResult = await service.sync_all(asset_types=asset_types)
+            progress.update(task, completed=100)
+        except Exception as e:
+            progress.update(task, completed=100)
+            print_error(f"Sync failed: {e}")
+            if verbose:
+                import traceback
+                console.print_exception()
+            raise typer.Exit(1)
+
+    # Print results
+    if not quiet:
+        if result.success:
+            print_success(f"Sync completed in {result.duration_seconds:.1f}s")
+            print_info(f"Repositories synced: {result.repositories_synced}")
+            print_info(f"Assets synced: {result.assets_synced}")
+            print_info(f"Assets skipped: {result.assets_skipped}")
+            if result.commit_hashes:
+                for repo_slug, commit_hash in result.commit_hashes.items():
+                    print_info(f"  {repo_slug}: {commit_hash[:8]}")
+        else:
+            print_warning("Sync completed with errors:")
+            for err in result.errors:
+                print_error(f"  - {err}")
+
+    if not result.success:
+        raise typer.Exit(1)
+
+
+def _print_sync_plan(plan: dict, console: Console) -> None:
+    """Print dry-run plan as Rich table."""
+    from rich.table import Table
+
+    table = Table(title="Sync Plan (Dry Run)", show_header=True)
+    table.add_column("Repo Slug", style="cyan")
+    table.add_column("Asset Type", style="green")
+    table.add_column("Asset Name", style="white")
+    table.add_column("Folder", style="dim")
+    table.add_column("Action", style="yellow")
+
+    for repo_slug, repo_data in plan.get("repositories", {}).items():
+        for asset in repo_data.get("assets", []):
+            table.add_row(
+                repo_slug,
+                asset.get("asset_type", "-"),
+                asset.get("name", "-"),
+                asset.get("folder", "-"),
+                asset.get("action", "-"),
+            )
+
+    console.print(table)
+
+    total_create = sum(1 for r in plan.get("repositories", {}).values() for a in r.get("assets", []) if a.get("action") == "create")
+    total_update = sum(1 for r in plan.get("repositories", {}).values() for a in r.get("assets", []) if a.get("action") == "update")
+    total_skip = sum(1 for r in plan.get("repositories", {}).values() for a in r.get("assets", []) if a.get("action") == "skip")
+
+    console.print(f"[cyan]Plan Summary:[/cyan] {total_create} create, {total_update} update, {total_skip} skip")
 
 
 @app.command("revert")
