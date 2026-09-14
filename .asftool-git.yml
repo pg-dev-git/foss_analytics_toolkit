@@ -1,0 +1,10 @@
+version: '1'
+default_target:
+  provider: github
+  host: github.com
+  organization: myorg
+  repository: crm-assets
+  credentials_alias: test-creds
+  branch: main
+  path_prefix: ""
+rules: []
