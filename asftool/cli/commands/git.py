@@ -153,10 +153,10 @@ def sync(
             except httpx.HTTPStatusError as e:
                 progress.update(task, completed=100)
                 if e.response.status_code == 401:
-                    print_error(f"Authentication failed: {e}")
+                    print_error("Authentication failed: Your Salesforce session has expired.")
                     print_info("Run 'asftool auth login --alias <your-alias>' to re-authenticate")
                 else:
-                    print_error(f"Sync failed: {e}")
+                    print_error(f"Sync failed (HTTP {e.response.status_code})")
                 if verbose:
                     import traceback
                     console.print_exception()

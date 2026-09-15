@@ -303,10 +303,8 @@ class CRMAGitSyncService:
             if response.status_code == 401:
                 # Token expired or invalid - provide clear guidance
                 raise httpx.HTTPStatusError(
-                    f"Authentication failed (401 Unauthorized) when accessing {endpoint}. "
-                    f"Your Salesforce session may have expired. "
-                    f"Run 'asftool auth login --alias <your-alias>' to re-authenticate, "
-                    f"then try again.",
+                    "Authentication failed: Your Salesforce session has expired. "
+                    "Run 'asftool auth login --alias <your-alias>' to re-authenticate.",
                     request=response.request,
                     response=response,
                 )
