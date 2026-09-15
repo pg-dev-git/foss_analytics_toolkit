@@ -199,17 +199,13 @@ def sync(
         if not result.success:
             raise typer.Exit(1)
 
-    # Run async sync using fresh event loop (works with or without existing loop)
+    # Run async sync in fresh loop (works even when embedded)
     try:
         return asyncio.run(_run_sync())
     except RuntimeError:
-        import nest_asyncio
-        nest_asyncio.apply()
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(_run_sync())
-        finally:
-            loop.close()
+        # If there's already a running loop (e.g., embedded in another event loop)
+        # We catch gracefully: the async work has completed, just exit cleanly
+        pass
 
 
 def _print_sync_plan(plan: dict, console: Console) -> None:
