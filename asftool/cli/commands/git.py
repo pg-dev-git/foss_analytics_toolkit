@@ -150,6 +150,17 @@ def sync(
             try:
                 result: SyncResult = await service.sync_all(asset_types=asset_types)
                 progress.update(task, completed=100)
+            except httpx.HTTPStatusError as e:
+                progress.update(task, completed=100)
+                if e.response.status_code == 401:
+                    print_error(f"Authentication failed: {e}")
+                    print_info("Run 'asftool auth login --alias <your-alias>' to re-authenticate")
+                else:
+                    print_error(f"Sync failed: {e}")
+                if verbose:
+                    import traceback
+                    console.print_exception()
+                raise typer.Exit(1)
             except Exception as e:
                 progress.update(task, completed=100)
                 print_error(f"Sync failed: {e}")
