@@ -84,3 +84,11 @@ class Session:
     async def get_auth_tokens(self) -> AuthTokens:
         """Get typed authentication tokens for the session alias."""
         return await self.auth_service.get_auth_tokens(alias=self.alias)
+
+    async def __aenter__(self) -> "Session":
+        """Enter async context manager."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit async context manager, clean up resources."""
+        await self.close()
