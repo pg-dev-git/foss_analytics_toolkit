@@ -81,9 +81,20 @@ class Session:
         finally:
             await self.close()
 
-    async def get_auth_tokens(self) -> AuthTokens:
+    async def get_auth_tokens(self, alias: str = "default") -> AuthTokens:
         """Get typed authentication tokens for the session alias."""
-        return await self.auth_service.get_auth_tokens(alias=self.alias)
+        # First try stored token (from previous auth login) without triggering SF CLI login
+        token = await self.token_store.load_token(alias)
+        if token and token.access_token:
+            return AuthTokens(
+                access_token=token.access_token,
+                instance_url=token.instance_url,
+                username=token.username,
+                alias=alias,
+                token_expired=token.is_expired() if hasattr(token, 'is_expired') else False,
+            )
+        # Fallback: retrieve from SF CLI auth service
+        return await self.auth_service.get_auth_tokens(alias=alias)
 
     async def __aenter__(self) -> "Session":
         """Enter async context manager."""
