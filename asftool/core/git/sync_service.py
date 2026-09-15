@@ -299,6 +299,18 @@ class CRMAGitSyncService:
 
         while next_url:
             response = await client.get(next_url)
+
+            if response.status_code == 401:
+                # Token expired or invalid - provide clear guidance
+                raise httpx.HTTPStatusError(
+                    f"Authentication failed (401 Unauthorized) when accessing {endpoint}. "
+                    f"Your Salesforce session may have expired. "
+                    f"Run 'asftool auth login --alias <your-alias>' to re-authenticate, "
+                    f"then try again.",
+                    request=response.request,
+                    response=response,
+                )
+
             response.raise_for_status()
             data = response.json()
 
