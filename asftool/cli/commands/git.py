@@ -8,6 +8,7 @@ Commands:
 """
 
 import asyncio
+import httpx
 from typing import Optional
 
 import typer
