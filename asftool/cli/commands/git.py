@@ -128,7 +128,18 @@ def sync(
         if dry_run:
             # Show dry-run preview
             print_info("Dry-run mode: showing planned changes without syncing")
-            plan = await service.dry_run(asset_types=asset_types)
+            try:
+                plan = await service.dry_run(asset_types=asset_types)
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 401:
+                    print_error("Authentication failed: Your Salesforce session has expired.")
+                    print_info("Run 'asftool auth login --alias <your-alias>' to re-authenticate")
+                else:
+                    print_error(f"Sync failed (HTTP {e.response.status_code})")
+                if verbose:
+                    import traceback
+                    console.print_exception()
+                raise typer.Exit(1)
             _print_sync_plan(plan, console)
             return
 
