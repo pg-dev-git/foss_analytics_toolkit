@@ -134,7 +134,7 @@ def sync(
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:
                     print_error("Authentication failed: Your Salesforce session has expired.")
-                    print_info("Run 'asftool auth login --alias <your-alias>' to re-authenticate")
+                    print_info(f"Run 'asftool auth login --alias {alias}' to re-authenticate")
                 elif e.response.status_code == 404:
                     print_error("CRMA API endpoint not found (404). This usually means:")
                     print_info("  - CRM Analytics (Wave) is not enabled in this org")
@@ -172,7 +172,7 @@ def sync(
                 progress.update(task, completed=100)
                 if e.response.status_code == 401:
                     print_error("Authentication failed: Your Salesforce session has expired.")
-                    print_info("Run 'asftool auth login --alias <your-alias>' to re-authenticate")
+                    print_info(f"Run 'asftool auth login --alias {alias}' to re-authenticate")
                 elif e.response.status_code == 404:
                     print_error("CRMA API endpoint not found (404). This usually means:")
                     print_info("  - CRM Analytics (Wave) is not enabled in this org")
