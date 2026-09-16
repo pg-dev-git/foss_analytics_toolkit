@@ -20,6 +20,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskPr
 
 from asftool.cli.session import Session
 from asftool.cli.ui import print_error, print_info, print_success, print_warning
+from asftool.core.config import Settings, get_settings
 from asftool.core.git import (
     AssetContext,
     CRMAGitSyncService,
@@ -115,10 +116,12 @@ def sync(
         if not verbose and not quiet:
             print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
 
+        settings = get_settings()
         service = CRMAGitSyncService(
             resolver=resolver,
             instance_url=auth_tokens.instance_url,
             access_token=auth_tokens.access_token,
+            settings=settings,
         )
 
         if asset_type == "all":
@@ -280,10 +283,12 @@ def revert(
 
     resolver = RepoMappingResolver.from_file(config_path)
 
+    settings = get_settings()
     service = CRMAGitSyncService(
         resolver=resolver,
         instance_url="https://test.salesforce.com",
         access_token="test-token",
+        settings=settings,
     )
 
     print_info(f"Reverting asset {asset_id} ({asset_type}) to commit {commit}")

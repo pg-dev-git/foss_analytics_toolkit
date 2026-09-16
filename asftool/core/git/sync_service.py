@@ -16,6 +16,7 @@ import httpx
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 
 from asftool.core.auth.git_auth import get_git_auth_service
+from asftool.core.config import Settings, get_settings
 from asftool.core.git.resolver import AssetContext, RepoMappingResolver
 from asftool.core.git.normalizer import CRMANormalizer
 from asftool.core.git.engine import GitEngine
@@ -48,19 +49,6 @@ class RevertResult:
 class CRMAGitSyncService:
     """Core service for syncing CRMA assets to Git and reverting from Git commits."""
 
-    # CRMA asset types and their REST API endpoints
-    ASSET_TYPES = {
-        "dashboard": "/services/data/v68.0/wave/dashboards",
-        "recipe": "/services/data/v68.0/wave/recipes",
-        "dataflow": "/services/data/v68.0/wave/dataflows",
-        "lens": "/services/data/v68.0/wave/lenses",
-        "dataset": "/services/data/v68.0/wave/datasets",
-        "xmd": "/services/data/v68.0/wave/xmds",
-    }
-
-    # Bundle endpoint pattern
-    BUNDLE_ENDPOINT_PATTERN = "/services/data/v68.0/wave/{asset_type}/{asset_id}/bundle"
-
     def __init__(
         self,
         resolver: RepoMappingResolver,
@@ -70,6 +58,7 @@ class CRMAGitSyncService:
         access_token: Optional[str] = None,
         auth_alias: str = "default",
         progress: Optional[Progress] = None,
+        settings: Optional[Settings] = None,
     ):
         """Initialize sync service.
 
@@ -81,6 +70,7 @@ class CRMAGitSyncService:
             access_token: Salesforce access token
             auth_alias: SF CLI auth alias to use
             progress: Optional Rich Progress for CLI feedback
+            settings: Optional Settings for dynamic API version (defaults to get_settings())
         """
         self.resolver = resolver
         self.normalizer = normalizer or CRMANormalizer()
@@ -89,22 +79,65 @@ class CRMAGitSyncService:
         self.access_token = access_token
         self.auth_alias = auth_alias
         self.progress = progress
+        self.settings = settings or get_settings()
 
         # Git auth service for credentials
         self.git_auth_service = get_git_auth_service()
 
+    @property
+    def base_url(self) -> str:
+        """Get the base API URL for this instance."""
+        return f"{self.instance_url}/services/data/{self.settings.sf_api_version}"
+
+    @property
+    def wave_base_url(self) -> str:
+        """Get the Wave/Analytics API base URL."""
+        return f"{self.base_url}/wave"
+
+    # CRMA asset types and their REST API endpoints (relative to wave_base_url)
+    ASSET_TYPES = {
+        "dashboard": "/dashboards",
+        "recipe": "/recipes",
+        "dataflow": "/dataflows",
+        "lens": "/lenses",
+        "dataset": "/datasets",
+        "xmd": "/xmds",
+    }
+
+    # Bundle endpoint pattern (relative to wave_base_url)
+    BUNDLE_ENDPOINT_PATTERN = "/{asset_type}/{asset_id}/bundle"
+
+    def _get_asset_endpoint(self, asset_type: str) -> str:
+        """Get the full endpoint URL for an asset type."""
+        return f"{self.wave_base_url}{self.ASSET_TYPES.get(asset_type, '')}"
+
+    def _get_bundle_endpoint(self, asset_type: str, asset_id: str) -> str:
+        """Get the full bundle endpoint URL for an asset."""
+        return f"{self.wave_base_url}{self.BUNDLE_ENDPOINT_PATTERN.format(asset_type=asset_type, asset_id=asset_id)}"
+
     def _get_sf_client(self) -> httpx.AsyncClient:
         """Create authenticated HTTP client for Salesforce REST API."""
-        # This would integrate with existing SF auth system
-        # For now, return a client that needs proper auth
         headers = {
             "Authorization": f"Bearer {self.access_token}" if self.access_token else "",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": f"{self.settings.app_name}/{self.settings.app_version}",
         }
         return httpx.AsyncClient(
             base_url=self.instance_url,
             headers=headers,
-            timeout=60.0,
+            timeout=httpx.Timeout(
+                connect=10.0,
+                read=60.0,
+                write=30.0,
+                pool=10.0,
+            ),
+            limits=httpx.Limits(
+                max_connections=10,
+                max_keepalive_connections=5,
+                keepalive_expiry=30.0,
+            ),
+            follow_redirects=True,
         )
 
     async def sync_all(
@@ -176,11 +209,10 @@ class CRMAGitSyncService:
 
         async with self._get_sf_client() as client:
             for asset_type in types_to_sync:
-                endpoint = self.ASSET_TYPES.get(asset_type)
-                if not endpoint:
+                if asset_type not in self.ASSET_TYPES:
                     continue
 
-                assets = await self._fetch_all_assets(client, endpoint, asset_type)
+                assets = await self._fetch_all_assets(client, asset_type)
 
                 for asset in assets:
                     context = self._asset_to_context(asset, asset_type)
@@ -230,12 +262,11 @@ class CRMAGitSyncService:
         dry_run: bool,
     ) -> dict[str, Any]:
         """Sync all assets of a specific type."""
-        endpoint = self.ASSET_TYPES.get(asset_type)
-        if not endpoint:
+        if asset_type not in self.ASSET_TYPES:
             return {"total": 0, "synced": 0, "skipped": 0, "errors": [f"Unknown asset type: {asset_type}"], "commit_hash": None, "repo_slug": None}
 
         # Fetch all assets of this type
-        assets = await self._fetch_all_assets(client, endpoint, asset_type)
+        assets = await self._fetch_all_assets(client, asset_type)
 
         # Group by target repository
         assets_by_repo: dict[str, list[dict]] = {}
@@ -290,15 +321,22 @@ class CRMAGitSyncService:
     async def _fetch_all_assets(
         self,
         client: httpx.AsyncClient,
-        endpoint: str,
         asset_type: str,
     ) -> list[dict[str, Any]]:
         """Fetch all assets of a type from CRMA REST API with pagination."""
         assets = []
+        endpoint = self._get_asset_endpoint(asset_type)
         next_url = endpoint
 
         while next_url:
-            response = await client.get(next_url)
+            # nextPageUrl from Salesforce is a full URL, so we need to handle both cases
+            # If it's a full URL, use it directly; otherwise prepend base_url
+            if next_url.startswith("http"):
+                url = next_url
+            else:
+                url = f"{self.instance_url}{next_url}"
+
+            response = await client.get(url)
 
             if response.status_code == 401:
                 # Token expired or invalid - provide clear guidance
@@ -318,10 +356,10 @@ class CRMAGitSyncService:
                 except Exception:
                     error_detail = {"raw": error_body}
                 # Print directly so user sees it regardless of exception formatting
-                print(f"[DEBUG] Salesforce 404 Response URL: {next_url}")
+                print(f"[DEBUG] Salesforce 404 Response URL: {url}")
                 print(f"[DEBUG] Response Body: {error_detail}")
                 raise httpx.HTTPStatusError(
-                    f"CRMA API endpoint not found (404). URL: {next_url}\n"
+                    f"CRMA API endpoint not found (404). URL: {url}\n"
                     f"Response: {error_detail}\n"
                     f"This usually means:\n"
                     f"  - CRM Analytics (Wave) is not enabled in this org\n"
@@ -590,10 +628,7 @@ class CRMAGitSyncService:
     ) -> bool:
         """Deploy asset bundle to CRMA via PUT /wave/<assetType>/<id>/bundle."""
         try:
-            endpoint = self.BUNDLE_ENDPOINT_PATTERN.format(
-                asset_type=asset_type,
-                asset_id=asset_id,
-            )
+            endpoint = self._get_bundle_endpoint(asset_type, asset_id)
 
             async with self._get_sf_client() as client:
                 response = await client.put(
@@ -612,6 +647,7 @@ def create_sync_service(
     access_token: str,
     auth_alias: str = "default",
     progress: Optional[Progress] = None,
+    settings: Optional[Settings] = None,
 ) -> CRMAGitSyncService:
     """Factory function to create sync service."""
     return CRMAGitSyncService(
@@ -620,4 +656,5 @@ def create_sync_service(
         access_token=access_token,
         auth_alias=auth_alias,
         progress=progress,
+        settings=settings,
     )
