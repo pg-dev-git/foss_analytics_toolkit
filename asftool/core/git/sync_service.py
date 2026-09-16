@@ -50,16 +50,16 @@ class CRMAGitSyncService:
 
     # CRMA asset types and their REST API endpoints
     ASSET_TYPES = {
-        "dashboard": "/services/data/v60.0/wave/dashboards",
-        "recipe": "/services/data/v60.0/wave/recipes",
-        "dataflow": "/services/data/v60.0/wave/dataflows",
-        "lens": "/services/data/v60.0/wave/lenses",
-        "dataset": "/services/data/v60.0/wave/datasets",
-        "xmd": "/services/data/v60.0/wave/xmds",
+        "dashboard": "/services/data/v68.0/wave/dashboards",
+        "recipe": "/services/data/v68.0/wave/recipes",
+        "dataflow": "/services/data/v68.0/wave/dataflows",
+        "lens": "/services/data/v68.0/wave/lenses",
+        "dataset": "/services/data/v68.0/wave/datasets",
+        "xmd": "/services/data/v68.0/wave/xmds",
     }
 
     # Bundle endpoint pattern
-    BUNDLE_ENDPOINT_PATTERN = "/services/data/v60.0/wave/{asset_type}/{asset_id}/bundle"
+    BUNDLE_ENDPOINT_PATTERN = "/services/data/v68.0/wave/{asset_type}/{asset_id}/bundle"
 
     def __init__(
         self,
