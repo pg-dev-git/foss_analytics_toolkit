@@ -310,13 +310,16 @@ class CRMAGitSyncService:
                 )
 
             if response.status_code == 404:
-                # Capture response body for debugging
+                # Capture full response body for debugging (print to stdout)
                 error_body = response.text
                 try:
                     error_json = response.json()
                     error_detail = error_json
                 except Exception:
                     error_detail = {"raw": error_body}
+                # Print directly so user sees it regardless of exception formatting
+                print(f"[DEBUG] Salesforce 404 Response URL: {next_url}")
+                print(f"[DEBUG] Response Body: {error_detail}")
                 raise httpx.HTTPStatusError(
                     f"CRMA API endpoint not found (404). URL: {next_url}\n"
                     f"Response: {error_detail}\n"

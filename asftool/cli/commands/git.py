@@ -184,10 +184,26 @@ def sync(
                 raise typer.Exit(1)
             except Exception as e:
                 progress.update(task, completed=100)
-                print_error(f"Sync failed: {e}")
+                error_str = str(e)
+                # Clean up: show just first line (no full traceback unless verbose)
+                clean_error = error_str.split("
+")[0][:200] if error_str else "Unknown error"
+                if "401" in clean_error or "Unauthorized" in clean_error:
+                    print_error("Authentication failed: Your Salesforce session has expired.")
+                    print_info(f"Run 'asftool auth login --alias {alias}' to re-authenticate")
+                elif "404" in clean_error or "NOT_FOUND" in clean_error:
+                    print_error(f"CRMA API endpoint not found (404): {clean_error}")
+                    print_info("This usually means CRM Analytics (Wave) is not enabled or endpoint URL is incorrect")
+                else:
+                    # For connection/network errors, suppress full traceback
+                    print_error(f"Sync failed: {clean_error}")
+                    print_info(f"Use --verbose to see full traceback. Check network and endpoint URL.")
                 if verbose:
                     import traceback
                     console.print_exception()
+                else:
+                    # Brief note that verbose mode exists
+                    pass
                 raise typer.Exit(1)
 
         # Print results
