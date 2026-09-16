@@ -136,11 +136,8 @@ def sync(
                     print_error("Authentication failed: Your Salesforce session has expired.")
                     print_info(f"Run 'asftool auth login --alias {alias}' to re-authenticate")
                 elif e.response.status_code == 404:
-                    print_error("CRMA API endpoint not found (404). This usually means:")
-                    print_info("  - CRM Analytics (Wave) is not enabled in this org")
-                    print_info("  - The API version may be incorrect")
-                    print_info("  - The user lacks CRM Analytics license")
-                    print_info("Try: asftool datasets list --alias <alias> to verify API access")
+                    # Print the actual error message which includes the full response
+                    print_error(str(e))
                 else:
                     print_error(f"Sync failed (HTTP {e.response.status_code})")
                 if verbose:
