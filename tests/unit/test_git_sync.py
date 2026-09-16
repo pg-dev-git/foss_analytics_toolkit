@@ -39,8 +39,17 @@ def mock_crma_dashboard():
 @respx.mock
 def test_sync_service_dry_run(mock_crma_dashboard):
     """Integration: dry_run returns plan without making Git changes."""
-    # Mock the CRMA REST endpoint
-    route = respx.get("/services/data/v60.0/wave/dashboards").mock(
+    # Use a custom settings with known API version for testing
+    from asftool.core.config import Settings
+
+    test_settings = Settings(
+        ENCRYPTION_KEY="LzLb1AK5iiGgy3e6gbnireGJ16sYvia7RcvUUNWuw5Q=",
+        JWT_SECRET_KEY="test-jwt-secret-key-that-is-at-least-32-chars-long",
+        SF_API_VERSION="v68.0",
+    )
+
+    # Mock the CRMA REST endpoint - use dynamic API version (test v68.0)
+    route = respx.get("/services/data/v68.0/wave/dashboards").mock(
         return_value=httpx.Response(
             200,
             json={
@@ -75,6 +84,7 @@ def test_sync_service_dry_run(mock_crma_dashboard):
         resolver=resolver,
         instance_url="https://test.salesforce.com",
         access_token="test-token",
+        settings=test_settings,
     )
 
     # The dry_run would call the REST endpoint; in test environment
@@ -82,6 +92,10 @@ def test_sync_service_dry_run(mock_crma_dashboard):
     assert service is not None
     assert service.normalizer is not None
     assert service.workspace_manager is not None
+    # Verify dynamic URL construction works
+    assert service.base_url == "https://test.salesforce.com/services/data/v68.0"
+    assert service.wave_base_url == "https://test.salesforce.com/services/data/v68.0/wave"
+    assert service._get_asset_endpoint("dashboard") == "https://test.salesforce.com/services/data/v68.0/wave/dashboards"
 
 
 def test_sync_result_dataclass():
