@@ -65,10 +65,10 @@ def _to_async_cb(cb: Callable | None) -> Callable | None:
 
 
 async def list_datasets_async(
-    page_size: int = 50, sort: str = "Mru"
+    page_size: int = 50, sort: str = "Mru", alias: str = "default"
 ) -> None:
     """List all datasets."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DatasetService(client, session.settings)
@@ -234,9 +234,10 @@ async def show_dataset_async(dataset_id: str) -> None:
 def list_datasets(
     page_size: int = typer.Option(50, "--page-size", help="Page size"),
     sort: str = typer.Option("Mru", "--sort", help="Sort order: Mru, Name, CreatedDate"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """List all datasets."""
-    _run(list_datasets_async(page_size=page_size, sort=sort))
+    _run(list_datasets_async(page_size=page_size, sort=sort, alias=alias))
 
 
 @app.command("extract")
