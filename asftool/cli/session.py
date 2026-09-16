@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 
+import os
 from asftool.core.auth import SFCLIAuthService
 from asftool.core.auth.token_store import TokenStore
 from asftool.core.client import SalesforceClient
@@ -35,9 +36,15 @@ class Session:
         self.alias = alias
         self.settings = settings or get_settings()
         self.crypto = crypto or create_crypto_manager()
+        # Ensure crypto manager is valid before creating token store
+        if self.crypto is None:
+            from asftool.core.crypto import CryptoManager
+            import base64
+            temp_key = base64.urlsafe_b64encode(os.urandom(32)).decode()
+            self.crypto = CryptoManager(temp_key)
         self._auth_service: SFCLIAuthService | None = None
         self._client: SalesforceClient | None = None
-        self.token_store = TokenStore(crypto)
+        self.token_store = TokenStore(self.crypto)
 
     @property
     def auth_service(self) -> SFCLIAuthService:
