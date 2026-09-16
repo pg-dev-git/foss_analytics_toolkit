@@ -95,13 +95,15 @@ class CRMAGitSyncService:
         return f"{self.base_url}/wave"
 
     # CRMA asset types and their REST API endpoints (relative to wave_base_url)
+    # Note: "xmd" is NOT included because XMD (Extended Metadata) does not have
+    # a standalone list endpoint. XMDs are accessed per dataset via:
+    # /datasets/{dataset_id}/versions/{version_id}/xmds/main
     ASSET_TYPES = {
         "dashboard": "/dashboards",
         "recipe": "/recipes",
         "dataflow": "/dataflows",
         "lens": "/lenses",
         "dataset": "/datasets",
-        "xmd": "/xmds",
     }
 
     # Bundle endpoint pattern (relative to wave_base_url)
