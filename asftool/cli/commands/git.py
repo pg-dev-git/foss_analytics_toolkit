@@ -106,7 +106,7 @@ def sync(
         # Get SF auth tokens from session
         async with Session(alias=alias) as session:
             try:
-                auth_tokens = await session.get_auth_tokens()
+                auth_tokens = await session.get_auth_tokens(alias=alias)
             except Exception as e:
                 print_error(f"Failed to get auth tokens: {e}")
                 print_info("Run 'asftool auth login --alias {alias}' first")
