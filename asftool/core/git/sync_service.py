@@ -309,6 +309,26 @@ class CRMAGitSyncService:
                     response=response,
                 )
 
+            if response.status_code == 404:
+                # Capture response body for debugging
+                error_body = response.text
+                try:
+                    error_json = response.json()
+                    error_detail = error_json
+                except Exception:
+                    error_detail = {"raw": error_body}
+                raise httpx.HTTPStatusError(
+                    f"CRMA API endpoint not found (404). URL: {next_url}\n"
+                    f"Response: {error_detail}\n"
+                    f"This usually means:\n"
+                    f"  - CRM Analytics (Wave) is not enabled in this org\n"
+                    f"  - The API version may be incorrect\n"
+                    f"  - The user lacks CRM Analytics license\n"
+                    f"Try: asftool datasets list --alias <alias> to verify API access",
+                    request=response.request,
+                    response=response,
+                )
+
             response.raise_for_status()
             data = response.json()
 
