@@ -186,8 +186,7 @@ def sync(
                 progress.update(task, completed=100)
                 error_str = str(e)
                 # Clean up: show just first line (no full traceback unless verbose)
-                clean_error = error_str.split("
-")[0][:200] if error_str else "Unknown error"
+                clean_error = error_str.split("\n")[0][:200] if error_str else "Unknown error"
                 if "401" in clean_error or "Unauthorized" in clean_error:
                     print_error("Authentication failed: Your Salesforce session has expired.")
                     print_info(f"Run 'asftool auth login --alias {alias}' to re-authenticate")
