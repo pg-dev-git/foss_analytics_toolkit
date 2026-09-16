@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 import structlog
 
 from asftool.core.auth import SFCLIAuthService
+from asftool.core.auth.token_store import TokenStore
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
 from asftool.core.crypto import CryptoManager, create_crypto_manager
@@ -47,6 +48,7 @@ class Session:
                 self.crypto = None
         self._auth_service: SFCLIAuthService | None = None
         self._client: SalesforceClient | None = None
+        self.token_store = TokenStore(crypto)
 
     @property
     def auth_service(self) -> SFCLIAuthService:
