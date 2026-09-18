@@ -330,6 +330,17 @@ class CRMAGitSyncService:
         endpoint = self._get_asset_endpoint(asset_type)
         next_url = endpoint
 
+        # Map asset_type to the response key that contains the array of assets
+        # Salesforce Wave API uses different keys for different asset types
+        asset_key_map = {
+            "dashboard": "dashboards",
+            "dataset": "datasets",
+            "recipe": "recipes",
+            "dataflow": "dataflows",
+            "lens": "lenses",
+        }
+        asset_key = asset_key_map.get(asset_type, "records")
+
         while next_url:
             # nextPageUrl from Salesforce is a full URL, so we need to handle both cases
             # If it's a full URL, use it directly; otherwise prepend base_url
@@ -375,8 +386,8 @@ class CRMAGitSyncService:
             response.raise_for_status()
             data = response.json()
 
-            if "records" in data:
-                assets.extend(data["records"])
+            if asset_key in data:
+                assets.extend(data[asset_key])
 
             next_url = data.get("nextPageUrl")
 
