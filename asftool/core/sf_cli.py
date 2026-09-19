@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -226,6 +227,9 @@ class SFCLIManager:
         cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli", command=cmd)
 
+        # Filter out SF_API_VERSION to avoid SF CLI behavior changes
+        env = {k: v for k, v in os.environ.items() if k != "SF_API_VERSION"}
+
         try:
             result = subprocess.run(
                 cmd,
@@ -268,7 +272,9 @@ class SFCLIManager:
         cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli_async", command=cmd)
 
-        import sys
+        # Filter out SF_API_VERSION to avoid SF CLI behavior changes
+        env = {k: v for k, v in os.environ.items() if k != "SF_API_VERSION"}
+
         # On Windows, SF CLI is often a .cmd file which needs shell execution.
         # Use create_subprocess_shell with a properly quoted command string on Windows.
         if sys.platform == "win32":
