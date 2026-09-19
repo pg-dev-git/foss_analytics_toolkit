@@ -65,7 +65,7 @@ def _to_async_cb(cb: Callable | None) -> Callable | None:
 
 
 async def list_datasets_async(
-    page_size: int = 50, sort: str = "Mru", alias: str = "default"
+    page_size: int = 50, sort: str = "Mru", alias: str | None = None
 ) -> None:
     """List all datasets."""
     session = Session(alias=alias)
@@ -107,7 +107,7 @@ async def list_datasets_async(
 async def extract_dataset_async(
     dataset_id: str,
     output: Path | None = None,
-    alias: str = "default",
+    alias: str | None = None,
     show_progress: bool = True,
 ) -> None:
     """Extract dataset to CSV."""
@@ -148,9 +148,10 @@ async def upload_dataset_async(
     name: str | None = None,
     operation: Literal["Overwrite", "Append"] = "Overwrite",
     show_progress: bool = True,
+    alias: str | None = None,
 ) -> None:
     """Upload CSV to dataset."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DatasetService(client, session.settings)
@@ -182,9 +183,9 @@ async def upload_dataset_async(
         await session.close()
 
 
-async def delete_dataset_async(dataset_id: str) -> None:
+async def delete_dataset_async(dataset_id: str, alias: str | None = None) -> None:
     """Delete a dataset (no confirmation — menu callers handle UX)."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DatasetService(client, session.settings)
@@ -200,9 +201,9 @@ async def delete_dataset_async(dataset_id: str) -> None:
         await session.close()
 
 
-async def show_dataset_async(dataset_id: str) -> None:
+async def show_dataset_async(dataset_id: str, alias: str | None = None) -> None:
     """Show dataset details."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DatasetService(client, session.settings)
@@ -272,6 +273,7 @@ def upload_dataset(
     show_progress: bool = typer.Option(
         True, "--progress/--no-progress", help="Show progress"
     ),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Upload CSV to dataset."""
     _run(
@@ -281,6 +283,7 @@ def upload_dataset(
             name=name,
             operation=operation,
             show_progress=show_progress,
+            alias=alias,
         )
     )
 
@@ -289,6 +292,7 @@ def upload_dataset(
 def delete_dataset(
     dataset_id: str = typer.Argument(..., help="Dataset ID"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Delete a dataset."""
     if not force:
@@ -296,12 +300,13 @@ def delete_dataset(
         if not confirm:
             print_info("Cancelled")
             return
-    _run(delete_dataset_async(dataset_id=dataset_id))
+    _run(delete_dataset_async(dataset_id=dataset_id, alias=alias))
 
 
 @app.command("show")
 def show_dataset(
     dataset_id: str = typer.Argument(..., help="Dataset ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Show dataset details."""
-    _run(show_dataset_async(dataset_id=dataset_id))
+    _run(show_dataset_async(dataset_id=dataset_id, alias=alias))

@@ -49,7 +49,7 @@ from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
 from asftool.cli.commands.mcp import app as mcp_app
 from asftool.cli.menu import Menu, create_menus
-from asftool.cli.session import Session
+from asftool.cli.session import Session, get_current_session_alias, set_current_session_alias
 from asftool.cli.ui import console, print_error, print_header, print_info, print_warning
 
 app = typer.Typer(
@@ -241,6 +241,7 @@ async def _run_menu_loop(main_menu: Menu) -> None:
                 elif isinstance(selection, SelectedOrg):
                     # User selected an existing org - import it
                     session.alias = selection.alias
+                    set_current_session_alias(selection.alias)  # Set context for menu handlers
                     try:
                         await session.auth_service.import_sf_cli_session(selection.alias)
                         console.print(f"[green]Imported SF CLI session for '{selection.alias}'[/green]")

@@ -6,6 +6,7 @@ Manages a single SFCLIAuthService + SalesforceClient per command.
 
 from contextlib import asynccontextmanager
 from typing import Any
+from contextvars import ContextVar
 
 import structlog
 
@@ -19,6 +20,19 @@ from asftool.core.models.auth_tokens import AuthTokens
 
 logger = structlog.get_logger(__name__)
 
+# Context variable to store the current session alias for the interactive menu loop
+_current_session_alias: ContextVar[str | None] = ContextVar("_current_session_alias", default=None)
+
+
+def get_current_session_alias() -> str | None:
+    """Get the current session alias from context."""
+    return _current_session_alias.get()
+
+
+def set_current_session_alias(alias: str | None) -> None:
+    """Set the current session alias in context."""
+    _current_session_alias.set(alias)
+
 
 class Session:
     """Manages authenticated session for a single CLI command or menu action.
@@ -30,11 +44,12 @@ class Session:
 
     def __init__(
         self,
-        alias: str = "default",
+        alias: str | None = None,
         settings: Settings | None = None,
         crypto: CryptoManager | None = None,
     ):
-        self.alias = alias
+        # Use context alias if available, otherwise fallback to "default"
+        self.alias = alias or get_current_session_alias() or "default"
         self.settings = settings or get_settings()
         self.crypto = crypto or create_crypto_manager()
         # Ensure crypto manager is valid before creating token store

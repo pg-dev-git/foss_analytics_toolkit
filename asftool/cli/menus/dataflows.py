@@ -61,7 +61,7 @@ async def backup_dataflow() -> None:
 
     try:
         await backup_dataflow_async(
-            dataflow_id=dataflow_id, output=Path(output), alias=session.alias
+            dataflow_id=dataflow_id, output=Path(output)
         )
     except typer.Exit:
         pass

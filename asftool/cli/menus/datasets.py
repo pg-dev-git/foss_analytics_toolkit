@@ -63,7 +63,7 @@ async def extract_dataset() -> None:
         return
 
     try:
-        await extract_dataset_async(dataset_id=dataset_id, output=Path(output), alias=session.alias)
+        await extract_dataset_async(dataset_id=dataset_id, output=Path(output))
     except typer.Exit:
         pass
 

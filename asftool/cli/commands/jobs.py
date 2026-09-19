@@ -45,9 +45,9 @@ _STATUS_COLORS = {
 # ---------------------------------------------------------------------------
 
 
-async def list_jobs_async() -> None:
+async def list_jobs_async(alias: str | None = None) -> None:
     """List all dataflow jobs."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -87,9 +87,9 @@ async def list_jobs_async() -> None:
         await session.close()
 
 
-async def show_job_async(job_id: str) -> None:
+async def show_job_async(job_id: str, alias: str | None = None) -> None:
     """Show job details."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -127,14 +127,17 @@ async def show_job_async(job_id: str) -> None:
 
 
 @app.command("list")
-def list_jobs():
+def list_jobs(
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
+):
     """List all dataflow jobs."""
-    _run(list_jobs_async())
+    _run(list_jobs_async(alias=alias))
 
 
 @app.command("show")
 def show_job(
     job_id: str = typer.Argument(..., help="Job ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Show job details."""
-    _run(show_job_async(job_id=job_id))
+    _run(show_job_async(job_id=job_id, alias=alias))

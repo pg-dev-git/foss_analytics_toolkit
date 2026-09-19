@@ -75,12 +75,13 @@ async def analyze_field_async(
     include_dashboards: bool = True,
     include_dataflows: bool = True,
     include_replicated: bool = True,
+    alias: str | None = None,
 ) -> Path | None:
     """Run the field analyzer.
 
     Returns the path of the saved JSON report (always written, regardless of fmt).
     """
-    session = Session()
+    session = Session(alias=alias)
     try:
         from asftool.core.models import MatchMode
 
@@ -226,6 +227,7 @@ def analyze(
     no_dashboards: bool = typer.Option(False, "--no-dashboards", help="Skip dashboard scanning"),
     no_dataflows: bool = typer.Option(False, "--no-dataflows", help="Skip dataflow scanning"),
     no_replicated: bool = typer.Option(False, "--no-replicated", help="Skip replicated dataset scanning"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ) -> None:
     """Analyze where a field is used across all ASFT assets."""
     _apply_api_version_override(api_version)
@@ -241,5 +243,6 @@ def analyze(
             include_dashboards=not no_dashboards,
             include_dataflows=not no_dataflows,
             include_replicated=not no_replicated,
+            alias=alias,
         )
     )

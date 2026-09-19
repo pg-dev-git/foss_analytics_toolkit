@@ -38,10 +38,10 @@ def _run(coro):
 
 
 async def list_dashboards_async(
-    page_size: int = 50, sort: str = "Mru"
+    page_size: int = 50, sort: str = "Mru", alias: str | None = None
 ) -> None:
     """List all dashboards."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DashboardService(client, session.settings)
@@ -77,7 +77,7 @@ async def list_dashboards_async(
         await session.close()
 
 
-async def backup_dashboard_async(dashboard_id: str, output: Path | None = None, alias: str = "default") -> None:
+async def backup_dashboard_async(dashboard_id: str, output: Path | None = None, alias: str | None = None) -> None:
     """Backup dashboard JSON definition."""
     session = Session(alias=alias)
     try:
@@ -99,9 +99,9 @@ async def backup_dashboard_async(dashboard_id: str, output: Path | None = None, 
         await session.close()
 
 
-async def show_dashboard_async(dashboard_id: str) -> None:
+async def show_dashboard_async(dashboard_id: str, alias: str | None = None) -> None:
     """Show dashboard details."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DashboardService(client, session.settings)
@@ -135,9 +135,10 @@ async def show_dashboard_async(dashboard_id: str) -> None:
 def list_dashboards(
     page_size: int = typer.Option(50, "--page-size", help="Page size"),
     sort: str = typer.Option("Mru", "--sort", help="Sort order: Mru, Name, CreatedDate"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """List all dashboards."""
-    _run(list_dashboards_async(page_size=page_size, sort=sort))
+    _run(list_dashboards_async(page_size=page_size, sort=sort, alias=alias))
 
 
 @app.command("backup")
@@ -155,6 +156,7 @@ def backup_dashboard(
 @app.command("show")
 def show_dashboard(
     dashboard_id: str = typer.Argument(..., help="Dashboard ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Show dashboard details."""
-    _run(show_dashboard_async(dashboard_id=dashboard_id))
+    _run(show_dashboard_async(dashboard_id=dashboard_id, alias=alias))
