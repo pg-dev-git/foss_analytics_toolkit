@@ -369,8 +369,14 @@ class SFCLIAuthService:
                 }
 
             # Org is authenticated in SF CLI, get details
+            # Note: we check auth via SF CLI session state, not token validity
             org_info = await self.sf_cli.get_org_info(alias)
-            access_token = await self.sf_cli.get_access_token(alias)
+            try:
+                access_token = await self.sf_cli.get_access_token(alias)
+                has_token = bool(access_token)
+            except Exception:
+                access_token = None
+                has_token = False
 
             return {
                 "authenticated": True,
@@ -378,7 +384,7 @@ class SFCLIAuthService:
                 "username": org_info.username,
                 "instance_url": org_info.instance_url,
                 "message": f"SF CLI has authenticated session for '{alias}'",
-                "has_valid_token": bool(access_token),
+                "has_valid_token": has_token,
             }
 
         except Exception as e:

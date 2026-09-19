@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     )
 
     # SF CLI Auto-Import Settings
-    auto_import_sf_cli_session: bool = Field(default=False, alias="AUTO_IMPORT_SF_CLI_SESSION")
+    auto_import_sf_cli_session: bool = Field(default=True, alias="AUTO_IMPORT_SF_CLI_SESSION")
 
     @field_validator("sf_api_version")
     @classmethod

@@ -483,7 +483,7 @@ class SFCLIManager:
         try:
             orgs = self.list_orgs()
             for org in orgs:
-                if org.get("alias") == alias and org.get("connectedStatus") == "Connected":
+                if org.get("alias") == alias and org.get("connectedStatus") in ("Connected", "fetch failed"):
                     return True
             return False
         except Exception:
@@ -507,9 +507,10 @@ class SFCLIManager:
             args = ["org", "list", "--json", "--all"]
             result = await self._run_command_async(args)
             output = json.loads(result.stdout)
-            orgs = output.get("result", {}).get("orgs", [])
+            result = output.get("result", {})
+            orgs = result.get("other", []) + result.get("nonScratchOrgs", []) + result.get("devHubs", []) + result.get("scratchOrgs", [])
             for org in orgs:
-                if org.get("alias") == alias and org.get("connectedStatus") == "Connected":
+                if org.get("alias") == alias and org.get("connectedStatus") in ("Connected", "fetch failed"):
                     return True
             return False
         except Exception:
@@ -527,16 +528,15 @@ class SFCLIManager:
         """
         if not self.is_available():
             return []
-
         try:
             args = ["org", "list", "--json", "--all"]
             result = await self._run_command_async(args)
             output = json.loads(result.stdout)
-            orgs = output.get("result", {}).get("orgs", [])
-
+            result_data = output.get("result", {})
+            orgs = result_data.get("other", []) + result_data.get("nonScratchOrgs", []) + result_data.get("devHubs", []) + result_data.get("scratchOrgs", [])
             connected_orgs = []
             for org in orgs:
-                if org.get("connectedStatus") == "Connected":
+                if org.get("connectedStatus") in ("Connected", "fetch failed"):
                     connected_orgs.append({
                         "alias": org.get("alias", "unknown"),
                         "username": org.get("username"),
