@@ -326,6 +326,125 @@ class SFCLIAuthService:
             logger.error("list_orgs_failed", error=str(e))
             return []
 
+    async def check_sf_cli_auth(self, alias: str = "default") -> dict[str, Any]:
+        """
+        Check if SF CLI already has an authenticated session for the given alias.
+
+        This method checks SF CLI directly (not the token store) to see if
+        an org is already authorized and connected. This is useful before
+        initiating a login flow to avoid re-authentication when SF CLI
+        already has a valid session.
+
+        Args:
+            alias: Org alias to check
+
+        Returns:
+            Dictionary with authentication status:
+            - authenticated: bool - whether SF CLI has auth for this alias
+            - alias: str - the alias checked
+            - username: str | None - username if authenticated
+            - instance_url: str | None - instance URL if authenticated
+            - message: str - human-readable status message
+        """
+        if not self.sf_cli.is_available():
+            return {
+                "authenticated": False,
+                "alias": alias,
+                "username": None,
+                "instance_url": None,
+                "message": "SF CLI not available",
+            }
+
+        try:
+            # Check if org is in SF CLI's authorized list
+            is_authenticated = await self.sf_cli.is_org_authenticated_async(alias)
+
+            if not is_authenticated:
+                return {
+                    "authenticated": False,
+                    "alias": alias,
+                    "username": None,
+                    "instance_url": None,
+                    "message": f"No authenticated session found for alias '{alias}' in SF CLI",
+                }
+
+            # Org is authenticated in SF CLI, get details
+            org_info = await self.sf_cli.get_org_info(alias)
+            access_token = await self.sf_cli.get_access_token(alias)
+
+            return {
+                "authenticated": True,
+                "alias": alias,
+                "username": org_info.username,
+                "instance_url": org_info.instance_url,
+                "message": f"SF CLI has authenticated session for '{alias}'",
+                "has_valid_token": bool(access_token),
+            }
+
+        except Exception as e:
+            logger.warning("sf_cli_auth_check_failed", alias=alias, error=str(e))
+            return {
+                "authenticated": False,
+                "alias": alias,
+                "username": None,
+                "instance_url": None,
+                "message": f"Failed to check SF CLI auth: {e}",
+            }
+
+    async def get_sf_cli_orgs(self) -> list[dict[str, Any]]:
+        """
+        Get detailed list of all authenticated orgs from SF CLI.
+
+        Returns:
+            List of dicts with: alias, username, instance_url, connected_status
+        """
+        if not self.sf_cli.is_available():
+            return []
+
+        return await self.sf_cli.get_sf_cli_orgs()
+
+    async def import_sf_cli_session(self, alias: str = "default") -> str:
+        """
+        Import an existing SF CLI authenticated session into the token store.
+
+        This method takes an already-authenticated SF CLI session and stores
+        the token in our encrypted token store for use by the application.
+
+        Args:
+            alias: Org alias to import
+
+        Returns:
+            Access token
+
+        Raises:
+            SFCLIAuthError: If no authenticated session exists in SF CLI
+        """
+        if not self.sf_cli.is_available():
+            raise SFCLIAuthError("SF CLI not available")
+
+        # Check if org is authenticated in SF CLI
+        is_authenticated = await self.sf_cli.is_org_authenticated_async(alias)
+        if not is_authenticated:
+            raise SFCLIAuthError(f"No authenticated session for alias '{alias}' in SF CLI. Run 'sf org login web' first.")
+
+        # Get org info and access token from SF CLI
+        org_info = await self.sf_cli.get_org_info(alias)
+        access_token = await self.sf_cli.get_access_token(alias)
+
+        # Store in token store
+        stored_token = StoredToken(
+            access_token=access_token,
+            instance_url=org_info.instance_url or "",
+            refresh_token=org_info.refresh_token,
+            expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
+            alias=org_info.alias,
+            username=org_info.username,
+        )
+        await self.token_store.save_token(stored_token)
+
+        logger.info("sf_cli_session_imported", alias=alias, username=org_info.username)
+        return access_token
+
     async def get_auth_tokens(self, alias: str = "default") -> AuthTokens:
         """
         Get typed authentication tokens for an alias.

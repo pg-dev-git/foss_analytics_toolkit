@@ -463,3 +463,87 @@ class SFCLIManager:
             return output.get("result", {}).get("orgs", [])  # type: ignore[no-any-return]
         except (json.JSONDecodeError, KeyError):
             return []
+
+    def is_org_authenticated(self, alias: str = "default") -> bool:
+        """
+        Check if a specific org alias is authenticated in SF CLI.
+
+        This method checks if the org exists in SF CLI's authorized orgs list
+        and has a connected status, without triggering any login flow.
+
+        Args:
+            alias: Org alias to check
+
+        Returns:
+            True if the org is authenticated and connected, False otherwise
+        """
+        if not self.is_available():
+            return False
+
+        try:
+            orgs = self.list_orgs()
+            for org in orgs:
+                if org.get("alias") == alias and org.get("connectedStatus") == "Connected":
+                    return True
+            return False
+        except Exception:
+            return False
+
+    async def is_org_authenticated_async(self, alias: str = "default") -> bool:
+        """
+        Check if a specific org alias is authenticated in SF CLI (async version).
+
+        Args:
+            alias: Org alias to check
+
+        Returns:
+            True if the org is authenticated and connected, False otherwise
+        """
+        if not self.is_available():
+            return False
+
+        try:
+            # Use async org list command
+            args = ["org", "list", "--json", "--all"]
+            result = await self._run_command_async(args)
+            output = json.loads(result.stdout)
+            orgs = output.get("result", {}).get("orgs", [])
+            for org in orgs:
+                if org.get("alias") == alias and org.get("connectedStatus") == "Connected":
+                    return True
+            return False
+        except Exception:
+            return False
+
+    async def get_sf_cli_orgs(self) -> list[dict[str, Any]]:
+        """
+        Get detailed list of all authenticated orgs from SF CLI.
+
+        Returns a list of dicts with: alias, username, instance_url, connected_status.
+        Only returns orgs with connectedStatus == "Connected".
+
+        Returns:
+            List of authenticated org details
+        """
+        if not self.is_available():
+            return []
+
+        try:
+            args = ["org", "list", "--json", "--all"]
+            result = await self._run_command_async(args)
+            output = json.loads(result.stdout)
+            orgs = output.get("result", {}).get("orgs", [])
+
+            connected_orgs = []
+            for org in orgs:
+                if org.get("connectedStatus") == "Connected":
+                    connected_orgs.append({
+                        "alias": org.get("alias", "unknown"),
+                        "username": org.get("username"),
+                        "instance_url": org.get("instanceUrl"),
+                        "connected_status": org.get("connectedStatus"),
+                    })
+            return connected_orgs
+        except Exception as e:
+            logger.warning("get_sf_cli_orgs_failed", error=str(e))
+            return []

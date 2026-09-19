@@ -67,6 +67,9 @@ class Settings(BaseSettings):
         default="both", alias="FIELD_IMPACT_DEFAULT_MATCH_MODE"
     )
 
+    # SF CLI Auto-Import Settings
+    auto_import_sf_cli_session: bool = Field(default=False, alias="AUTO_IMPORT_SF_CLI_SESSION")
+
     @field_validator("sf_api_version")
     @classmethod
     def validate_sf_api_version(cls, v: str) -> str:

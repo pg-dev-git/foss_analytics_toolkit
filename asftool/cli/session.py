@@ -5,6 +5,7 @@ Manages a single SFCLIAuthService + SalesforceClient per command.
 """
 
 from contextlib import asynccontextmanager
+from typing import Any
 
 import structlog
 
@@ -104,6 +105,18 @@ class Session:
             )
         # Fallback: retrieve from SF CLI auth service
         return await self.auth_service.get_auth_tokens(alias=alias)
+
+    async def check_sf_cli_auth(self, alias: str = "default") -> dict[str, Any]:
+        """Check if SF CLI has an authenticated session for the alias."""
+        return await self.auth_service.check_sf_cli_auth(alias=alias)
+
+    async def import_sf_cli_session(self, alias: str = "default") -> str:
+        """Import an existing SF CLI authenticated session into the token store."""
+        return await self.auth_service.import_sf_cli_session(alias=alias)
+
+    async def get_sf_cli_orgs(self) -> list[dict[str, Any]]:
+        """Get detailed list of all authenticated orgs from SF CLI."""
+        return await self.auth_service.get_sf_cli_orgs()
 
     async def __aenter__(self) -> "Session":
         """Enter async context manager."""

@@ -42,8 +42,13 @@ async def login_async(
     instance_url: str | None = None,
     device: bool = False,
     timeout: int = 300,
+    force: bool = False,
 ) -> None:
-    """Authenticate via SF CLI web (default) or device flow."""
+    """Authenticate via SF CLI web (default) or device flow.
+
+    If SF CLI already has an authenticated session for the alias, it will be
+    imported automatically unless --force is specified.
+    """
     session = Session(alias=alias)
 
     if not session.auth_service.sf_cli.is_available():
@@ -52,6 +57,25 @@ async def login_async(
             "Install from: https://developer.salesforce.com/tools/sfdxcli"
         )
         raise typer.Exit(1)
+
+    # Check if SF CLI already has an authenticated session
+    if not force:
+        sf_cli_auth = await session.auth_service.check_sf_cli_auth(alias=alias)
+        if sf_cli_auth["authenticated"]:
+            print_info(f"Found existing SF CLI session for '{alias}' (User: {sf_cli_auth['username']})")
+            print_info("Importing existing session...")
+            try:
+                await session.auth_service.import_sf_cli_session(alias=alias)
+                print_success("Successfully imported existing SF CLI session")
+                instance = await session.auth_service.get_instance_url(alias=alias)
+                username = await session.auth_service.get_username(alias=alias)
+                print_info(f"Instance: {instance}")
+                if username:
+                    print_info(f"User: {username}")
+                return
+            except SFCLIAuthError as e:
+                print_warning(f"Could not import existing session: {e}")
+                print_info("Proceeding with new login...")
 
     try:
         if device:
@@ -155,6 +179,30 @@ async def list_orgs_async() -> None:
         await session.close()
 
 
+async def check_auth_async(alias: str = "default") -> None:
+    """Check if SF CLI has an authenticated session for the alias."""
+    session = Session(alias=alias)
+
+    try:
+        result = await session.auth_service.check_sf_cli_auth(alias=alias)
+        if result["authenticated"]:
+            print_success(f"SF CLI authenticated: {result['alias']}")
+            if result.get("username"):
+                print_info(f"User: {result['username']}")
+            print_info(f"Instance: {result['instance_url']}")
+            if result.get("has_valid_token"):
+                print_info("Valid access token available")
+            else:
+                print_warning("Access token could not be retrieved")
+        else:
+            print_warning(result["message"])
+    except Exception as e:
+        print_error(f"Auth check failed: {e}")
+        raise typer.Exit(1) from e
+    finally:
+        await session.close()
+
+
 # ---------------------------------------------------------------------------
 # Typer commands (thin shims that call the async wrappers)
 # ---------------------------------------------------------------------------
@@ -172,11 +220,14 @@ def login(
     timeout: int = typer.Option(
         300, "--timeout", "-t", help="Login timeout in seconds"
     ),
+    force: bool = typer.Option(
+        False, "--force", "-f", help="Force new login even if SF CLI session exists"
+    ),
 ):
     """Authenticate via SF CLI web/device login."""
     _run(
         login_async(
-            alias=alias, instance_url=instance_url, device=device, timeout=timeout
+            alias=alias, instance_url=instance_url, device=device, timeout=timeout, force=force
         )
     )
 
@@ -206,15 +257,30 @@ def list_orgs():
 def import_sf(alias: str = typer.Option("default", "--alias", "-a", help="SF CLI alias")):
     _run(import_sf_async(alias=alias))
 
+
+@app.command("check-auth")
+def check_auth(
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias to check"),
+):
+    """Check if SF CLI has an authenticated session for the alias."""
+    _run(check_auth_async(alias=alias))
+
 async def import_sf_async(alias: str = "default") -> None:
+    """Import an existing SF CLI authenticated session into the token store."""
     session = Session(alias=alias)
     try:
-        # Import from SF CLI session
-        from asftool.core.sf_cli import SFCLIManager
-        manager = SFCLIManager()
-        info = await manager.get_org_info(alias=alias)
-        print_success(f"Imported SF CLI session for '{alias}'")
-        print_info(f"Instance: {info.instance_url}")
+        # Import from SF CLI session using the new method
+        access_token = await session.auth_service.import_sf_cli_session(alias=alias)
+        print_success(f"Successfully imported SF CLI session for '{alias}'")
+        instance = await session.auth_service.get_instance_url(alias=alias)
+        username = await session.auth_service.get_username(alias=alias)
+        print_info(f"Instance: {instance}")
+        if username:
+            print_info(f"User: {username}")
+        print_info("Session is now available for use with asftool commands")
+    except SFCLIAuthError as e:
+        print_error(f"Import failed: {e}")
+        raise typer.Exit(1) from e
     except Exception as e:
         print_error(f"Import failed: {e}")
         raise typer.Exit(1) from e

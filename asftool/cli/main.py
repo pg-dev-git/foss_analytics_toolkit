@@ -30,6 +30,7 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 # ruff: noqa: E402 - imports below must come after encoding setup
 import asyncio
+from typing import Literal
 
 import typer
 from rich.panel import Panel
@@ -49,7 +50,7 @@ from asftool.cli.commands.lineage import app as lineage_app
 from asftool.cli.commands.mcp import app as mcp_app
 from asftool.cli.menu import Menu, create_menus
 from asftool.cli.session import Session
-from asftool.cli.ui import console, print_error, print_header, print_info
+from asftool.cli.ui import console, print_error, print_header, print_info, print_warning
 
 app = typer.Typer(
     name="asftool",
@@ -75,6 +76,91 @@ app.add_typer(git_app, name="git")
 # ---------------------------------------------------------------------------
 # Menu rendering (async, runs inside one event loop)
 # ---------------------------------------------------------------------------
+
+
+from dataclasses import dataclass
+
+
+@dataclass
+class SelectedOrg:
+    """Result of org selection prompt."""
+    alias: str
+    username: str | None
+    instance_url: str | None
+
+
+async def _prompt_sf_cli_org_selection(session: Session) -> SelectedOrg | None | Literal["login"]:
+    """
+    Prompt user to select an SF CLI authenticated org on startup.
+
+    Returns:
+        - SelectedOrg: user selected an existing org
+        - None: user chose to continue without selecting
+        - "login": user wants to start a new web login flow
+    """
+    # Check if SF CLI is available
+    if not session.auth_service.sf_cli.is_available():
+        return None
+
+    # Get authenticated orgs from SF CLI
+    orgs = await session.get_sf_cli_orgs()
+    if not orgs:
+        console.print()
+        print_warning("No authenticated orgs found in SF CLI")
+        console.print("Options:")
+        console.print("  [l] Start new web login")
+        console.print("  [c] Continue without SF CLI session")
+        console.print()
+        try:
+            choice = console.input("Select [l/c]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[yellow]Exiting...[/yellow]")
+            return None
+        if choice == "l":
+            return "login"
+        return None
+
+    # Display numbered list of orgs
+    console.print()
+    print_header("SF CLI Authenticated Orgs")
+    console.print("Found the following authenticated orgs in SF CLI:")
+    console.print()
+
+    for i, org in enumerate(orgs, 1):
+        username = org.get("username", "unknown")
+        instance = org.get("instance_url", "unknown")
+        console.print(f"  [cyan]{i}[/cyan]  [bold]{org['alias']}[/bold] — {username} — {instance}")
+
+    console.print()
+    console.print("Options:")
+    for i in range(1, len(orgs) + 1):
+        console.print(f"  [{i}] Use this org")
+    console.print("  [c] Continue without choosing")
+    console.print("  [l] Start new web login")
+    console.print()
+
+    while True:
+        try:
+            choice = console.input("Select option: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            console.print("\n[yellow]Exiting...[/yellow]")
+            return None
+        
+        if choice == "c":
+            return None
+        elif choice == "l":
+            return "login"
+        elif choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(orgs):
+                selected = orgs[idx]
+                return SelectedOrg(
+                    alias=selected["alias"],
+                    username=selected.get("username"),
+                    instance_url=selected.get("instance_url"),
+                )
+        
+        console.print("[red]Invalid choice. Please try again.[/red]")
 
 
 async def _session_status_text(session: Session) -> str:
@@ -133,8 +219,35 @@ async def _run_menu_loop(main_menu: Menu) -> None:
     """The interactive menu loop (fully async)."""
     session = Session()
     current: Menu = main_menu
+    first_run = True
 
     while True:
+        # On first run, check for SF CLI authenticated orgs and prompt user (config-controlled)
+        if first_run:
+            from asftool.core.config import get_settings
+            first_run = False
+            if get_settings().auto_import_sf_cli_session:
+                selection = await _prompt_sf_cli_org_selection(session)
+                
+                if selection == "login":
+                    # User wants to start a new web login
+                    from asftool.cli.commands.auth import login_async
+                    try:
+                        await login_async(alias=session.alias)
+                    except KeyboardInterrupt:
+                        console.print("\n[yellow]Login cancelled[/yellow]")
+                    except Exception as e:
+                        print_error(f"Login failed: {e}")
+                elif isinstance(selection, SelectedOrg):
+                    # User selected an existing org - import it
+                    session.alias = selection.alias
+                    try:
+                        await session.auth_service.import_sf_cli_session(selection.alias)
+                        console.print(f"[green]Imported SF CLI session for '{selection.alias}'[/green]")
+                    except Exception as e:
+                        print_warning(f"Could not import SF CLI session: {e}")
+                # If None (continue without choosing), just proceed with current session
+
         status_text = await _session_status_text(session)
         _render_session_header(status_text, session.alias)
         _render_menu(current)
