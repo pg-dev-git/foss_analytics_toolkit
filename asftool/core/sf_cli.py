@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -202,10 +203,12 @@ class SFCLIManager:
         else:
             # Unix-like systems can use create_subprocess_exec directly
             try:
+                # Pass environment explicitly so SF CLI can find its config
                 process = await asyncio.create_subprocess_exec(
                     *cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    env=os.environ,
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
@@ -460,7 +463,13 @@ class SFCLIManager:
         result = self._run_command(["org", "list", "--json", "--all"])
         try:
             output = json.loads(result.stdout)
-            return output.get("result", {}).get("orgs", [])  # type: ignore[no-any-return]
+            result_data = output.get("result", {})
+            # SF CLI returns orgs in multiple arrays: other, nonScratchOrgs, devHubs, scratchOrgs
+            orgs = (result_data.get("other", []) + 
+                    result_data.get("nonScratchOrgs", []) + 
+                    result_data.get("devHubs", []) + 
+                    result_data.get("scratchOrgs", []))
+            return orgs  # type: ignore[no-any-return]
         except (json.JSONDecodeError, KeyError):
             return []
 
