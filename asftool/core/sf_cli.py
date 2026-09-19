@@ -131,13 +131,27 @@ class SFCLIManager:
         logger.debug("running_sf_cli", command=cmd)
 
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
+            # On Windows, SF CLI .cmd files need shell execution and environment
+            if sys.platform == "win32":
+                shell_cmd = " ".join(f'"{c}"' if " " in c or "\t" in c else c for c in cmd)
+                result = subprocess.run(
+                    shell_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    check=False,
+                    shell=True,
+                    env=os.environ,
+                )
+            else:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    check=False,
+                    env=os.environ,
+                )
         except subprocess.TimeoutExpired as e:
             raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
         except FileNotFoundError as e:
@@ -189,6 +203,7 @@ class SFCLIManager:
                     shell_cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    env=os.environ,
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
