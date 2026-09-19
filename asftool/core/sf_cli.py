@@ -301,6 +301,7 @@ class SFCLIManager:
         else:
             # Unix-like systems can use create_subprocess_exec directly
             try:
+                # Pass environment explicitly so SF CLI can find its config
                 process = await asyncio.create_subprocess_exec(
                     *cmd,
                     stdout=asyncio.subprocess.PIPE,
