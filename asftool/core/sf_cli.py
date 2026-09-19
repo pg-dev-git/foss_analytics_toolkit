@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -130,6 +131,9 @@ class SFCLIManager:
         cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli", command=cmd)
 
+        # Filter out SF_API_VERSION to avoid SF CLI behavior changes
+        env = {k: v for k, v in os.environ.items() if k != "SF_API_VERSION"}
+
         try:
             # On Windows, SF CLI .cmd files need shell execution and environment
             if sys.platform == "win32":
@@ -141,7 +145,7 @@ class SFCLIManager:
                     timeout=timeout,
                     check=False,
                     shell=True,
-                    env=os.environ,
+                    env=env,
                 )
             else:
                 result = subprocess.run(
@@ -150,7 +154,7 @@ class SFCLIManager:
                     text=True,
                     timeout=timeout,
                     check=False,
-                    env=os.environ,
+                    env=env,
                 )
         except subprocess.TimeoutExpired as e:
             raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
@@ -185,7 +189,9 @@ class SFCLIManager:
         cmd: list[str] = [self._cli_path, *args]
         logger.debug("running_sf_cli_async", command=cmd)
 
-        import sys
+        # Filter out SF_API_VERSION to avoid SF CLI behavior changes
+        env = {k: v for k, v in os.environ.items() if k != "SF_API_VERSION"}
+
         # On Windows, SF CLI is often a .cmd file which needs shell execution.
         # Use create_subprocess_shell with a properly quoted command string on Windows.
         if sys.platform == "win32":
@@ -203,7 +209,7 @@ class SFCLIManager:
                     shell_cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    env=os.environ,
+                    env=env,
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
@@ -223,7 +229,7 @@ class SFCLIManager:
                     *cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
-                    env=os.environ,
+                    env=env,
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
