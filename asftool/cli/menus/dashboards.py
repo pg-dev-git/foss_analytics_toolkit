@@ -61,7 +61,7 @@ async def backup_dashboard() -> None:
 
     try:
         await backup_dashboard_async(
-            dashboard_id=dashboard_id, output=Path(output), alias=session.alias
+            dashboard_id=dashboard_id, output=Path(output)
         )
     except typer.Exit:
         pass

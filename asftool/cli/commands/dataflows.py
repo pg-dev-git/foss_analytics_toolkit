@@ -53,9 +53,9 @@ _STATUS_COLORS = {
 # ---------------------------------------------------------------------------
 
 
-async def list_dataflows_async() -> None:
+async def list_dataflows_async(alias: str | None = None) -> None:
     """List all dataflows."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -90,7 +90,7 @@ async def list_dataflows_async() -> None:
         await session.close()
 
 
-async def backup_dataflow_async(dataflow_id: str, output: Path | None = None, alias: str = "default") -> None:
+async def backup_dataflow_async(dataflow_id: str, output: Path | None = None, alias: str | None = None) -> None:
     """Backup dataflow JSON definition."""
     session = Session(alias=alias)
     try:
@@ -110,9 +110,9 @@ async def backup_dataflow_async(dataflow_id: str, output: Path | None = None, al
         await session.close()
 
 
-async def start_dataflow_async(dataflow_id: str) -> None:
+async def start_dataflow_async(dataflow_id: str, alias: str | None = None) -> None:
     """Start a dataflow execution."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -130,9 +130,9 @@ async def start_dataflow_async(dataflow_id: str) -> None:
         await session.close()
 
 
-async def stop_dataflow_async(dataflow_id: str) -> None:
+async def stop_dataflow_async(dataflow_id: str, alias: str | None = None) -> None:
     """Stop a running dataflow."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -150,9 +150,9 @@ async def stop_dataflow_async(dataflow_id: str) -> None:
         await session.close()
 
 
-async def show_dataflow_async(dataflow_id: str) -> None:
+async def show_dataflow_async(dataflow_id: str, alias: str | None = None) -> None:
     """Show dataflow details."""
-    session = Session()
+    session = Session(alias=alias)
     try:
         async with session.client_context() as client:
             service = DataflowService(client, session.settings)
@@ -177,9 +177,11 @@ async def show_dataflow_async(dataflow_id: str) -> None:
 
 
 @app.command("list")
-def list_dataflows():
+def list_dataflows(
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
+):
     """List all dataflows."""
-    _run(list_dataflows_async())
+    _run(list_dataflows_async(alias=alias))
 
 
 @app.command("backup")
@@ -197,22 +199,25 @@ def backup_dataflow(
 @app.command("start")
 def start_dataflow(
     dataflow_id: str = typer.Argument(..., help="Dataflow ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Start a dataflow execution."""
-    _run(start_dataflow_async(dataflow_id=dataflow_id))
+    _run(start_dataflow_async(dataflow_id=dataflow_id, alias=alias))
 
 
 @app.command("stop")
 def stop_dataflow(
     dataflow_id: str = typer.Argument(..., help="Dataflow ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Stop a running dataflow."""
-    _run(stop_dataflow_async(dataflow_id=dataflow_id))
+    _run(stop_dataflow_async(dataflow_id=dataflow_id, alias=alias))
 
 
 @app.command("show")
 def show_dataflow(
     dataflow_id: str = typer.Argument(..., help="Dataflow ID"),
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
 ):
     """Show dataflow details."""
-    _run(show_dataflow_async(dataflow_id=dataflow_id))
+    _run(show_dataflow_async(dataflow_id=dataflow_id, alias=alias))
