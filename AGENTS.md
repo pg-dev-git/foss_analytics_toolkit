@@ -15,6 +15,51 @@ Add `asftool` to `claude_desktop_config.json` with `mcp start` command.
 
 ---
 
+## Git & GitHub Workflow (MANDATORY)
+
+### Branching Strategy
+- **Never work directly on `main` or `master`**
+- Create a new feature branch for each task/feature: `git checkout -b feat/descriptive-name`
+- Use conventional branch prefixes:
+  - `feat/` — new features
+  - `fix/` — bug fixes
+  - `refactor/` — code restructuring
+  - `docs/` — documentation updates
+  - `chore/` — maintenance, dependencies, tooling
+
+### Commit Standards
+- **Clean, atomic commits** — one logical change per commit
+- **Conventional commit messages**:
+  ```
+  type(scope): brief description
+
+  Longer explanation if needed.
+
+  Fixes #issue-number
+  ```
+  Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`
+- Include context in commit body (why, not just what)
+
+### Push & Pull Request Workflow
+1. **Push feature branch** to origin: `git push -u origin feat/branch-name`
+2. **Create Pull Request** against `main` (or default branch)
+3. **PR Requirements**:
+   - Clear title and description
+   - Link related issues (`Fixes #123`, `Closes #456`)
+   - Pass all CI checks (tests, lint, type-check)
+   - At least 1 review approval (if team policy)
+4. **Merge via GitHub UI** — squash and merge preferred for clean history
+5. **Delete branch** after merge (local & remote)
+
+### Git Hygiene
+- `git pull --rebase origin main` before starting new work
+- Keep branches short-lived (< 1 week ideal)
+- Squash fixup commits before PR (`git rebase -i`)
+- Never force-push to shared branches
+- Use `git commit --amend` for local fixes before push
+
+---
+
 ## Critical Lessons Learned & Gotchas
 
 ### 1. SF CLI API Version Format Mismatch
