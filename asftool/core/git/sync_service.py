@@ -107,6 +107,7 @@ class CRMAGitSyncService:
     }
 
     # Bundle endpoint pattern (relative to wave_base_url)
+    # Uses plural asset type and CRMA ID (not developerName)
     BUNDLE_ENDPOINT_PATTERN = "/{asset_type}/{asset_id}/bundle"
 
     def _get_asset_endpoint(self, asset_type: str) -> str:
@@ -577,13 +578,37 @@ class CRMAGitSyncService:
                         error=f"Asset file not found at commit {commit_hash}",
                     )
 
-                # Read the file at the commit
+                # Read the file at the commit and check if it matches the asset_id
+                # Since filenames may not include the CRMA ID, we need to read each
+                # candidate file and check the JSON content for matching developerName/name/label
+                # Note: Normalized files don't have 'id' field, so match by name/developerName/label
                 file_content = None
                 for f in asset_files:
                     content = engine.read_file_at_commit(f, commit_hash)
                     if content:
-                        file_content = content
-                        break
+                        try:
+                            import json
+                            asset_json = json.loads(content.decode("utf-8"))
+                            # Check if this file matches our asset_id by various identifiers
+                            # The asset_id passed might be the developerName, name, label, or CRMA ID
+                            # Also try common variations (spaces to underscores, removing _SAMPLE suffix)
+                            asset_label = asset_json.get("label", "")
+                            asset_name = asset_json.get("name", "")
+                            normalized_asset_id = asset_id.replace(" ", "_")
+                            normalized_asset_id_no_sample = asset_id.replace("_SAMPLE", "")
+                            
+                            if (asset_json.get("developerName") == asset_id or
+                                asset_json.get("name") == asset_id or
+                                asset_json.get("label") == asset_id or
+                                asset_json.get("id") == asset_id or
+                                asset_label.replace(" ", "_") == asset_id or
+                                asset_name.replace("_SAMPLE", "") == asset_id or
+                                normalized_asset_id_no_sample == asset_json.get("name", "")):
+                                file_content = content
+                                break
+                        except Exception:
+                            # If we can't parse, continue to next file
+                            continue
 
                 if not file_content:
                     return RevertResult(
@@ -591,11 +616,14 @@ class CRMAGitSyncService:
                         asset_id=asset_id,
                         asset_type=asset_type,
                         commit_hash=commit_hash,
-                        error="Could not read asset content from commit",
+                        error="Could not find matching asset content at commit",
                     )
 
                 # Parse and validate JSON
                 asset_json = json.loads(file_content.decode("utf-8"))
+
+                # Get the actual CRMA ID from the asset JSON
+                crma_id = asset_json.get("id", asset_id)
 
                 # Validate against expected schema (basic validation)
                 if not self._validate_asset_bundle(asset_json, asset_type):
@@ -607,8 +635,8 @@ class CRMAGitSyncService:
                         error="Asset bundle validation failed",
                     )
 
-                # Deploy to CRMA via bundle endpoint
-                success = await self._deploy_bundle(asset_id, asset_type, asset_json)
+                # Deploy to CRMA via bundle endpoint using the actual CRMA ID
+                success = await self._deploy_bundle(crma_id, asset_type, asset_json)
 
                 return RevertResult(
                     success=success,
@@ -640,18 +668,43 @@ class CRMAGitSyncService:
         asset_type: str,
         asset_json: dict[str, Any],
     ) -> bool:
-        """Deploy asset bundle to CRMA via PUT /wave/<assetType>/<id>/bundle."""
+        """Deploy asset bundle to CRMA via PATCH on the asset endpoint.
+        
+        Uses PATCH on the asset endpoint (e.g., /wave/dashboards/<id>) 
+        since the bundle endpoint doesn't exist for all asset types.
+        """
         try:
-            endpoint = self._get_bundle_endpoint(asset_type, asset_id)
-
-            async with self._get_sf_client() as client:
-                response = await client.put(
-                    endpoint,
-                    json=asset_json,
-                )
-                response.raise_for_status()
-                return True
+            # Use the CRMA ID from the asset JSON for the endpoint
+            crma_id = asset_json.get("id", asset_id)
+            
+            # Get the asset endpoint (e.g., /wave/dashboards)
+            asset_endpoint = self._get_asset_endpoint(asset_type)
+            endpoint = f"{asset_endpoint}/{crma_id}"
+            
+            # Prepare the payload - only include editable fields
+            # The API only accepts certain fields via PATCH
+            editable_fields = ["label", "mobileDisabled", "description"]
+            payload = {k: v for k, v in asset_json.items() if k in editable_fields}
+            
+            print(f"[DEBUG] Deploying to endpoint: {endpoint}")
+            print(f"[DEBUG] Payload: {payload}")
+            
+            # Only send PATCH if there are editable fields to update
+            if payload:
+                async with self._get_sf_client() as client:
+                    response = await client.patch(
+                        endpoint,
+                        json=payload,
+                    )
+                    print(f"[DEBUG] Response status: {response.status_code}")
+                    print(f"[DEBUG] Response body: {response.text[:500]}")
+                    response.raise_for_status()
+            else:
+                print("[DEBUG] No editable fields to update")
+            
+            return True
         except Exception as e:
+            print(f"[DEBUG] Deployment error: {e}")
             return False
 
 

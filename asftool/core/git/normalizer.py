@@ -92,6 +92,7 @@ class NormalizerConfig(BaseModel):
     # Fields to NEVER strip (preserve identity)
     preserve_fields: list[str] = Field(
         default_factory=lambda: [
+            "id",
             "developerName",
             "label",
             "name",

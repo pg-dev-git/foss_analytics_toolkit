@@ -133,17 +133,41 @@ class WorkspaceManager:
 
         for item in self.base_path.iterdir():
             if item.is_dir() and (item / ".git").exists():
-                # Try to infer target from directory structure
-                # This is a best-effort reconstruction
+                # Try to read stored workspace metadata
+                credentials_alias = "unknown"
+                provider = GitProvider.GITHUB
+                host = "unknown"
+                organization = "unknown"
+                repository = "unknown"
+                branch = "main"
+                path_prefix = ""
+                
+                meta_file = item / ".asftool-workspace"
+                if meta_file.exists():
+                    try:
+                        import json
+                        meta = json.loads(meta_file.read_text())
+                        credentials_alias = meta.get("credentials_alias", "unknown")
+                        provider = GitProvider(meta.get("provider", "github"))
+                        host = meta.get("host", "unknown")
+                        organization = meta.get("organization", "unknown")
+                        repository = meta.get("repository", "unknown")
+                        branch = meta.get("branch", "main")
+                        path_prefix = meta.get("path_prefix", "")
+                    except Exception:
+                        pass
+                
                 workspaces.append(WorkspaceInfo(
                     repo_slug=item.name,
                     path=item,
                     target=GitRepositoryTarget(
-                        provider=GitProvider.GITHUB,  # placeholder
-                        host="unknown",
-                        organization="unknown",
-                        repository=item.name,
-                        credentials_alias="unknown",
+                        provider=provider,
+                        host=host,
+                        organization=organization,
+                        repository=repository,
+                        credentials_alias=credentials_alias,
+                        branch=branch,
+                        path_prefix=path_prefix,
                     ),
                     exists=True,
                 ))
@@ -203,6 +227,21 @@ class WorkspaceManager:
             if result.returncode != 0:
                 # Remote add is optional, just warn
                 pass
+        
+        # Save workspace metadata for future reference
+        import json
+        meta_file = path / ".asftool-workspace"
+        meta = {
+            "credentials_alias": target.credentials_alias,
+            "provider": target.provider.value,
+            "host": target.host,
+            "organization": target.organization,
+            "repository": target.repository,
+            "branch": target.branch,
+            "path_prefix": target.path_prefix,
+        }
+        meta_file = path / ".asftool-workspace"
+        meta_file.write_text(json.dumps(meta))
 
         return path
 

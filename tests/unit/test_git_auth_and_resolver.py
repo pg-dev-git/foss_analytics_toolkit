@@ -858,7 +858,6 @@ class TestCRMANormalizer:
         normalized = json.loads(result.normalized_json)
 
         # Check volatile fields are stripped
-        assert "id" not in normalized
         assert "createdDate" not in normalized
         assert "lastModifiedDate" not in normalized
         assert "createdById" not in normalized
@@ -871,13 +870,13 @@ class TestCRMANormalizer:
         assert "state" not in normalized
         assert "uiState" not in normalized
 
-        # Check preserved fields
+        # Check preserved fields (id is now preserved for deployment)
         assert normalized["developerName"] == "Executive_Dashboard"
         assert normalized["label"] == "Executive Dashboard"
+        assert normalized["id"] == "01Z000000000000AAA"
         assert "widgets" in normalized
 
         # Check stripped fields list
-        assert "id" in result.stripped_fields
         assert "createdDate" in result.stripped_fields
         assert "lastModifiedDate" in result.stripped_fields
 
@@ -887,7 +886,6 @@ class TestCRMANormalizer:
 
         normalized = json.loads(result.normalized_json)
 
-        assert "id" not in normalized
         assert "createdDate" not in normalized
         assert "lastModifiedDate" not in normalized
         assert "createdById" not in normalized
@@ -896,6 +894,7 @@ class TestCRMANormalizer:
 
         assert normalized["developerName"] == "Data_Prep_Recipe"
         assert normalized["label"] == "Data Prep Recipe"
+        assert normalized["id"] == "01Z000000000001BBB"
         assert "steps" in normalized
 
     def test_normalize_deterministic_output(self, normalizer, sample_dashboard):

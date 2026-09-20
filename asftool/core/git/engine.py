@@ -239,11 +239,20 @@ class GitEngine:
             Dict with fetch results
         """
         try:
-            result = dulwich.porcelain.fetch(
-                self.repo,
-                remote,
-                auth=self._get_auth_for_remote(remote),
-            )
+            auth = self._get_auth_for_remote(remote)
+            if auth:
+                username, password = auth(None, None)
+                result = dulwich.porcelain.fetch(
+                    self.repo,
+                    remote,
+                    username=username,
+                    password=password,
+                )
+            else:
+                result = dulwich.porcelain.fetch(
+                    self.repo,
+                    remote,
+                )
             return {"success": True, "result": result}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -259,12 +268,22 @@ class GitEngine:
             Dict with pull results
         """
         try:
-            result = dulwich.porcelain.pull(
-                self.repo,
-                remote,
-                branch=branch,
-                auth=self._get_auth_for_remote(remote),
-            )
+            auth = self._get_auth_for_remote(remote)
+            if auth:
+                username, password = auth(None, None)
+                result = dulwich.porcelain.pull(
+                    self.repo,
+                    remote,
+                    branch=branch,
+                    username=username,
+                    password=password,
+                )
+            else:
+                result = dulwich.porcelain.pull(
+                    self.repo,
+                    remote,
+                    branch=branch,
+                )
             return {"success": True, "result": result}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -287,13 +306,24 @@ class GitEngine:
         """
         try:
             refspecs = [f"refs/heads/{branch}:refs/heads/{branch}"]
-            result = dulwich.porcelain.push(
-                self.repo,
-                remote,
-                refspecs=refspecs,
-                force=force,
-                auth=self._get_auth_for_remote(remote),
-            )
+            auth = self._get_auth_for_remote(remote)
+            if auth:
+                username, password = auth(None, None)
+                result = dulwich.porcelain.push(
+                    self.repo,
+                    remote,
+                    refspecs=refspecs,
+                    force=force,
+                    username=username,
+                    password=password,
+                )
+            else:
+                result = dulwich.porcelain.push(
+                    self.repo,
+                    remote,
+                    refspecs=refspecs,
+                    force=force,
+                )
             return {"success": True, "result": result}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -306,7 +336,7 @@ class GitEngine:
         # Get remote URL
         try:
             config = self.repo.get_config()
-            url = config.get((b'remote "' + remote.encode() + b'"', b"url"))
+            url = config.get((b'remote', remote.encode()), b"url")
             if url:
                 return self._create_dulwich_auth(self.credentials, url.decode())
         except Exception:
@@ -574,13 +604,26 @@ class GitEngine:
 
         Args:
             file_path: Path to file relative to repo root
-            commit_hash: Commit hash
+            commit_hash: Commit hash (full or abbreviated)
 
         Returns:
             File content as bytes, or None if not found
         """
         try:
-            commit = self.repo[commit_hash.encode()]
+            # Handle abbreviated commit hashes
+            if len(commit_hash) < 40:
+                try:
+                    commit = self.repo[commit_hash.encode()]
+                except KeyError:
+                    # Try to resolve through refs
+                    for ref_name, ref_value in self.repo.refs.as_dict().items():
+                        if ref_value.startswith(commit_hash.encode()):
+                            commit = self.repo[ref_value]
+                            break
+                    else:
+                        raise KeyError(f"Commit {commit_hash} not found")
+            else:
+                commit = self.repo[commit_hash.encode()]
             tree = self.repo[commit.tree]
 
             # Navigate to file
@@ -620,14 +663,28 @@ class GitEngine:
         """List all files at a specific commit.
 
         Args:
-            commit_hash: Commit hash
+            commit_hash: Commit hash (full or abbreviated)
             path_prefix: Optional path prefix to filter
 
         Returns:
             List of file paths
         """
         try:
-            commit = self.repo[commit_hash.encode()]
+            # Handle abbreviated commit hashes by resolving to full hash
+            if len(commit_hash) < 40:
+                # Try to resolve abbreviated hash
+                try:
+                    commit = self.repo[commit_hash.encode()]
+                except KeyError:
+                    # Try to resolve through refs
+                    for ref_name, ref_value in self.repo.refs.as_dict().items():
+                        if ref_value.startswith(commit_hash.encode()):
+                            commit = self.repo[ref_value]
+                            break
+                    else:
+                        raise KeyError(f"Commit {commit_hash} not found")
+            else:
+                commit = self.repo[commit_hash.encode()]
             tree = self.repo[commit.tree]
 
             files = []
