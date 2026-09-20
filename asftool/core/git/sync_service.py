@@ -228,7 +228,8 @@ class CRMAGitSyncService:
                         }
 
                     # Check if asset exists in workspace and compare content
-                    workspace_path = self.workspace_manager.ensure_workspace(target)
+                    # For dry-run, only check local workspace without cloning
+                    workspace_path = self.workspace_manager.get_workspace_path(target)
                     file_name = f"{context.name}.json"
                     if context.folder:
                         folder = self._sanitize_path(context.folder)

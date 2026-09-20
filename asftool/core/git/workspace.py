@@ -156,7 +156,7 @@ class WorkspaceManager:
         clone_url: Optional[str] = None,
         branch: Optional[str] = None,
     ) -> Path:
-        """Ensure workspace exists, cloning if necessary.
+        """Ensure workspace exists, cloning if necessary. If remote doesn't exist, initialize local repo.
 
         Args:
             target: Target repository configuration
@@ -173,9 +173,36 @@ class WorkspaceManager:
             self._checkout_branch(path, branch or target.branch)
             return path
 
-        # Clone the repository
+        # Try to clone the repository
         url = clone_url or target.clone_url_https
-        self._clone_repository(url, path, branch or target.branch)
+        try:
+            self._clone_repository(url, path, branch or target.branch)
+        except RuntimeError as e:
+            # If clone fails (e.g., repo not found), initialize a new local repository
+            import subprocess
+            path.parent.mkdir(parents=True, exist_ok=True)
+            result = subprocess.run(
+                ["git", "init", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to initialize local repository: {result.stderr}")
+            
+            # Set up the branch
+            self._checkout_branch(path, branch or target.branch)
+            
+            # Add remote for future push
+            result = subprocess.run(
+                ["git", "-C", str(path), "remote", "add", "origin", url],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                # Remote add is optional, just warn
+                pass
 
         return path
 
