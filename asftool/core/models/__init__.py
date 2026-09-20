@@ -364,9 +364,9 @@ class DataflowJob(BaseModel):
 
 class DataflowJobListResponse(BaseModel):
     """Response for dataflow job listing."""
-    dataflowjobs: list[DataflowJob]
+    dataflowjobs: list[DataflowJob] = Field(..., alias="dataflowJobs")
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 # Limits Models

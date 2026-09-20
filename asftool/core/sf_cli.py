@@ -519,6 +519,37 @@ class SFCLIManager:
         except Exception:
             return False
 
+    async def get_org_api_version(self, alias: str = "default") -> str | None:
+        """
+        Get the API version for a specific org from SF CLI.
+
+        Args:
+            alias: Org alias
+
+        Returns:
+            API version string (e.g., "67.0") or None if not found
+        """
+        if not self.is_available():
+            return None
+
+        try:
+            args = ["org", "list", "--json", "--all"]
+            result = await self._run_command_async(args)
+            output = json.loads(result.stdout)
+            result_data = output.get("result", {})
+            orgs = (result_data.get("other", []) + 
+                    result_data.get("nonScratchOrgs", []) + 
+                    result_data.get("devHubs", []) + 
+                    result_data.get("scratchOrgs", []))
+            for org in orgs:
+                if org.get("alias") == alias:
+                    version = org.get("instanceApiVersion")
+                    if version:
+                        return version
+            return None
+        except Exception:
+            return None
+
     async def is_org_authenticated_async(self, alias: str = "default") -> bool:
         """
         Check if a specific org alias is authenticated in SF CLI (async version).

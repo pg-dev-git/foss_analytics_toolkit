@@ -253,6 +253,9 @@ def extract_dataset(
     ),
 ):
     """Extract dataset to CSV."""
+    # Handle empty string from Typer - treat as None
+    if output == "":
+        output = None
     _run(
         extract_dataset_async(
             dataset_id=dataset_id, output=output, alias=alias, show_progress=show_progress

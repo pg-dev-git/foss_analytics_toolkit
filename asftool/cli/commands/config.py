@@ -43,30 +43,6 @@ def show() -> None:
     )
 
 
-@app.command("set-api-version")
-def set_api_version(
-    version: str = typer.Argument(..., help="Salesforce API version (e.g. v68.0)"),
-) -> None:
-    """Persist a preferred Salesforce API version to ~/.asftool/config.json."""
-    # Validate format here too (the validator on Settings also catches it,
-    # but we want a clear CLI error before touching disk).
-    import re
-    if not re.match(r"^v\d+\.\d+$", version):
-        print_error(
-            f"Invalid API version {version!r}: must match v<major>.<minor> "
-            f"(e.g. 'v68.0')"
-        )
-        raise typer.Exit(1)
-    store = ConfigStore()
-    cfg = UserConfig(sf_api_version=version)
-    store.save(cfg)
-    print_success(f"Saved sf_api_version = {version} to {store.path}")
-    print_info(
-        "This takes effect for future invocations. Set SF_API_VERSION env "
-        "var to override per-session."
-    )
-
-
 @app.command("reset")
 def reset() -> None:
     """Delete the persisted config file (revert to hardcoded defaults)."""

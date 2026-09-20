@@ -82,11 +82,25 @@ class Session:
             auto_refresh=True,
         )
         instance_url = await self.auth_service.get_instance_url(alias=self.alias)
+        
+        # Get stored token to retrieve API version if available
+        from asftool.core.auth.token_store import TokenStore
+        stored_token = await self.auth_service.token_store.load_token(self.alias)
+        api_version = stored_token.api_version if stored_token else None
+        
+        # Create settings with the stored API version if available
+        from asftool.core.config import Settings
+        client_settings = self.settings
+        if api_version:
+            # Create a copy of settings with the org's API version
+            client_settings = Settings(
+                **{**self.settings.model_dump(), "sf_api_version": api_version}
+            )
 
         self._client = SalesforceClient(
             access_token=token,
             instance_url=instance_url,
-            settings=self.settings,
+            settings=client_settings,
         )
         return self._client
 

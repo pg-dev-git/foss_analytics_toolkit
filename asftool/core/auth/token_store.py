@@ -23,6 +23,7 @@ class StoredToken:
     expires_at: str | None = None  # ISO format string
     alias: str = "default"
     username: str | None = None
+    api_version: str | None = None  # API version for this org (e.g., "67.0")
     created_at: str = ""  # ISO format string
     updated_at: str = ""  # ISO format string
 

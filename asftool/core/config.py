@@ -105,7 +105,12 @@ class Settings(BaseSettings):
     @property
     def sf_base_url(self) -> str:
         """Get the base Salesforce API URL."""
-        return f"https://{self.sf_default_domain}/services/data/{self.sf_api_version}"
+        domain = self.sf_default_domain
+        if domain.startswith("http://"):
+            domain = domain[7:]
+        elif domain.startswith("https://"):
+            domain = domain[8:]
+        return f"https://{domain}/services/data/{self.sf_api_version}"
 
     @property
     def wave_base_url(self) -> str:

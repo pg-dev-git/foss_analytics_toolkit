@@ -95,6 +95,7 @@ class SFCLIAuthService:
             # Get org info for metadata (instance_url, username, etc.).
             # If SF CLI rejects version format, fall back to auth_result.
             org_info = await self.sf_cli.get_org_info(alias=alias)
+            api_version = await self.sf_cli.get_org_api_version(alias)
             # If version was rejected, org_info is partial; fall back to auth_result.
             if not org_info.instance_url:
                 org_info = auth_result
@@ -105,6 +106,7 @@ class SFCLIAuthService:
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
                 alias=org_info.alias,
                 username=org_info.username,
+                api_version=api_version,
             )
             await self.token_store.save_token(refreshed_token)
             logger.info("sf_cli_login_token_refreshed", alias=alias)
@@ -172,6 +174,7 @@ class SFCLIAuthService:
             # Get org info for metadata (instance_url, username, etc.).
             # If SF CLI rejects version format, fall back to auth_result.
             org_info = await self.sf_cli.get_org_info(alias=alias)
+            api_version = await self.sf_cli.get_org_api_version(alias)
             # If version was rejected, org_info is partial; fall back to auth_result.
             if not org_info.instance_url:
                 org_info = auth_result
@@ -182,6 +185,7 @@ class SFCLIAuthService:
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
                 alias=org_info.alias,
                 username=org_info.username,
+                api_version=api_version,
             )
             await self.token_store.save_token(refreshed_token)
             logger.info("sf_cli_device_login_token_refreshed", alias=alias)
@@ -436,6 +440,7 @@ class SFCLIAuthService:
         # Get org info and access token from SF CLI
         org_info = await self.sf_cli.get_org_info(alias)
         access_token = await self.sf_cli.get_access_token(alias)
+        api_version = await self.sf_cli.get_org_api_version(alias)
 
         # Store in token store
         stored_token = StoredToken(
@@ -445,6 +450,7 @@ class SFCLIAuthService:
             expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
             alias=org_info.alias,
             username=org_info.username,
+            api_version=api_version,
         )
         await self.token_store.save_token(stored_token)
 
