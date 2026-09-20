@@ -206,6 +206,10 @@ class SalesforceClient:
         """PATCH request."""
         return await self._request("PATCH", path, json=json, **kwargs)
 
+    async def put(self, path: str, json: dict | None = None, **kwargs: Any) -> httpx.Response:
+        """PUT request."""
+        return await self._request("PUT", path, json=json, **kwargs)
+
     async def delete(self, path: str, **kwargs: Any) -> httpx.Response:
         """DELETE request."""
         return await self._request("DELETE", path, **kwargs)
