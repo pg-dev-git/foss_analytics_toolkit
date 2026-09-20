@@ -545,6 +545,9 @@ class SFCLIManager:
                 if org.get("alias") == alias:
                     version = org.get("instanceApiVersion")
                     if version:
+                        # SF CLI returns version as "67.0" but Settings expects "v67.0"
+                        if not version.startswith("v"):
+                            version = f"v{version}"
                         return version
             return None
         except Exception:
