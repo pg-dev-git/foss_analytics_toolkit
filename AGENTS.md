@@ -211,6 +211,150 @@ asftool auth login --force --alias mcp
 
 ---
 
+### 12. Git Sync/Revert Implementation Lessons
+
+#### 12.1 SF_DEFAULT_DOMAIN Format in .env
+**Problem**: `.env` contained `SF_DEFAULT_DOMAIN=https://claritev6-dev-ed.develop.my.salesforce.com` but code prepends `https://` when building `sf_base_url`, resulting in double `https://`.
+
+**Solution**: Store only the domain in `.env`:
+```
+# Wrong - causes double https://
+SF_DEFAULT_DOMAIN=https://claritev6-dev-ed.develop.my.salesforce.com
+
+# Correct - just the domain
+SF_DEFAULT_DOMAIN=claritev6-dev-ed.develop.my.salesforce.com
+```
+
+**Where**: `.env` file and `asftool/core/config.py` → `sf_base_url` property
+
+---
+
+#### 12.2 Salesforce Wave API Response Key Inconsistency
+**Problem**: Wave API uses different response keys for different asset types instead of a uniform "records" key:
+- `/dashboards` → `"dashboards"`
+- `/datasets` → `"datasets"`
+- `/recipes` → `"recipes"`
+- `/dataflows` → `"dataflows"`
+- `/lenses` → `"lenses"`
+
+**Solution**: Use an `asset_key_map` in `_fetch_all_assets()`:
+```python
+asset_key_map = {
+    "dashboard": "dashboards",
+    "dataset": "datasets",
+    "recipe": "recipes",
+    "dataflow": "dataflows",
+    "lens": "lenses",
+}
+asset_key = asset_key_map.get(asset_type, "records")
+```
+
+**Where**: `asftool/core/git/sync_service.py` → `_fetch_all_assets()`
+
+---
+
+#### 12.3 XMD Endpoint Doesn't Exist
+**Problem**: Tried to sync "xmd" asset type via `/xmds` endpoint which doesn't exist. XMDs are accessed per dataset via `/datasets/{id}/versions/{version_id}/xmds/main`.
+
+**Solution**: Remove "xmd" from `ASSET_TYPES` dict and handle XMDs separately per dataset if needed.
+
+**Where**: `asftool/core/git/sync_service.py` → `ASSET_TYPES` dict
+
+---
+
+#### 12.4 Dry-Run Should Not Clone Repositories
+**Problem**: `dry_run()` was calling `ensure_workspace()` which clones/initializes repos, even though dry-run should be read-only.
+
+**Solution**: Use `get_workspace_path()` instead of `ensure_workspace()` in `dry_run()` method to only check local files without cloning.
+
+**Where**: `asftool/core/git/sync_service.py` → `dry_run()` method
+
+---
+
+#### 12.5 Missing Remote Repo Handling
+**Problem**: Sync fails when remote GitHub repo doesn't exist (e.g., "Repository not found").
+
+**Solution**: In `ensure_workspace()`, catch clone failure and initialize local repo with `git init`, then add remote for future push:
+```python
+try:
+    self._clone_repository(url, path, branch)
+except RuntimeError:
+    # Initialize local repo
+    subprocess.run(["git", "init", str(path)])
+    self._checkout_branch(path, branch)
+    # Add remote for future push
+    subprocess.run(["git", "-C", str(path), "remote", "add", "origin", url])
+```
+
+**Where**: `asftool/core/git/workspace.py` → `ensure_workspace()`
+
+---
+
+#### 12.6 Revert Asset Matching Requires Flexible Identifier Resolution
+**Problem**: Filenames in Git don't include CRMA IDs (e.g., `dashboard/DTC Sales.json`), but the asset JSON has `label: "DTC Sales"`, `name: "DTC_Sales_SAMPLE"`, `id: "0FKak0000018zeCGAQ"`. Need to match by various identifiers.
+
+**Solution**: Try multiple matching strategies in revert:
+- `developerName`, `name`, `label`, `id` exact match
+- Common variations: `label.replace(" ", "_")`, `name.replace("_SAMPLE", "")`
+
+**Where**: `asftool/core/git/sync_service.py` → `revert_asset()` method
+
+---
+
+#### 12.7 Bundle Deployment Uses PATCH on Asset Endpoint
+**Problem**: The `/wave/{assetType}/{id}/bundle` endpoint doesn't exist for all asset types. The correct approach is PATCH on the asset endpoint (e.g., `/wave/dashboards/{id}`) with only editable fields.
+
+**Solution**: 
+- Use PATCH on asset endpoint: `/{asset_endpoint}/{crma_id}`
+- Only send editable fields: `label`, `mobileDisabled`, `description`
+- Strip read-only fields from payload (`id`, `createdBy`, `createdDate`, `type`, `visibility`, etc.)
+
+**Where**: `asftool/core/git/sync_service.py` → `_deploy_bundle()`
+
+---
+
+#### 12.8 Dulwich Auth Requires Username/Password Tuple
+**Problem**: Dulwich's `fetch()`, `pull()`, `push()` don't accept `auth` callback directly. They need `username` and `password` parameters.
+
+**Solution**: Extract credentials from auth handler and pass explicitly:
+```python
+auth = self._get_auth_for_remote(remote)
+if auth:
+    username, password = auth(None, None)
+    result = dulwich.porcelain.pull(self.repo, remote, branch=branch, username=username, password=password)
+```
+
+**Where**: `asftool/core/git/engine.py` → `fetch()`, `pull()`, `push()` methods
+
+---
+
+#### 12.9 Preserve 'id' Field in Normalizer for Deployment
+**Problem**: Normalizer was stripping the `id` field (Salesforce ID) which is needed for deployment endpoints.
+
+**Solution**: Add `"id"` to `preserve_fields` in `CRMANormalizerConfig`:
+```python
+preserve_fields: list[str] = Field(
+    default_factory=lambda: [
+        "id",  # Keep for deployment
+        "developerName",
+        "label",
+        "name",
+        ...
+    ],
+)
+```
+
+**Where**: `asftool/core/git/normalizer.py` → `CRMANormalizerConfig.preserve_fields`
+
+---
+
+#### 12.10 Git Credentials Stored in OS Keyring, Not Config File
+**Problem**: The `.asftool-git.yml` config only references a `credentials_alias` — actual credentials are stored in OS keyring.
+
+**Solution**: Use `asftool git-auth login --alias <alias> --provider github --host github.com --username <user> --token <pat> --auth-type pat --non-interactive` to store credentials, or set env vars `ASFTOOL_GIT_TOKEN` and `ASFTOOL_GIT_USERNAME`.
+
+**Where**: `asftool/core/auth/git_auth.py` → `GitAuthService`
+
 ## Debugging Checklist
 
 When commands fail with "Resource not found" or "No authenticated session":
