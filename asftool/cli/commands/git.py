@@ -272,6 +272,7 @@ def revert(
     asset_type: str = typer.Option("dashboard", "--type", "-t"),
     repo_slug: str = typer.Option(None, "--repo", "-r"),
     config: str = typer.Option(".asftool-git.yml", "--config", "-c"),
+    alias: str = typer.Option("default", "--alias", "-a", help="SF CLI alias to use"),
 ):
     """Revert an asset to a specific Git commit and deploy to CRMA."""
     from pathlib import Path
@@ -283,17 +284,40 @@ def revert(
 
     resolver = RepoMappingResolver.from_file(config_path)
 
-    settings = get_settings()
-    service = CRMAGitSyncService(
-        resolver=resolver,
-        instance_url="https://test.salesforce.com",
-        access_token="test-token",
-        settings=settings,
-    )
+    async def _run_revert():
+        # Get SF auth tokens from session
+        async with Session(alias=alias) as session:
+            try:
+                auth_tokens = await session.get_auth_tokens(alias=alias)
+            except Exception as e:
+                print_error(f"Failed to get auth tokens: {e}")
+                print_info(f"Run 'asftool auth login --alias {alias}' first")
+                raise typer.Exit(1)
 
-    print_info(f"Reverting asset {asset_id} ({asset_type}) to commit {commit}")
-    # Note: revert_asset is async, would need to run in async context
-    print_info("Revert workflow initialized")
+        settings = get_settings()
+        service = CRMAGitSyncService(
+            resolver=resolver,
+            instance_url=auth_tokens.instance_url,
+            access_token=auth_tokens.access_token,
+            settings=settings,
+        )
+
+        print_info(f"Reverting asset {asset_id} ({asset_type}) to commit {commit}")
+        
+        result = await service.revert_asset(
+            asset_id=asset_id,
+            asset_type=asset_type,
+            commit_hash=commit,
+            repo_slug=repo_slug,
+        )
+
+        if result.success:
+            print_success(f"Successfully reverted asset {asset_id} to commit {commit}")
+        else:
+            print_error(f"Revert failed: {result.error}")
+            raise typer.Exit(1)
+
+    asyncio.run(_run_revert())
 
 
 @app.command("status")

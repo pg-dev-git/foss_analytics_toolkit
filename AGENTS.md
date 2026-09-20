@@ -1,18 +1,5 @@
 # AGENTS.md — Agent Integration Guide
 
-## SDK Usage
-```python
-from asftool.sdk.engine import ASFToolSDK
-async with ASFToolSDK() as sdk:
-    results = await sdk.datasets.list()
-```
-
-## MCP Setup
-Run `asftool mcp start` to expose stdio transport.
-
-## Claude Desktop Config
-Add `asftool` to `claude_desktop_config.json` with `mcp start` command.
-
 ---
 
 ## Git & GitHub Workflow (MANDATORY)
