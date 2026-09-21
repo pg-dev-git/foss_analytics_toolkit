@@ -131,6 +131,7 @@ class Session:
                 username=token.username,
                 alias=alias,
                 token_expired=token.is_expired() if hasattr(token, 'is_expired') else False,
+                api_version=token.api_version,
             )
         # Fallback: retrieve from SF CLI auth service
         return await self.auth_service.get_auth_tokens(alias=alias)

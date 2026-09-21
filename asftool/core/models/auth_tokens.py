@@ -13,3 +13,4 @@ class AuthTokens(BaseModel):
     username: str | None = Field(None, description="Authenticated username")
     alias: str = Field(default="default", description="SF CLI alias")
     token_expired: bool = Field(default=False, description="Whether token has expired")
+    api_version: str | None = Field(None, description="Salesforce API version (e.g., v67.0)")
