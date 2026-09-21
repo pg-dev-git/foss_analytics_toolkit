@@ -5,6 +5,7 @@ Orchestrates the complete workflow:
 - Revert: Checkout commit -> Validate -> Deploy via PUT /wave/<assetType>/<id>/bundle
 """
 
+import asyncio
 import json
 import time
 from dataclasses import dataclass, field
@@ -59,6 +60,7 @@ class CRMAGitSyncService:
         auth_alias: str = "default",
         progress: Optional[Progress] = None,
         settings: Optional[Settings] = None,
+        detail_fetch_concurrency: int = 5,  # Max concurrent detail API calls
     ):
         """Initialize sync service.
 
@@ -71,6 +73,7 @@ class CRMAGitSyncService:
             auth_alias: SF CLI auth alias to use
             progress: Optional Rich Progress for CLI feedback
             settings: Optional Settings for dynamic API version (defaults to get_settings())
+            detail_fetch_concurrency: Maximum concurrent detail API calls (default 5)
         """
         self.resolver = resolver
         self.normalizer = normalizer or CRMANormalizer()
@@ -83,6 +86,9 @@ class CRMAGitSyncService:
 
         # Git auth service for credentials
         self.git_auth_service = get_git_auth_service()
+
+        # Semaphore for rate limiting detail API calls
+        self._detail_fetch_semaphore = asyncio.Semaphore(detail_fetch_concurrency)
 
     @property
     def base_url(self) -> str:
@@ -106,6 +112,16 @@ class CRMAGitSyncService:
         "dataset": "/datasets",
     }
 
+    # Detail endpoint patterns for fetching full asset definitions
+    # These endpoints return the complete asset JSON with widgets, steps, etc.
+    DETAIL_ENDPOINT_PATTERNS = {
+        "dashboard": "/dashboards/{asset_id}",
+        "recipe": "/recipes/{asset_id}",
+        "dataflow": "/dataflows/{asset_id}",
+        "lens": "/lenses/{asset_id}",
+        "dataset": "/datasets/{asset_id}",
+    }
+
     # Bundle endpoint pattern (relative to wave_base_url)
     # Uses plural asset type and CRMA ID (not developerName)
     BUNDLE_ENDPOINT_PATTERN = "/{asset_type}/{asset_id}/bundle"
@@ -113,6 +129,13 @@ class CRMAGitSyncService:
     def _get_asset_endpoint(self, asset_type: str) -> str:
         """Get the full endpoint URL for an asset type."""
         return f"{self.wave_base_url}{self.ASSET_TYPES.get(asset_type, '')}"
+
+    def _get_detail_endpoint(self, asset_type: str, asset_id: str) -> str:
+        """Get the full detail endpoint URL for a specific asset."""
+        pattern = self.DETAIL_ENDPOINT_PATTERNS.get(asset_type)
+        if not pattern:
+            raise ValueError(f"No detail endpoint pattern for asset type: {asset_type}")
+        return f"{self.wave_base_url}{pattern.format(asset_id=asset_id)}"
 
     def _get_bundle_endpoint(self, asset_type: str, asset_id: str) -> str:
         """Get the full bundle endpoint URL for an asset."""
@@ -327,8 +350,14 @@ class CRMAGitSyncService:
         client: httpx.AsyncClient,
         asset_type: str,
     ) -> list[dict[str, Any]]:
-        """Fetch all assets of a type from CRMA REST API with pagination."""
-        assets = []
+        """Fetch all assets of a type from CRMA REST API with pagination.
+        
+        This first fetches the list of assets (preview/summary), then fetches
+        the full detail for each asset to get complete definitions including
+        widgets (dashboards), steps (dataflows/recipes), etc.
+        """
+        # First, fetch the list of assets (preview data)
+        asset_previews = []
         endpoint = self._get_asset_endpoint(asset_type)
         next_url = endpoint
 
@@ -389,11 +418,60 @@ class CRMAGitSyncService:
             data = response.json()
 
             if asset_key in data:
-                assets.extend(data[asset_key])
+                asset_previews.extend(data[asset_key])
 
             next_url = data.get("nextPageUrl")
 
-        return assets
+        # Now fetch full detail for each asset
+        # We need to merge preview data (for context like folderName) with full detail
+        full_assets = []
+
+        async def fetch_detail(preview: dict) -> dict:
+            """Fetch detail for a single asset with semaphore limiting."""
+            asset_id = preview.get("id")
+            if not asset_id:
+                return preview
+
+            async with self._detail_fetch_semaphore:
+                try:
+                    detail_url = self._get_detail_endpoint(asset_type, asset_id)
+                    response = await client.get(detail_url)
+
+                    if response.status_code == 401:
+                        raise httpx.HTTPStatusError(
+                            "Authentication failed: Your Salesforce session has expired. "
+                            "Run 'asftool auth login --alias <your-alias>' to re-authenticate.",
+                            request=response.request,
+                            response=response,
+                        )
+
+                    if response.status_code == 404:
+                        # Asset might have been deleted, use preview data
+                        print(f"[WARN] Detail fetch 404 for {asset_type} {asset_id}, using preview data")
+                        return preview
+
+                    response.raise_for_status()
+                    full_detail = response.json()
+
+                    # Merge: start with full detail, overlay preview fields that might
+                    # not be in detail (like folderName, applicationId for context)
+                    merged = {**full_detail}
+                    # Preserve preview fields useful for routing that might not be in detail
+                    for key in ["folderName", "applicationId", "folderId", "dataflowId", "dataflowName", "datasetId", "datasetName"]:
+                        if key in preview and key not in merged:
+                            merged[key] = preview[key]
+
+                    return merged
+
+                except Exception as e:
+                    print(f"[WARN] Failed to fetch detail for {asset_type} {asset_id}: {e}, using preview data")
+                    return preview
+
+        # Fetch details concurrently with semaphore limiting
+        tasks = [fetch_detail(preview) for preview in asset_previews]
+        full_assets = await asyncio.gather(*tasks)
+
+        return full_assets
 
     def _asset_to_context(self, asset: dict[str, Any], asset_type: str) -> AssetContext:
         """Convert CRMA asset to AssetContext for routing."""
@@ -715,6 +793,7 @@ def create_sync_service(
     auth_alias: str = "default",
     progress: Optional[Progress] = None,
     settings: Optional[Settings] = None,
+    detail_fetch_concurrency: int = 5,
 ) -> CRMAGitSyncService:
     """Factory function to create sync service."""
     return CRMAGitSyncService(
@@ -724,4 +803,5 @@ def create_sync_service(
         auth_alias=auth_alias,
         progress=progress,
         settings=settings,
+        detail_fetch_concurrency=detail_fetch_concurrency,
     )
