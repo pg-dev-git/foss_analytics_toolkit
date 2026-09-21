@@ -115,8 +115,18 @@ def sync(
 
         if not verbose and not quiet:
             print_info(f"Using SF org: {auth_tokens.username} @ {auth_tokens.instance_url}")
+            if auth_tokens.api_version:
+                print_info(f"Using API version from SF CLI: {auth_tokens.api_version}")
 
-        settings = get_settings()
+        # Use API version from stored token (from SF CLI org info) if available,
+        # otherwise fall back to settings (which uses .env/default)
+        from asftool.core.config import Settings
+        if auth_tokens.api_version:
+            settings = Settings(
+                **{**get_settings().model_dump(), "sf_api_version": auth_tokens.api_version}
+            )
+        else:
+            settings = get_settings()
         service = CRMAGitSyncService(
             resolver=resolver,
             instance_url=auth_tokens.instance_url,
