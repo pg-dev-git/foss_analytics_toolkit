@@ -470,6 +470,21 @@ class SFCLIAuthService:
         Raises:
             SFCLIAuthError: If no valid token available
         """
+        # First try to load from token store (includes api_version)
+        from asftool.core.auth.token_store import TokenStore
+        token_store = TokenStore(self.crypto_manager)
+        stored_token = await token_store.load_token(alias)
+        if stored_token and stored_token.access_token:
+            return AuthTokens(
+                access_token=stored_token.access_token,
+                instance_url=stored_token.instance_url,
+                username=stored_token.username,
+                alias=alias,
+                token_expired=stored_token.is_expired(),
+                api_version=stored_token.api_version,
+            )
+
+        # Fallback: get individual components (no api_version available)
         access_token = await self.get_access_token(alias=alias)
         instance_url = await self.get_instance_url(alias=alias)
         username = await self.get_username(alias=alias)
