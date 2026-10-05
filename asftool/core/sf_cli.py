@@ -533,6 +533,7 @@ class SFCLIManager:
             return None
 
         try:
+            # First try org list --json --all
             args = ["org", "list", "--json", "--all"]
             result = await self._run_command_async(args)
             output = json.loads(result.stdout)
@@ -549,6 +550,23 @@ class SFCLIManager:
                         if not version.startswith("v"):
                             version = f"v{version}"
                         return version
+            
+            # If not found in org list, try org display --target-org
+            # This handles cases where SF CLI authenticated with a different alias
+            # but the org is still accessible via target-org
+            try:
+                args = ["org", "display", "--target-org", alias, "--json"]
+                result = await self._run_command_async(args)
+                output = json.loads(result.stdout)
+                result_data = output.get("result", {})
+                version = result_data.get("instanceApiVersion")
+                if version:
+                    if not version.startswith("v"):
+                        version = f"v{version}"
+                    return version
+            except Exception:
+                pass
+            
             return None
         except Exception:
             return None
@@ -610,4 +628,25 @@ class SFCLIManager:
             return connected_orgs
         except Exception as e:
             logger.warning("get_sf_cli_orgs_failed", error=str(e))
+            return []
+
+    async def get_org_list(self) -> list[dict[str, Any]]:
+        """
+        Get ALL orgs from SF CLI (including disconnected/expired).
+        Used to find the actual alias for an instance URL.
+
+        Returns:
+            List of all org details
+        """
+        if not self.is_available():
+            return []
+        try:
+            args = ["org", "list", "--json", "--all"]
+            result = await self._run_command_async(args)
+            output = json.loads(result.stdout)
+            result_data = output.get("result", {})
+            orgs = result_data.get("other", []) + result_data.get("nonScratchOrgs", []) + result_data.get("devHubs", []) + result_data.get("scratchOrgs", [])
+            return orgs
+        except Exception as e:
+            logger.warning("get_org_list_failed", error=str(e))
             return []
