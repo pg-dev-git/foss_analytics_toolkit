@@ -484,11 +484,13 @@ class SFCLIAuthService:
                 api_version=stored_token.api_version,
             )
 
-        # Fallback: get individual components (no api_version available)
+        # Fallback: get individual components + try to get api_version from SF CLI
         access_token = await self.get_access_token(alias=alias)
         instance_url = await self.get_instance_url(alias=alias)
         username = await self.get_username(alias=alias)
         status = await self.status(alias=alias)
+        # Try to get API version from SF CLI org info
+        api_version = await self.sf_cli.get_org_api_version(alias)
 
         return AuthTokens(
             access_token=access_token,
@@ -496,4 +498,5 @@ class SFCLIAuthService:
             username=username,
             alias=alias,
             token_expired=status.get("token_expired", False),
+            api_version=api_version,
         )
