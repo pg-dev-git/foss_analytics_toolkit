@@ -78,13 +78,18 @@ class SFCLIAuthService:
                 timeout=timeout,
             )
 
-            # Store token
+            # Store token with the REQUESTED alias (not SF CLI's returned alias)
+            # SF CLI may return a different alias if the instance is already authenticated
             stored_token = StoredToken(
                 access_token=auth_result.access_token,
                 instance_url=auth_result.instance_url,
                 refresh_token=auth_result.refresh_token,
                 expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
+<<<<<<< HEAD
                 alias=alias,
+=======
+                alias=alias,  # Use requested alias
+>>>>>>> 62be8fe (fix(auth): always store token with requested alias)
                 username=auth_result.username,
             )
             await self.token_store.save_token(stored_token)
@@ -107,7 +112,11 @@ class SFCLIAuthService:
                 instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
+<<<<<<< HEAD
                 alias=alias,
+=======
+                alias=alias,  # Use requested alias
+>>>>>>> 62be8fe (fix(auth): always store token with requested alias)
                 username=org_info.username,
                 api_version=api_version,
             )
@@ -163,7 +172,11 @@ class SFCLIAuthService:
                 instance_url=auth_result.instance_url,
                 refresh_token=auth_result.refresh_token,
                 expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
+<<<<<<< HEAD
                 alias=alias,
+=======
+                alias=alias,  # Use requested alias
+>>>>>>> 62be8fe (fix(auth): always store token with requested alias)
                 username=auth_result.username,
             )
             await self.token_store.save_token(stored_token)
@@ -186,7 +199,11 @@ class SFCLIAuthService:
                 instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
+<<<<<<< HEAD
                 alias=alias,
+=======
+                alias=alias,  # Use requested alias
+>>>>>>> 62be8fe (fix(auth): always store token with requested alias)
                 username=org_info.username,
                 api_version=api_version,
             )
@@ -538,13 +555,14 @@ class SFCLIAuthService:
         access_token = await self.sf_cli.get_access_token(alias)
         api_version = await self.sf_cli.get_org_api_version(alias)
 
-        # Store in token store
+        # Store in token store with the REQUESTED alias
+        # SF CLI may return a different alias if the instance is already authenticated
         stored_token = StoredToken(
             access_token=access_token,
             instance_url=org_info.instance_url or "",
             refresh_token=org_info.refresh_token,
             expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
-            alias=org_info.alias,
+            alias=alias,  # Use requested alias
             username=org_info.username,
             api_version=api_version,
         )
