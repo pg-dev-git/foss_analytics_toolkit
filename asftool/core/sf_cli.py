@@ -606,6 +606,7 @@ class SFCLIManager:
             return None
 
         try:
+            # First try org list --json --all
             args = ["org", "list", "--json", "--all"]
             result = await self._run_command_async(args)
             output = json.loads(result.stdout)
@@ -622,6 +623,23 @@ class SFCLIManager:
                         if not version.startswith("v"):
                             version = f"v{version}"
                         return version
+            
+            # If not found in org list, try org display --target-org
+            # This handles cases where SF CLI authenticated with a different alias
+            # but the org is still accessible via target-org
+            try:
+                args = ["org", "display", "--target-org", alias, "--json"]
+                result = await self._run_command_async(args)
+                output = json.loads(result.stdout)
+                result_data = output.get("result", {})
+                version = result_data.get("instanceApiVersion")
+                if version:
+                    if not version.startswith("v"):
+                        version = f"v{version}"
+                    return version
+            except Exception:
+                pass
+            
             return None
         except Exception:
             return None
