@@ -492,7 +492,7 @@ class SFCLIAuthService:
         """
         # First try to load from token store (includes api_version)
         from asftool.core.auth.token_store import TokenStore
-        token_store = TokenStore(self.crypto_manager)
+        token_store = TokenStore(self.crypto)  # FIX: use self.crypto
         stored_token = await token_store.load_token(alias)
         if stored_token and stored_token.access_token:
             return AuthTokens(
@@ -518,5 +518,5 @@ class SFCLIAuthService:
             username=username,
             alias=alias,
             token_expired=status.get("token_expired", False),
-            api_version=api_version,
+            api_version=api_version,  # FIX: include api_version
         )
