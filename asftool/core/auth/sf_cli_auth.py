@@ -75,8 +75,11 @@ class SFCLIAuthService:
                 timeout=timeout,
             )
 
-            # Store token with the REQUESTED alias (not SF CLI's returned alias)
             # SF CLI may return a different alias if the instance is already authenticated
+            # Use SF CLI's actual alias for subsequent API calls
+            sf_cli_actual_alias = auth_result.alias or alias
+
+            # Store token with the REQUESTED alias (not SF CLI's returned alias)
             stored_token = StoredToken(
                 access_token=auth_result.access_token,
                 instance_url=auth_result.instance_url,
@@ -91,12 +94,13 @@ class SFCLIAuthService:
             # The 'org display' command redacts the token for security.
             # Also get org info for instance_url, username, etc.
             # This step is MANDATORY - the login_web token is often redacted/invalid.
-            actual_token = await self.sf_cli.get_access_token(alias=alias)
+            actual_token = await self.sf_cli.get_access_token(alias=sf_cli_actual_alias)
 
             # Get org info for metadata (instance_url, username, etc.).
             # If SF CLI rejects version format, fall back to auth_result.
-            org_info = await self.sf_cli.get_org_info(alias=alias)
-            api_version = await self.sf_cli.get_org_api_version(alias)
+            org_info = await self.sf_cli.get_org_info(alias=sf_cli_actual_alias)
+            # Get API version using SF CLI's actual alias
+            api_version = await self.sf_cli.get_org_api_version(sf_cli_actual_alias)
             # If version was rejected, org_info is partial; fall back to auth_result.
             if not org_info.instance_url:
                 org_info = auth_result
@@ -156,6 +160,10 @@ class SFCLIAuthService:
                 timeout=timeout,
             )
 
+            # SF CLI may return a different alias if the instance is already authenticated
+            # Use SF CLI's actual alias for subsequent API calls
+            sf_cli_actual_alias = auth_result.alias or alias
+
             stored_token = StoredToken(
                 access_token=auth_result.access_token,
                 instance_url=auth_result.instance_url,
@@ -170,12 +178,13 @@ class SFCLIAuthService:
             # The 'org display' command redacts the token for security.
             # Also get org info for instance_url, username, etc.
             # This step is MANDATORY - the login_device token is often redacted/invalid.
-            actual_token = await self.sf_cli.get_access_token(alias=alias)
+            actual_token = await self.sf_cli.get_access_token(alias=sf_cli_actual_alias)
 
             # Get org info for metadata (instance_url, username, etc.).
             # If SF CLI rejects version format, fall back to auth_result.
-            org_info = await self.sf_cli.get_org_info(alias=alias)
-            api_version = await self.sf_cli.get_org_api_version(alias)
+            org_info = await self.sf_cli.get_org_info(alias=sf_cli_actual_alias)
+            # Get API version using SF CLI's actual alias
+            api_version = await self.sf_cli.get_org_api_version(sf_cli_actual_alias)
             # If version was rejected, org_info is partial; fall back to auth_result.
             if not org_info.instance_url:
                 org_info = auth_result
@@ -438,10 +447,19 @@ class SFCLIAuthService:
         if not is_authenticated:
             raise SFCLIAuthError(f"No authenticated session for alias '{alias}' in SF CLI. Run 'sf org login web' first.")
 
-        # Get org info and access token from SF CLI
+        # Get org info using the requested alias first
         org_info = await self.sf_cli.get_org_info(alias)
-        access_token = await self.sf_cli.get_access_token(alias)
-        api_version = await self.sf_cli.get_org_api_version(alias)
+        
+        # If the org info doesn't match the requested alias, SF CLI may have a different alias
+        # for the same instance. Use the actual alias from org_info for subsequent calls.
+        sf_cli_actual_alias = org_info.alias or alias
+        
+        # Get org info and access token using SF CLI's actual alias
+        if sf_cli_actual_alias != alias:
+            org_info = await self.sf_cli.get_org_info(sf_cli_actual_alias)
+        access_token = await self.sf_cli.get_access_token(alias=sf_cli_actual_alias)
+        # Get API version using SF CLI's actual alias
+        api_version = await self.sf_cli.get_org_api_version(sf_cli_actual_alias)
 
         # Store in token store with the REQUESTED alias
         # SF CLI may return a different alias if the instance is already authenticated
