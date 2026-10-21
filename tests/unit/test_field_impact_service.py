@@ -422,15 +422,6 @@ async def test_progress_callback_invoked():
 
 
 @pytest.mark.asyncio
-async def test_extract_page_token():
-    s = FieldImpactService.__new__(FieldImpactService)
-    assert s._extract_page_token("") is None
-    assert s._extract_page_token("/path?other=x") is None
-    assert s._extract_page_token("/path?pageToken=abc") == "abc"
-    assert s._extract_page_token("/path?pageToken=abc&sort=name") == "abc"
-
-
-@pytest.mark.asyncio
 async def test_analyze_with_application_id_builds_graph():
     """When application_id is provided, the service should build a graph
     and only scan assets present in that graph."""

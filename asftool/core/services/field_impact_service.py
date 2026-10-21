@@ -31,6 +31,7 @@ from asftool.core.models import (
     ReplicatedDatasetField,
     ReplicatedDatasetFieldAnalysisResult,
 )
+from asftool.core.pagination import extract_page_token
 from asftool.core.services.asset_graph import AssetGraphBuilder
 from asftool.core.services.field_matcher import FieldMatcher, extract_field_strings
 
@@ -277,15 +278,20 @@ class FieldImpactService:
         """List all datasets, handling pagination."""
         all_ds: list[dict] = []
         page_token: str | None = None
+        seen_tokens: set[str] = set()
         while True:
             resp = await self.client.list_datasets(page_token=page_token)
             all_ds.extend(resp.get("datasets", []))
             next_url = resp.get("nextPageUrl")
             if not next_url:
                 break
-            page_token = self._extract_page_token(next_url)
-            if not page_token:
+            next_token = extract_page_token(next_url)
+            if not next_token or next_token in seen_tokens:
+                # The platform is not advancing (or the URL carries no
+                # cursor); stop rather than loop forever.
                 break
+            seen_tokens.add(next_token)
+            page_token = next_token
         return all_ds
 
     async def _scan_one_dataset(
@@ -366,15 +372,20 @@ class FieldImpactService:
         """Scan dashboards for field references in widget/step JSON."""
         all_db: list[dict] = []
         page_token: str | None = None
+        seen_tokens: set[str] = set()
         while True:
             resp = await self.client.list_dashboards(page_token=page_token)
             all_db.extend(resp.get("dashboards", []))
             next_url = resp.get("nextPageUrl")
             if not next_url:
                 break
-            page_token = self._extract_page_token(next_url)
-            if not page_token:
+            next_token = extract_page_token(next_url)
+            if not next_token or next_token in seen_tokens:
+                # The platform is not advancing (or the URL carries no
+                # cursor); stop rather than loop forever.
                 break
+            seen_tokens.add(next_token)
+            page_token = next_token
 
         if graph is not None:
             graph_db_ids = {n.id for n in graph.filter_by_type(AssetType.DASHBOARD)}
@@ -697,15 +708,3 @@ class FieldImpactService:
             replicated_datasets_scanned=len(details.replicated_datasets),
         )
 
-    @staticmethod
-    def _extract_page_token(url: str) -> str | None:
-        """Extract pageToken query param from a next-page URL."""
-        if not url:
-            return None
-        if "pageToken=" not in url:
-            return None
-        try:
-            after = url.split("pageToken=", 1)[1]
-            return after.split("&", 1)[0]
-        except Exception:
-            return None

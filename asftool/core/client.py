@@ -24,6 +24,7 @@ from asftool.core.exceptions import (
     SalesforceNotFoundError,
     SalesforceRateLimitError,
 )
+from asftool.core.pagination import build_page_params
 
 logger = structlog.get_logger(__name__)
 
@@ -235,9 +236,7 @@ class SalesforceClient:
         page_token: str | None = None,
     ) -> Any:
         """List datasets with pagination."""
-        params = {"pageSize": page_size, "sort": sort}
-        if page_token:
-            params["pageToken"] = page_token
+        params = build_page_params(page_token, page_size=page_size, sort=sort)
         response = await self.get(f"{self.wave_base_url}/datasets", params=params)
         return response.json()
 
@@ -275,9 +274,7 @@ class SalesforceClient:
         page_token: str | None = None,
     ) -> Any:
         """List dashboards with pagination."""
-        params = {"pageSize": page_size, "sort": sort}
-        if page_token:
-            params["pageToken"] = page_token
+        params = build_page_params(page_token, page_size=page_size, sort=sort)
         response = await self.get(f"{self.wave_base_url}/dashboards", params=params)
         return response.json()
 
