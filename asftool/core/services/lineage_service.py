@@ -5,12 +5,16 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import structlog
+
 from asftool.core.models.lineage import (
     AssetType,
     LineageEdge,
     LineageGraph,
     LineageNode,
 )
+
+logger = structlog.get_logger(__name__)
 
 
 class LineageService:
@@ -31,8 +35,14 @@ class LineageService:
 
             try:
                 data = await self.client.get_dependencies(asset_id)
-            except Exception:
-                # If dependency API fails, treat as leaf
+            except Exception as e:
+                # The dependency fetch failed. Treating the asset as a leaf
+                # makes a partial graph look complete, so record it.
+                logger.warning(
+                    "lineage_dependency_fetch_failed", asset_id=asset_id, error=str(e)
+                )
+                if asset_id not in graph.incomplete_nodes:
+                    graph.incomplete_nodes.append(asset_id)
                 return
 
             # Extract nodes from response

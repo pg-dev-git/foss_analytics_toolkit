@@ -160,6 +160,8 @@ class DataflowService:
             )
 
         import json
+        # A user-chosen path may not have an existing parent directory.
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(definition, indent=2, ensure_ascii=False), encoding="utf-8")
         logger.info("dataflow_backup_saved", path=str(output_path))
 

@@ -47,8 +47,17 @@ class LineageGraph(BaseModel):
     nodes: list[LineageNode] = Field(default_factory=list)
     edges: list[LineageEdge] = Field(default_factory=list)
     root_asset_id: str | None = None
+    #: Assets whose dependencies could not be fetched. A graph is only as
+    #: complete as its data: without this, a partial graph looks identical
+    #: to a complete one and the missing nodes are invisible.
+    incomplete_nodes: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="allow")
+
+    @property
+    def is_complete(self) -> bool:
+        """True when every node's dependencies were fetched successfully."""
+        return not self.incomplete_nodes
 
     def add_node(self, node: LineageNode) -> None:
         if not any(n.id == node.id for n in self.nodes):

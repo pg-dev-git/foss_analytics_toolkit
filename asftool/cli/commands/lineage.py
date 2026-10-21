@@ -12,6 +12,7 @@ from asftool.cli.ui import (
     print_error,
     print_info,
     print_lineage_success,
+    print_warning,
 )
 from asftool.core.services.lineage_service import LineageService
 
@@ -31,6 +32,15 @@ async def generate_async(asset_id: str, fmt: str = "mermaid", out: str = "lineag
             service = LineageService(client)
             print_info(f"Fetching dependencies for asset: {asset_id}")
             graph = await service.build_graph(asset_id)
+            if graph.incomplete_nodes:
+                # A partial graph looks exactly like a complete one, so the
+                # user has to be told which assets are missing.
+                print_warning(
+                    f"Partial graph: dependencies could not be fetched for "
+                    f"{len(graph.incomplete_nodes)} asset(s): "
+                    f"{', '.join(graph.incomplete_nodes[:10])}"
+                    + ("..." if len(graph.incomplete_nodes) > 10 else "")
+                )
             if fmt == "mermaid":
                 mmd = service.render_mermaid(graph)
                 out_path = f"{out}.mmd"

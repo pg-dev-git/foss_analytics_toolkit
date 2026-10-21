@@ -115,6 +115,8 @@ class DashboardService:
                 dashboard_id=dashboard_id,
             )
 
+        # A user-chosen path may not have an existing parent directory.
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(json_definition, indent=2, ensure_ascii=False), encoding="utf-8")
         logger.info("dashboard_backup_saved", path=str(output_path))
 

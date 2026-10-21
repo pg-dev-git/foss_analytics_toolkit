@@ -31,11 +31,15 @@ def show() -> None:
     """Show all current settings (env var + persisted + default)."""
     settings = get_settings()
     user = get_user_config()
+    from asftool.core.storage import get_storage_manager
+
+    storage = get_storage_manager(settings)
     print_info("=== Configuration ===")
     print_info(f"API version (effective):  {settings.sf_api_version}")
     print_info(f"API version (persisted):  {user.sf_api_version or '(none)'}")
     print_info(f"Default domain:           {settings.sf_default_domain}")
     print_info(f"Config dir:               {settings.config_dir}")
+    print_info(f"Downloads dir:            {storage.base_dir}")
     print_info(f"Log file:                 {settings.log_file}")
     print_info(
         f"Persisted config file:    {ConfigStore.DEFAULT_PATH} "

@@ -15,13 +15,26 @@ from asftool.core.config import Settings, get_settings
 class StorageManager:
     """Manages organized storage for downloaded data."""
 
-    def __init__(self, settings: Settings | None = None):
+    def __init__(self, settings: Settings | None = None, base_dir: Path | None = None):
         self.settings = settings or get_settings()
+        self._base_dir = base_dir
 
     @property
     def base_dir(self) -> Path:
-        """Base directory for all downloads (in current working directory)."""
-        return Path.cwd() / "asftool_downloads"
+        """Base directory for all downloads (``~/.asftool/downloads``).
+
+        Downloads used to land in ``$CWD/asftool_downloads``, which meant
+        running the tool from a different directory scattered output
+        wherever the user happened to be -- and could write into a
+        read-only or synchronised location. The location is now fixed
+        under the config directory, matching the sibling git workspaces
+        and the service docstrings.
+
+        See ``docs/decisions/0001-storage-root.md``.
+        """
+        if self._base_dir is not None:
+            return self._base_dir
+        return self.settings.config_dir / "downloads"
 
     def _sanitize(self, name: str) -> str:
         """Sanitize a string for use in filenames."""
@@ -158,7 +171,13 @@ class StorageManager:
             type_dir = self._org_dir(alias) / type_
             if not type_dir.exists():
                 continue
-            files = sorted(type_dir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
+            # glob("*") returns directories too, and unlink() on a directory
+            # raises IsADirectoryError.
+            files = sorted(
+                (p for p in type_dir.glob("*") if p.is_file()),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
             for old_file in files[keep_last:]:
                 old_file.unlink()
                 removed += 1
