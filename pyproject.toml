@@ -69,6 +69,9 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["asftool*"]
 
+[tool.setuptools.package-data]
+asftool = ["py.typed"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
