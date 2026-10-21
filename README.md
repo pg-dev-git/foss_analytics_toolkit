@@ -146,6 +146,9 @@ uv run mypy asftool                # typecheck
 uv run python scripts/verify-cross-platform.py  # platform sanity checks
 ```
 
+All three checks (`pytest`, `ruff`, `mypy`) also run in CI on every pull
+request. See [CHANGELOG.md](CHANGELOG.md) for the release history.
+
 ### Live testing against a real org
 
 ```bash
