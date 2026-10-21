@@ -12,6 +12,7 @@ from asftool.core.auth import SFCLIAuthService
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings, get_settings
 from asftool.core.crypto import CryptoManager, create_crypto_manager
+from asftool.core.exceptions import CryptoError
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +33,17 @@ class Session:
     ):
         self.alias = alias
         self.settings = settings or get_settings()
-        self.crypto = crypto or create_crypto_manager()
+        # A missing encryption key must not stop the session from being
+        # created: `asftool doctor` has to work on a machine with no
+        # configuration, because that is exactly when it is needed.
+        self.crypto: CryptoManager | None
+        if crypto is not None:
+            self.crypto = crypto
+        else:
+            try:
+                self.crypto = create_crypto_manager()
+            except CryptoError:
+                self.crypto = None
         self._auth_service: SFCLIAuthService | None = None
         self._client: SalesforceClient | None = None
 
@@ -42,6 +53,9 @@ class Session:
         if self._auth_service is None:
             self._auth_service = SFCLIAuthService(
                 settings=self.settings,
+                # May be None when no encryption key is configured. The auth
+                # service only needs it to *store* a token, so status and
+                # diagnostics still work without one.
                 crypto_manager=self.crypto,
             )
         return self._auth_service

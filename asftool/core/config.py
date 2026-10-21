@@ -34,11 +34,14 @@ class Settings(BaseSettings):
     sf_api_version: str = Field(default="v68.0", alias="SF_API_VERSION")
     sf_default_domain: str = Field(default="login.salesforce.com", alias="SF_DEFAULT_DOMAIN")
 
-    # Encryption Settings
-    encryption_key: str = Field(alias="ENCRYPTION_KEY")
+    # Encryption Settings.
+    # Optional so the tool can start on a machine with no .env file; the
+    # preflight in cli/main.py tells the user what to do instead of the
+    # process dying with a pydantic traceback.
+    encryption_key: str | None = Field(default=None, alias="ENCRYPTION_KEY")
 
     # JWT Settings
-    jwt_secret_key: str = Field(alias="JWT_SECRET_KEY")
+    jwt_secret_key: str | None = Field(default=None, alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
@@ -81,8 +84,10 @@ class Settings(BaseSettings):
 
     @field_validator("encryption_key")
     @classmethod
-    def validate_encryption_key(cls, v: str) -> str:
+    def validate_encryption_key(cls, v: str | None) -> str | None:
         """Validate that encryption key is a valid base64-encoded 32-byte key."""
+        if v is None:
+            return None
         try:
             decoded = base64.urlsafe_b64decode(v + "=" * (-len(v) % 4))
             if len(decoded) != 32:
@@ -93,8 +98,10 @@ class Settings(BaseSettings):
 
     @field_validator("jwt_secret_key")
     @classmethod
-    def validate_jwt_secret(cls, v: str) -> str:
+    def validate_jwt_secret(cls, v: str | None) -> str | None:
         """Validate JWT secret key length."""
+        if v is None:
+            return None
         if len(v) < 32:
             raise ValueError("JWT secret key must be at least 32 characters")
         return v

@@ -167,7 +167,19 @@ class CryptoManager:
 
 
 def create_crypto_manager() -> CryptoManager:
-    """Factory function to create CryptoManager from settings."""
+    """Factory function to create CryptoManager from settings.
+
+    Raises:
+        CryptoError: If no encryption key is configured. The key is what
+            protects the tokens in the OS keyring, so there is no safe
+            fallback -- the caller must report the missing configuration
+            rather than silently storing tokens unprotected.
+    """
     from asftool.core.config import get_settings
     settings = get_settings()
+    if not settings.encryption_key:
+        raise CryptoError(
+            "No ENCRYPTION_KEY is configured. "
+            "Run 'asftool init' or copy .env.example to .env."
+        )
     return CryptoManager(settings.encryption_key)

@@ -9,7 +9,11 @@ import keyring
 import structlog
 
 from asftool.core.crypto import CryptoManager, EncryptedData
-from asftool.core.exceptions import TokenRefreshError, TokenStoreUnavailableError
+from asftool.core.exceptions import (
+    CryptoError,
+    TokenRefreshError,
+    TokenStoreUnavailableError,
+)
 from asftool.core.sf_cli import SFCLIManager
 
 logger = structlog.get_logger(__name__)
@@ -106,12 +110,14 @@ class TokenStore:
 
     KEYRING_SERVICE = "asftool-sfcli"
 
-    def __init__(self, crypto_manager: CryptoManager):
+    def __init__(self, crypto_manager: CryptoManager | None):
         """
         Initialize token store.
 
         Args:
-            crypto_manager: CryptoManager instance for encryption
+            crypto_manager: CryptoManager instance for encryption. May be
+                None when no encryption key is configured; saving a token
+                then raises rather than storing it unprotected.
         """
         self.crypto = crypto_manager
 
@@ -125,7 +131,17 @@ class TokenStore:
 
         Args:
             token: StoredToken to save
+
+        Raises:
+            CryptoError: If no encryption key is configured. Storing a token
+                unprotected would defeat the point of the keyring.
         """
+        if self.crypto is None:
+            raise CryptoError(
+                "Cannot store a token: no ENCRYPTION_KEY is configured. "
+                "Run 'asftool init' or copy .env.example to .env."
+            )
+
         token.update_timestamp()
 
         # Serialize to JSON
@@ -166,6 +182,11 @@ class TokenStore:
 
         if not stored:
             return None
+
+        if self.crypto is None:
+            raise CryptoError(
+                "Cannot decrypt the stored token: no ENCRYPTION_KEY is configured."
+            )
 
         try:
             encrypted = EncryptedData.from_json(stored)

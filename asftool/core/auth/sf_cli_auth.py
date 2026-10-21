@@ -24,7 +24,7 @@ class SFCLIAuthService:
     def __init__(
         self,
         settings: Settings,
-        crypto_manager: CryptoManager,
+        crypto_manager: CryptoManager | None,
         sf_cli_manager: SFCLIManager | None = None,
     ):
         """
@@ -32,7 +32,9 @@ class SFCLIAuthService:
 
         Args:
             settings: Application settings
-            crypto_manager: CryptoManager for token encryption
+            crypto_manager: CryptoManager for token encryption. May be None
+                when no encryption key is configured -- the service can then
+                report status and list orgs, but not store a token.
             sf_cli_manager: Optional SFCLIManager instance (created if not provided)
         """
         self.settings = settings
