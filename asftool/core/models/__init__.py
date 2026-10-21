@@ -369,10 +369,15 @@ class DataflowJob(BaseModel):
     ``startDate``/``executedDate``. ``dataflow_id`` and ``dataflow_name``
     are therefore optional and only populated by callers that know which
     dataflow they asked for (e.g. the response to a start/stop request).
+
+    ``status`` is a plain string rather than an enum: the platform adds
+    statuses over time (a live org returns ``Warning``, which no
+    documented list mentions) and an unknown value must not stop the
+    listing from rendering.
     """
 
     id: str
-    status: Literal["Queued", "Running", "Success", "Failed", "Cancelled", "NotStarted"]
+    status: str
     label: str | None = None
     job_type: str | None = Field(default=None, alias="jobType")
     dataflow_id: str | None = None

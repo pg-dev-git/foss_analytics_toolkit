@@ -35,6 +35,7 @@ _STATUS_COLORS = {
     "Success": "green",
     "Running": "green",
     "Queued": "yellow",
+    "Warning": "yellow",
     "Cancelled": "yellow",
     "Failed": "red",
 }

@@ -150,14 +150,18 @@ class TestDataflowJobContracts:
         assert job.start_time.year == 2026
 
     def test_dataflow_job_end_time_is_optional(self):
-        """A queued job has no `executedDate`; the model must still parse."""
-        queued = next(
-            j
-            for j in wave_responses.DATAFLOW_JOBS["dataflowJobs"]
-            if j.get("status") == "Queued"
+        """A job that has not finished has no `executedDate`; it must parse."""
+        job = DataflowJob(
+            **{
+                "id": "03C000000000002",
+                "status": "Queued",
+                "jobType": "datasync",
+                "label": "Example Replication",
+                "startDate": "2026-10-21T13:52:01.000Z",
+            }
         )
-        job = DataflowJob(**queued)
         assert job.end_time is None
+        assert job.start_time is not None
 
     def test_dataflow_job_exposes_label(self):
         job = DataflowJob(**wave_responses.DATAFLOW_JOBS["dataflowJobs"][0])
@@ -166,6 +170,39 @@ class TestDataflowJobContracts:
     def test_dataflow_job_exposes_error_message(self):
         job = DataflowJob(**wave_responses.DATAFLOW_JOBS["dataflowJobs"][0])
         assert job.error_message is None or isinstance(job.error_message, str)
+
+    def test_dataflow_job_accepts_unknown_status(self):
+        """The platform adds statuses over time; an unknown one must not raise.
+
+        A live org returned `Warning`, which appears in no documented list of
+        job statuses. A strict enum here would break `jobs list` entirely.
+        """
+        job = DataflowJob(
+            **{
+                **wave_responses.DATAFLOW_JOBS["dataflowJobs"][0],
+                "status": "Warning",
+            }
+        )
+        assert job.status == "Warning"
+
+    def test_dataflow_job_parses_a_job_with_a_warning_message(self):
+        """A `Warning` job carries a multi-line `message` field."""
+        job = DataflowJob(
+            **{
+                "id": "03C000000000001",
+                "status": "Warning",
+                "jobType": "user",
+                "label": "Example Dataflow",
+                "startDate": "2026-10-21T13:58:45.000Z",
+                "executedDate": "2026-10-21T13:58:59.000Z",
+                "duration": 176,
+                "progress": 60.5,
+                "message": "Job completed with message:\nthe node didn't augment any columns.",
+            }
+        )
+        assert job.status == "Warning"
+        assert job.duration == 176
+        assert job.error_message
 
 
 # ---------------------------------------------------------------------------
