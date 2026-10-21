@@ -315,12 +315,22 @@ class SFCLIAuthService:
         }
 
     async def list_orgs(self) -> list[dict[str, Any]]:
-        """List all authorized orgs from SF CLI."""
+        """List all authorized orgs from SF CLI.
+
+        Raises:
+            SFCLIError: If SF CLI is installed but its output cannot be
+                parsed. Returning an empty list in that case made a parsing
+                bug indistinguishable from "you have no orgs", which is how
+                the org-discovery bug went unnoticed.
+        """
         if not self.sf_cli.is_available():
             return []
 
         try:
             return self.sf_cli.list_orgs()
+        except SFCLIError:
+            logger.error("list_orgs_parse_failed")
+            raise
         except Exception as e:
             logger.error("list_orgs_failed", error=str(e))
-            return []
+            raise SFCLIError(f"Could not list orgs via SF CLI: {e}") from e
