@@ -268,7 +268,7 @@ class DatasetService:
 
         job.status = "completed"
         job.result_path = str(output_path)
-        job.completed_at = pd.Timestamp.utcnow().to_pydatetime()
+        job.completed_at = pd.Timestamp.now("UTC").to_pydatetime()
 
         logger.info(
             "extraction_completed",
@@ -483,7 +483,7 @@ class DatasetService:
         await self.client.process_insights_external_data(external_data_id)
 
         job.status = "completed"
-        job.completed_at = pd.Timestamp.utcnow().to_pydatetime()
+        job.completed_at = pd.Timestamp.now("UTC").to_pydatetime()
 
         logger.info(
             "upload_completed",
@@ -520,7 +520,8 @@ class DatasetService:
         )
         external_data_id = job_response["id"]
 
-        total_rows = sum(1 for _ in open(file_path, encoding="utf-8")) - 1
+        with open(file_path, encoding="utf-8") as f:
+            total_rows = sum(1 for _ in f) - 1
         total_parts = math.ceil(total_rows / chunk_size)
 
         part_number = 1

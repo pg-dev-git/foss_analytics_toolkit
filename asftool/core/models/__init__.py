@@ -1,7 +1,7 @@
 """Pydantic models for ASFTool domain objects."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -218,8 +218,8 @@ class ExtractionJob(BaseModel):
     total_chunks: int = 0
     result_path: str | None = None
     error: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
@@ -239,8 +239,8 @@ class UploadJob(BaseModel):
     total_parts: int = 0
     external_data_id: str | None = None
     error: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
 
     model_config = ConfigDict(extra="allow")
@@ -316,7 +316,7 @@ class DashboardBackup(BaseModel):
     dashboard_name: str
     dashboard_label: str
     json_definition: dict[str, Any]
-    backed_up_at: datetime = Field(default_factory=datetime.utcnow)
+    backed_up_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     model_config = ConfigDict(extra="allow")
 
