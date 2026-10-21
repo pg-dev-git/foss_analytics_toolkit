@@ -1,3 +1,6 @@
+import pathlib
+
+
 def test_diag():
     import os
     import rich.console
@@ -7,8 +10,15 @@ def test_diag():
 
     c = rich.console.Console()
     r = CliRunner().invoke(app, ["doctor", "--help"])
-    print("CI_DIAG cols=", os.environ.get("COLUMNS"), "lines=", os.environ.get("LINES"))
-    print("CI_DIAG term=", os.environ.get("TERM"))
-    print("CI_DIAG richwidth=", c.width, "richheight=", c.height)
-    print("CI_DIAG stdoutlen=", len(r.stdout))
-    print("CI_DIAG stdoutrepr=", repr(r.stdout[:200]))
+    lines = [
+        f"cols={os.environ.get('COLUMNS')}",
+        f"lines={os.environ.get('LINES')}",
+        f"term={os.environ.get('TERM')}",
+        f"richwidth={c.width}",
+        f"richheight={c.height}",
+        f"stdoutlen={len(r.stdout)}",
+        f"stdoutrepr={r.stdout[:300]!r}",
+        f"has_alias={'--alias' in r.stdout}",
+    ]
+    pathlib.Path("/tmp/ci_diag.txt").write_text("\n".join(lines))
+    assert True
