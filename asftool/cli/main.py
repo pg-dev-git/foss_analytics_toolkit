@@ -42,6 +42,7 @@ from asftool.cli.commands.dataflows import app as dataflows_app
 from asftool.cli.commands.datasets import app as datasets_app
 from asftool.cli.commands.doctor import app as doctor_app
 from asftool.cli.commands.fields import app as fields_app
+from asftool.cli.commands.init import init as init_command
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
 from asftool.cli.menu import Menu, create_menus
@@ -65,6 +66,7 @@ app.add_typer(doctor_app, name="doctor")
 app.add_typer(fields_app, name="fields")
 app.add_typer(config_app, name="config")
 app.add_typer(lineage_app, name="lineage")
+app.command("init")(init_command)
 
 
 # ---------------------------------------------------------------------------
@@ -191,7 +193,18 @@ async def _run_menu_loop(main_menu: Menu) -> None:
 
 def _has_subcommand(argv: list[str]) -> bool:
     """True if argv contains a known subcommand (not just --flags)."""
-    known = {"auth", "datasets", "dashboards", "dataflows", "jobs", "doctor", "fields", "config", "lineage"}
+    known = {
+        "auth",
+        "datasets",
+        "dashboards",
+        "dataflows",
+        "jobs",
+        "doctor",
+        "fields",
+        "config",
+        "lineage",
+        "init",
+    }
     for arg in argv[1:]:
         if arg in known:
             return True
@@ -247,7 +260,9 @@ def _preflight() -> str | None:
 
 
 #: Commands that must run even when the configuration is incomplete.
-_PREFLIGHT_EXEMPT = {"doctor", "config"}
+#: ``doctor`` and ``config show`` are the commands a user runs precisely
+#: because something is misconfigured; ``init`` is what fixes it.
+_PREFLIGHT_EXEMPT = {"doctor", "config", "init"}
 
 
 def _setup_logging() -> None:
