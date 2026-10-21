@@ -88,6 +88,24 @@ class TokenNotFoundError(OAuthError):
     pass
 
 
+class TokenStoreUnavailableError(ASFToolError):
+    """Raised when no OS keyring backend is available.
+
+    Headless containers frequently have no keyring. The failure is
+    recoverable -- install ``keyrings.alt`` -- so it gets its own type
+    rather than surfacing as a raw ``NoKeyringError`` traceback.
+    """
+
+
+class TokenRefreshError(OAuthError):
+    """Raised when refreshing an expired token fails.
+
+    Distinct from "there is no token": a refresh failure must not be
+    confused with an empty store, because the first means "your session
+    broke" and the second means "log in".
+    """
+
+
 class ValidationError(ASFToolError):
     """Raised when input validation fails."""
 

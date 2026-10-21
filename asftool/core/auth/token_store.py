@@ -9,9 +9,23 @@ import keyring
 import structlog
 
 from asftool.core.crypto import CryptoManager, EncryptedData
+from asftool.core.exceptions import TokenRefreshError, TokenStoreUnavailableError
 from asftool.core.sf_cli import SFCLIManager
 
 logger = structlog.get_logger(__name__)
+
+#: How long a token without an explicit expiry is trusted after it was last
+#: observed. The SF CLI does not report a token expiry, so this bounds how
+#: long an unverified token is used before it is refreshed.
+MAX_TOKEN_AGE = 3600  # seconds
+
+#: Actionable message for a host with no OS keyring backend.
+_NO_KEYRING_MESSAGE = (
+    "No OS keyring backend is available on this machine. "
+    "Install one with: pip install 'keyrings.alt' "
+    "(or: pip install 'asftool[headless]'), "
+    "or use a container that provides a keyring."
+)
 
 
 @dataclass
@@ -25,13 +39,16 @@ class StoredToken:
     username: str | None = None
     created_at: str = ""  # ISO format string
     updated_at: str = ""  # ISO format string
+    observed_at: str | None = None  # ISO format string
 
     def __post_init__(self):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
         if not self.created_at:
             self.created_at = now
         if not self.updated_at:
             self.updated_at = now
+        if not self.observed_at:
+            self.observed_at = now
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -43,33 +60,45 @@ class StoredToken:
         return cls(**data)
 
     def is_expired(self, buffer_seconds: int = 60) -> bool:
-        """Check if token is expired (with buffer).
+        """Check if the token is expired (with buffer).
+
+        The SF CLI does not report a token expiry -- `sf org display` has
+        no such field, and the access token is opaque rather than a
+        decodable JWT. So there is no authoritative expiry to read.
+
+        Two signals are used instead:
+
+        * ``expires_at``, when the platform did provide one.
+        * ``observed_at`` plus :data:`MAX_TOKEN_AGE`, as a bounded fallback
+          for the case where no expiry is available. Salesforce session
+          tokens are valid for a limited time, so a token we have not
+          refreshed within that window is treated as expired rather than
+          trusted forever.
 
         Returns:
-            True if we have a parseable timestamp that's already past
-            (or within ``buffer_seconds`` of being past). False if the
-            token is clearly still valid, OR if we have no ``expires_at``
-            at all (e.g. SF CLI returned a different field name we don't
-            know about) — in which case we trust SF CLI's own refresh
-            logic and let the request go through.
+            True if the token should be considered expired.
         """
-        if not self.expires_at:
-            return False
-        try:
-            expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
-            # ``datetime.utcnow()`` is deprecated and returns a NAIVE
-            # datetime; if ``expires`` carries a tzinfo (which it does
-            # for any Z-suffixed or +00:00-suffixed string) comparing
-            # naive vs aware raises TypeError. Use datetime.now(UTC)
-            # so both sides are timezone-aware and the comparison works.
-            now = datetime.now(UTC) if expires.tzinfo is not None else datetime.utcnow()
-            return now >= (expires - timedelta(seconds=buffer_seconds))
-        except (ValueError, TypeError):
-            return False
+        if self.expires_at:
+            try:
+                expires = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
+                now = datetime.now(UTC) if expires.tzinfo is not None else datetime.now()
+                return now >= (expires - timedelta(seconds=buffer_seconds))
+            except (ValueError, TypeError):
+                pass
+
+        if self.observed_at:
+            try:
+                observed = datetime.fromisoformat(self.observed_at.replace("Z", "+00:00"))
+                now = datetime.now(UTC) if observed.tzinfo is not None else datetime.now()
+                return now >= observed + timedelta(seconds=MAX_TOKEN_AGE)
+            except (ValueError, TypeError):
+                return False
+
+        return False
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow().isoformat()
+        self.updated_at = datetime.now(UTC).isoformat()
 
 
 class TokenStore:
@@ -122,9 +151,19 @@ class TokenStore:
             alias: Org alias
 
         Returns:
-            StoredToken if found, None otherwise
+            StoredToken if found, None otherwise.
+
+        Raises:
+            TokenStoreUnavailableError: If the host has no keyring backend.
         """
-        stored = keyring.get_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
+        try:
+            stored = keyring.get_password(
+                self.KEYRING_SERVICE, self._get_keyring_key(alias)
+            )
+        except keyring.errors.NoKeyringError as e:
+            logger.error("keyring_unavailable", alias=alias)
+            raise TokenStoreUnavailableError(_NO_KEYRING_MESSAGE) from e
+
         if not stored:
             return None
 
@@ -147,13 +186,20 @@ class TokenStore:
             alias: Org alias
 
         Returns:
-            True if deleted, False if not found
+            True if deleted, False if not found.
+
+        Raises:
+            TokenStoreUnavailableError: If the host has no keyring backend.
         """
         try:
             keyring.delete_password(self.KEYRING_SERVICE, self._get_keyring_key(alias))
             logger.info("token_deleted", alias=alias)
             return True
+        except keyring.errors.NoKeyringError as e:
+            logger.error("keyring_unavailable", alias=alias)
+            raise TokenStoreUnavailableError(_NO_KEYRING_MESSAGE) from e
         except keyring.errors.PasswordDeleteError:
+            # The entry does not exist.
             return False
 
     async def get_valid_token(
@@ -171,7 +217,16 @@ class TokenStore:
             auto_refresh: Whether to attempt auto-refresh
 
         Returns:
-            Valid StoredToken or None if not available
+            Valid StoredToken, or None when there is no token stored at all
+            (or auto-refresh was disabled).
+
+        Raises:
+            TokenRefreshError: If a refresh was attempted and failed. This
+                is deliberately distinct from returning None: a failed
+                refresh must not be mistaken for "no token", because the
+                caller would then start an interactive browser login that
+                the user never asked for.
+            TokenStoreUnavailableError: If the host has no keyring backend.
         """
         token = await self.load_token(alias)
         if not token:
@@ -200,7 +255,10 @@ class TokenStore:
             return new_token
         except Exception as e:
             logger.error("token_refresh_failed", alias=alias, error=str(e))
-            return None
+            raise TokenRefreshError(
+                f"Failed to refresh the token for alias '{alias}': {e}. "
+                "Run 'asftool auth login' to re-authenticate."
+            ) from e
 
     async def list_aliases(self) -> list[str]:
         """List all stored aliases (limited by keyring capabilities)."""

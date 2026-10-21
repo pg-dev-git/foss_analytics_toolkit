@@ -7,6 +7,7 @@ import structlog
 from asftool.core.auth.token_store import StoredToken, TokenStore
 from asftool.core.config import Settings
 from asftool.core.crypto import CryptoManager
+from asftool.core.exceptions import TokenStoreUnavailableError
 from asftool.core.sf_cli import SFCLIError, SFCLIManager, SFCLINotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -211,16 +212,21 @@ class SFCLIAuthService:
             Valid access token
 
         Raises:
+            TokenRefreshError: If a refresh was attempted and failed. The
+                failure is reported rather than silently starting an
+                interactive browser login, which the user did not ask for
+                and which cannot work on a headless host.
             SFCLIAuthError: If no valid token available
         """
-        # Try to get valid token from store
+        # Try to get valid token from store. A refresh failure propagates:
+        # it is not the same as "there is no token".
         token = await self.token_store.get_valid_token(alias, self.sf_cli, auto_refresh)
 
         if token and not token.is_expired():
             return token.access_token
 
-        # If we have a token but it's expired and auto_refresh failed,
-        # or no token at all, try to re-login
+        # No token at all (or auto_refresh is off). Only now is an
+        # interactive login appropriate.
         if auto_refresh:
             logger.info("attempting_re_login", alias=alias)
             return await self.login(alias=alias)
@@ -289,12 +295,25 @@ class SFCLIAuthService:
         Returns:
             Status dictionary
         """
-        token = await self.token_store.load_token(alias)
+        try:
+            token = await self.token_store.load_token(alias)
+        except TokenStoreUnavailableError as e:
+            # A host with no keyring is not authenticated, but it is also
+            # not broken -- report it plainly instead of raising a
+            # traceback out of the first command a user runs.
+            logger.warning("token_store_unavailable", alias=alias)
+            return {
+                "authenticated": False,
+                "alias": alias,
+                "token_store_available": False,
+                "message": str(e),
+            }
 
         if not token:
             return {
                 "authenticated": False,
                 "alias": alias,
+                "token_store_available": True,
                 "message": "Not authenticated. Run 'asftool auth login'.",
             }
 
@@ -310,8 +329,14 @@ class SFCLIAuthService:
             "expires_at": token.expires_at,
             "created_at": token.created_at,
             "updated_at": token.updated_at,
+            "observed_at": token.observed_at,
             "sf_cli_available": sf_cli_available,
-            "message": "Token expired" if is_expired else "Authenticated",
+            "token_store_available": True,
+            "message": (
+                "Token expired (will auto-refresh on next use)"
+                if is_expired
+                else "Authenticated"
+            ),
         }
 
     async def list_orgs(self) -> list[dict[str, Any]]:

@@ -50,6 +50,11 @@ dev = [
     "ruff>=0.5.0",
     "pre-commit>=3.7.0",
 ]
+headless = [
+    # Fallback keyring backend for containers and CI runners that have no
+    # OS keyring (e.g. a plain Docker image or a headless SSH session).
+    "keyrings.alt>=5.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/pg-dev-git/foss_analytics_toolkit"

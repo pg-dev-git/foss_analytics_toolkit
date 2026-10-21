@@ -6,6 +6,7 @@ import pytest
 
 from asftool.core.config import Settings
 from asftool.core.crypto import CryptoManager, EncryptedData
+from asftool.core.exceptions import CryptoError
 
 
 @pytest.fixture
@@ -98,3 +99,42 @@ class TestCryptoManager:
 
         secret = generate_jwt_secret()
         assert len(secret) >= 32
+
+
+class TestMasterKeyPadding:
+    """A key that Settings accepts must work in CryptoManager.
+
+    ``Settings`` pads the key before decoding it, but the CryptoManager
+    used to decode it strictly -- so an unpadded 43-character key passed
+    validation and then crashed on first use with a bare
+    ``binascii.Error``.
+    """
+
+    def test_padded_key_round_trips(self):
+        key = base64.urlsafe_b64encode(b"x" * 32).decode()
+        assert len(key) == 44
+        manager = CryptoManager(key)
+        encrypted = manager.encrypt("hello")
+        assert manager.decrypt(encrypted) == "hello"
+
+    def test_unpadded_key_round_trips(self):
+        key = base64.urlsafe_b64encode(b"x" * 32).decode().rstrip("=")
+        assert len(key) == 43
+        manager = CryptoManager(key)
+        encrypted = manager.encrypt("hello")
+        assert manager.decrypt(encrypted) == "hello"
+
+    def test_unpadded_and_padded_keys_produce_the_same_ciphertext_key(self):
+        padded = base64.urlsafe_b64encode(b"x" * 32).decode()
+        unpadded = padded.rstrip("=")
+        assert CryptoManager(padded)._master_key == CryptoManager(unpadded)._master_key
+
+    def test_malformed_key_raises_crypto_error(self):
+        with pytest.raises(CryptoError):
+            CryptoManager("not base64 at all!!")
+
+    def test_wrong_length_key_raises_crypto_error(self):
+        short = base64.urlsafe_b64encode(b"x" * 16).decode()
+        with pytest.raises(CryptoError) as exc_info:
+            CryptoManager(short)
+        assert "32 bytes" in str(exc_info.value)
