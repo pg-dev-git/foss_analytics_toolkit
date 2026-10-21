@@ -1,6 +1,32 @@
 """Pytest configuration and fixtures."""
 
+import base64
+
 import pytest
+
+# Deterministic, obviously-fake secrets for the test session. Tests must not
+# depend on the developer's ambient shell or on a local .env file.
+_TEST_ENCRYPTION_KEY = base64.urlsafe_b64encode(b"\x01" * 32).decode()
+_TEST_JWT_SECRET_KEY = "test-jwt-secret-key-not-used-in-production-000"
+
+
+@pytest.fixture(autouse=True)
+def isolate_settings(monkeypatch):
+    """Give every test a deterministic, self-contained Settings environment.
+
+    Without this, ``Settings()`` raises ``ValidationError`` when the machine
+    has no ``.env`` (and picks up whatever the developer has in their shell
+    when it does). The autouse fixture pins the two required secrets and
+    clears the ``get_settings`` cache so no state leaks between tests.
+    """
+    monkeypatch.setenv("ENCRYPTION_KEY", _TEST_ENCRYPTION_KEY)
+    monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET_KEY)
+
+    from asftool.core.config import get_settings
+
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture(scope="session")
