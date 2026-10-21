@@ -75,7 +75,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers --tb=short"
+addopts = "-v --strict-markers --tb=short -m 'not live'"
+markers = [
+    "live: contract tests that run against a real Salesforce org (opt-in; needs SF_AUTH_TOKEN and SF_DEFAULT_DOMAIN in .env)",
+]
 
 [tool.mypy]
 python_version = "3.11"

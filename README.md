@@ -183,6 +183,22 @@ uv run python scripts/verify-cross-platform.py  # platform sanity checks
 All three checks (`pytest`, `ruff`, `mypy`) also run in CI on every pull
 request. See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
+### Contract tests against a real org
+
+`tests/live/` holds contract tests that call the real Analytics REST API
+and assert the models still parse what the platform returns. They are
+excluded from the default run because they need credentials and a real
+org:
+
+```bash
+# needs SF_AUTH_TOKEN and SF_DEFAULT_DOMAIN in .env
+uv run pytest -m live
+```
+
+The checked-in fixtures in `tests/fixtures/wave_responses.py` were
+captured from a live org and sanitized; these tests are what tells you
+when the platform has moved on from them.
+
 ### Live testing against a real org
 
 ```bash
