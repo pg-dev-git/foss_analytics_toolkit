@@ -123,6 +123,10 @@ class TestBuildFromApplication:
         # We should have stopped before exploring all 10 levels.
         # So we should have at most MAX_DEPTH+1 children explored.
         assert len(mock_client.get_application_dependencies.call_args_list) <= AssetGraphBuilder.MAX_DEPTH + 1
+        # The graph itself must be truncated too: a node beyond MAX_DEPTH
+        # would mean the recursion guard did not actually stop the walk.
+        assert not any(node_id.startswith("n") and int(node_id[1:]) > AssetGraphBuilder.MAX_DEPTH
+                       for node_id in graph.nodes)
 
     @pytest.mark.asyncio
     async def test_error_in_dependency_fetch_continues(self, mock_client):

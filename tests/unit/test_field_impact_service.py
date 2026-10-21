@@ -8,7 +8,6 @@ import pytest
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings
 from asftool.core.models import (
-    AssetType,
     MatchMode,
     MatchType,
 )

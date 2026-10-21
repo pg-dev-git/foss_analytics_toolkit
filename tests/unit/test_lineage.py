@@ -1,9 +1,6 @@
 """Unit tests for lineage models, SVG/Mermaid/JSON rendering."""
 
-import json
-from pathlib import Path
 
-import pytest
 
 from asftool.core.models.lineage import AssetType, LineageEdge, LineageGraph, LineageNode
 from asftool.core.services.lineage_service import LineageService
