@@ -250,12 +250,33 @@ def _preflight() -> str | None:
 _PREFLIGHT_EXEMPT = {"doctor", "config"}
 
 
+def _setup_logging() -> None:
+    """Configure structured JSON logging.
+
+    Without this the whole package used structlog's default configuration:
+    human-readable output on stdout, never written to a file. The README
+    advertises "structured JSON logging" and the doctor command checks for
+    ``~/.asftool/asftool.log`` -- neither was true.
+
+    A failure to set up logging must not stop the tool from running, so
+    this degrades to the default configuration rather than raising.
+    """
+    try:
+        from asftool.core.logger import setup_logging
+
+        setup_logging()
+    except Exception as e:  # pragma: no cover - defensive
+        print_error(f"Could not configure logging: {e}")
+
+
 def main() -> None:
     """Entry point: dispatch to subcommand or run interactive menu loop."""
     if _wants_help(sys.argv):
         # Let Typer print the help / version text.
         app()
         return
+
+    _setup_logging()
 
     argv_subcommand = next(
         (arg for arg in sys.argv[1:] if arg in _PREFLIGHT_EXEMPT), None
