@@ -29,6 +29,7 @@ from asftool.cli.ui import (
     print_info,
     print_success,
 )
+from asftool.core.config import get_settings
 from asftool.core.exceptions import DatasetError, UploadError
 from asftool.core.models import ExtractionJob, UploadJob
 from asftool.core.services import DatasetService
@@ -266,7 +267,11 @@ def upload_dataset(
         None, "--name", "-n", help="Dataset name (default: from dataset)"
     ),
     operation: Literal["Overwrite", "Append"] = typer.Option(
-        "Overwrite", "--operation", "-o", help="Overwrite or Append"
+        # No short flag: `-o` already means `--output` elsewhere in this
+        # command group, and two meanings for one letter is a papercut.
+        "Overwrite",
+        "--operation",
+        help="Overwrite or Append",
     ),
     show_progress: bool = typer.Option(
         True, "--progress/--no-progress", help="Show progress"
@@ -296,6 +301,21 @@ def delete_dataset(
             print_info("Cancelled")
             return
     _run(delete_dataset_async(dataset_id=dataset_id))
+
+
+@app.command("cleanup")
+def cleanup_downloads(
+    alias: str = typer.Option("default", "--alias", "-a", help="Org alias"),
+    keep_last: int = typer.Option(
+        10, "--keep-last", "-k", help="How many recent files to keep per type"
+    ),
+):
+    """Remove old downloaded files, keeping the most recent ones."""
+    from asftool.core.storage import get_storage_manager
+
+    storage = get_storage_manager(get_settings())
+    removed = storage.cleanup_old_downloads(alias=alias, keep_last=keep_last)
+    print_success(f"Removed {removed} old file(s) for alias '{alias}'")
 
 
 @app.command("show")
