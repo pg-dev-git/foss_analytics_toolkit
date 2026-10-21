@@ -74,8 +74,11 @@ def create_menus() -> tuple[Menu, dict[str, Menu]]:
 
     async def _run_doctor() -> None:
         from asftool.cli.commands.doctor import run_diagnostics_async
+        from asftool.cli.session import Session
 
-        await run_diagnostics_async()
+        # Report on the org the session is actually using.
+        session = Session()
+        await run_diagnostics_async(alias=session.alias)
 
     main.add(MenuItem(key="8", label="🩺  Doctor / Diagnostics", handler=_run_doctor))
     main.add(MenuItem(key="q", label="❌  Exit"))

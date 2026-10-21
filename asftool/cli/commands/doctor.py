@@ -21,8 +21,20 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-async def _collect_checks(session: Session, verbose: bool) -> list[tuple[str, str, bool]]:
-    """Gather diagnostic checks. Returns (name, value, passed) tuples."""
+async def _collect_checks(
+    session: Session,
+    verbose: bool,
+    alias: str = "default",
+) -> list[tuple[str, str, bool]]:
+    """Gather diagnostic checks. Returns (name, value, passed) tuples.
+
+    Args:
+        session: The session to diagnose.
+        verbose: Whether to include extra detail.
+        alias: The org alias to report authentication for. The doctor used
+            to report on a hardcoded "default" regardless of which org the
+            user was actually authenticated as.
+    """
     checks: list[tuple[str, str, bool]] = []
 
     # Python version
@@ -87,12 +99,12 @@ async def _collect_checks(session: Session, verbose: bool) -> list[tuple[str, st
 
     # Auth status
     try:
-        auth_status = await session.auth_service.status("default")
+        auth_status = await session.auth_service.status(alias)
         if auth_status["authenticated"]:
-            value = auth_status.get("username") or "Authenticated"
+            value = f"{alias}: {auth_status.get('username') or 'Authenticated'}"
             auth_ok = not auth_status["token_expired"]
         else:
-            value = "Not authenticated"
+            value = f"{alias}: not authenticated"
             auth_ok = True  # not a failure — informational
         checks.append(("Authentication", value, auth_ok))
     except SFCLIAuthError as e:
@@ -107,34 +119,37 @@ async def _collect_checks(session: Session, verbose: bool) -> list[tuple[str, st
 def _doctor_default(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    alias: str = typer.Option(
+        "default", "--alias", "-a", help="Org alias to report on"
+    ),
 ) -> None:
     """Default: run comprehensive system diagnostics."""
     if ctx.invoked_subcommand is not None:
         return  # delegate to 'config'
 
-    if not run_diagnostics(verbose=verbose):
+    if not run_diagnostics(verbose=verbose, alias=alias):
         raise typer.Exit(1)
 
 
-def run_diagnostics(verbose: bool = False) -> bool:
+def run_diagnostics(verbose: bool = False, alias: str = "default") -> bool:
     """Run the diagnostic table. Returns True if all checks pass.
 
     Reusable from the menu loop (asftool/cli/menu.py) and the CLI callback.
     Sync wrapper: only for direct CLI invocation (not from a running event loop).
     """
-    result: bool = _run(run_diagnostics_async(verbose=verbose))  # type: ignore[no-any-return]
+    result: bool = _run(run_diagnostics_async(verbose=verbose, alias=alias))  # type: ignore[no-any-return]
     return result
 
 
-async def run_diagnostics_async(verbose: bool = False) -> bool:
+async def run_diagnostics_async(verbose: bool = False, alias: str = "default") -> bool:
     """Async path: safe to call from a running event loop (menu handler)."""
-    session = Session()
+    session = Session(alias=alias)
 
     async def _doctor() -> bool:
         print_header("ASFTool Doctor Diagnostics")
         console.print()
 
-        checks = await _collect_checks(session, verbose)
+        checks = await _collect_checks(session, verbose, alias)
 
         table = Table(title="System Checks", show_header=True)
         table.add_column("Check", style="cyan")
