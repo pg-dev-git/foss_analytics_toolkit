@@ -6,47 +6,59 @@ the case the tool advertises support for -- that made the most recommended
 troubleshooting command actively misleading.
 """
 
-import subprocess
-import sys
-from pathlib import Path
+import pytest
+from typer.testing import CliRunner
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from asftool.cli.main import app
 
 
-def _run(args: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        [sys.executable, "-m", "asftool.cli.main", *args],
-        capture_output=True,
-        text=True,
-        cwd=str(REPO_ROOT),
-        timeout=90,
-    )
+@pytest.fixture
+def runner():
+    return CliRunner()
 
 
 class TestDoctorAlias:
-    def test_alias_option_exists(self):
-        result = _run(["doctor", "--help"])
-        assert result.returncode == 0
+    def test_alias_option_exists(self, runner):
+        result = runner.invoke(app, ["doctor", "--help"])
+        assert result.exit_code == 0
         assert "--alias" in result.stdout
 
-    def test_short_alias_option_exists(self):
-        result = _run(["doctor", "--help"])
+    def test_short_alias_option_exists(self, runner):
+        result = runner.invoke(app, ["doctor", "--help"])
         assert "-a" in result.stdout
 
-    def test_reports_on_the_requested_alias(self):
+    def test_reports_on_the_requested_alias(self, runner, monkeypatch):
         """The Authentication row names the alias that was asked for."""
-        result = _run(["doctor", "--alias", "some-org"])
+        from asftool.cli.commands import doctor
 
-        output = result.stdout + result.stderr
-        assert "some-org" in output
-        # It must not claim to be reporting on "default".
-        assert "default: not authenticated" not in output
+        captured: dict[str, str] = {}
 
-    def test_defaults_to_the_default_alias(self):
-        result = _run(["doctor"])
+        async def _fake_collect(session, verbose, alias="default"):
+            captured["alias"] = alias
+            return [("Authentication", f"{alias}: not authenticated", True)]
 
-        output = result.stdout + result.stderr
-        assert "default" in output
+        monkeypatch.setattr(doctor, "_collect_checks", _fake_collect)
+
+        result = runner.invoke(app, ["doctor", "--alias", "some-org"])
+
+        assert result.exit_code == 0, result.stdout
+        assert captured["alias"] == "some-org"
+
+    def test_defaults_to_the_default_alias(self, runner, monkeypatch):
+        from asftool.cli.commands import doctor
+
+        captured: dict[str, str] = {}
+
+        async def _fake_collect(session, verbose, alias="default"):
+            captured["alias"] = alias
+            return [("Authentication", f"{alias}: not authenticated", True)]
+
+        monkeypatch.setattr(doctor, "_collect_checks", _fake_collect)
+
+        result = runner.invoke(app, ["doctor"])
+
+        assert result.exit_code == 0, result.stdout
+        assert captured["alias"] == "default"
 
 
 class TestCollectChecksSignature:

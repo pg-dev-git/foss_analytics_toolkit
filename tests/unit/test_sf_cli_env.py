@@ -15,6 +15,19 @@ import pytest
 from asftool.core.sf_cli import SFCLIManager, sf_cli_env
 
 
+@pytest.fixture
+def manager(monkeypatch):
+    """A manager that believes the SF CLI is installed.
+
+    The tests must not depend on the SF CLI being present: CI runners do
+    not have it.
+    """
+    m = SFCLIManager()
+    monkeypatch.setattr(m, "is_available", lambda: True)
+    m._cli_path = "/usr/bin/sf"
+    return m
+
+
 class TestSfCliEnv:
     def test_removes_sf_api_version(self, monkeypatch):
         monkeypatch.setenv("SF_API_VERSION", "v68.0")
@@ -32,7 +45,7 @@ class TestSfCliEnv:
 
 
 class TestRunCommandEnv:
-    def test_sync_run_does_not_pass_sf_api_version(self, monkeypatch):
+    def test_sync_run_does_not_pass_sf_api_version(self, monkeypatch, manager):
         """The subprocess must not inherit ASFTool's API version override."""
         monkeypatch.setenv("SF_API_VERSION", "v68.0")
         captured: dict[str, object] = {}
@@ -46,8 +59,6 @@ class TestRunCommandEnv:
 
         monkeypatch.setattr(subprocess, "run", fake_run)
 
-        manager = SFCLIManager()
-        manager._cli_path = "/usr/bin/sf"
         manager.list_orgs()
 
         env = captured.get("env")
@@ -55,7 +66,9 @@ class TestRunCommandEnv:
         assert "SF_API_VERSION" not in env
 
     @pytest.mark.asyncio
-    async def test_async_run_does_not_pass_sf_api_version(self, monkeypatch):
+    async def test_async_run_does_not_pass_sf_api_version(
+        self, monkeypatch, manager
+    ):
         """The async path is the one the interactive menu uses."""
         monkeypatch.setenv("SF_API_VERSION", "v68.0")
         captured: dict[str, object] = {}
@@ -72,8 +85,6 @@ class TestRunCommandEnv:
 
         monkeypatch.setattr("asyncio.create_subprocess_exec", fake_exec)
 
-        manager = SFCLIManager()
-        manager._cli_path = "/usr/bin/sf"
         await manager._run_command_async(["org", "list", "--json", "--all"])
 
         env = captured.get("env")

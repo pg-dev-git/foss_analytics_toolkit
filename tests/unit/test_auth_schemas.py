@@ -1,6 +1,8 @@
 """Unit tests for auth schemas."""
 
 
+from pathlib import Path
+
 from asftool.core.auth import SFCLIAuthError
 from asftool.core.models import (
     ConnectedAppConfig,
@@ -178,8 +180,10 @@ class TestAuthTokenVerification:
         # Verify that SFCLIAuthService.login() includes a call to
         # sf_cli.get_org_info() (which runs 'sf org display --json').
         # The fix is in source code, not just a test placeholder.
-        source_path = "/home/open/workspace/crma/asftool/core/auth/sf_cli_auth.py"
-        with open(source_path) as f:
+        import asftool.core.auth.sf_cli_auth as module
+
+        source_path = Path(module.__file__)
+        with source_path.open(encoding="utf-8") as f:
             source = f.read()
 
         # The fix should reference get_org_info and refresh the token

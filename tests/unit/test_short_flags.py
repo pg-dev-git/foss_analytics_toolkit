@@ -5,24 +5,20 @@
 depending on which command the user was running.
 """
 
-import subprocess
-import sys
-from pathlib import Path
-
 import pytest
+from typer.testing import CliRunner
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from asftool.cli.main import app
 
 
-def _help(command: list[str]) -> str:
-    result = subprocess.run(
-        [sys.executable, "-m", "asftool.cli.main", *command, "--help"],
-        capture_output=True,
-        text=True,
-        cwd=str(REPO_ROOT),
-        timeout=60,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+@pytest.fixture
+def runner():
+    return CliRunner()
+
+
+def _help(runner, command: list[str]) -> str:
+    result = runner.invoke(app, [*command, "--help"])
+    assert result.exit_code == 0, result.stdout
     return result.stdout
 
 
@@ -37,30 +33,16 @@ class TestShortFlagConsistency:
             ["lineage", "generate"],
         ],
     )
-    def test_output_uses_dash_o(self, command):
-        assert "-o" in _help(command)
+    def test_output_uses_dash_o(self, runner, command):
+        assert "-o" in _help(runner, command)
 
-    def test_operation_does_not_use_dash_o(self):
+    def test_operation_does_not_use_dash_o(self, runner):
         """`--operation` must not claim `-o`."""
-        help_text = _help(["datasets", "upload"])
-        # The option is listed, but without the colliding short flag.
+        help_text = _help(runner, ["datasets", "upload"])
         assert "--operation" in help_text
+        # The short flag would be rendered as "-o," next to the option.
         assert "-o," not in help_text.replace("--operation", "")
 
-    def test_upload_still_accepts_the_long_operation_flag(self):
+    def test_upload_still_accepts_the_long_operation_flag(self, runner):
         """Removing the short flag must not remove the option."""
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "asftool.cli.main",
-                "datasets",
-                "upload",
-                "--help",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=str(REPO_ROOT),
-            timeout=60,
-        )
-        assert "--operation" in result.stdout
+        assert "--operation" in _help(runner, ["datasets", "upload"])
