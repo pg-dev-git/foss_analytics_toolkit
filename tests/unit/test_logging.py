@@ -101,7 +101,7 @@ def _cli_env(tmp_path: Path) -> dict:
 class TestMainConfiguresLogging:
     def test_cli_run_creates_the_log_file(self, tmp_path):
         """A real CLI run must configure logging."""
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, "-m", "asftool.cli.main", "config", "show"],
             capture_output=True,
             text=True,
