@@ -282,23 +282,30 @@ class TestDataflowServiceIntegration:
         async def mock_list_jobs():
             nonlocal call_count
             call_count += 1
+            # The platform returns camelCase keys and a `dataflowJobs`
+            # collection key; the job carries a `label`, not a
+            # `dataflowName`/`dataflowId`/`command` triple.
             if call_count < 3:
                 return {
-                    "dataflowjobs": [{
+                    "dataflowJobs": [{
                         "id": "03D000000000001",
-                        "dataflow_id": "03C000000000001",
-                        "dataflow_name": "TestDataflow",
-                        "command": "start",
+                        "label": "TestDataflow",
+                        "jobType": "datasync",
+                        "startDate": "2024-01-01T00:00:00.000Z",
                         "status": "Running",
+                        "type": "dataflowjob",
                     }]
                 }
             return {
-                "dataflowjobs": [{
+                "dataflowJobs": [{
                     "id": "03D000000000001",
-                    "dataflow_id": "03C000000000001",
-                    "dataflow_name": "TestDataflow",
-                    "command": "start",
+                    "label": "TestDataflow",
+                    "jobType": "datasync",
+                    "startDate": "2024-01-01T00:00:00.000Z",
+                    "executedDate": "2024-01-01T00:05:00.000Z",
+                    "duration": 300,
                     "status": "Success",
+                    "type": "dataflowjob",
                 }]
             }
 

@@ -54,12 +54,36 @@ class DataflowService:
     async def start_dataflow(self, dataflow_id: str) -> DataflowJob:
         """Start a dataflow execution."""
         response = await self.client.start_dataflow(dataflow_id)
-        return DataflowJob(**response)
+        return await self._job_from_response(response, dataflow_id, "start")
 
     async def stop_dataflow(self, dataflow_id: str) -> DataflowJob:
         """Stop a running dataflow."""
         response = await self.client.stop_dataflow(dataflow_id)
-        return DataflowJob(**response)
+        return await self._job_from_response(response, dataflow_id, "stop")
+
+    async def _job_from_response(
+        self,
+        response: dict[str, Any],
+        dataflow_id: str,
+        command: str,
+    ) -> DataflowJob:
+        """Build a DataflowJob, filling in the dataflow context we already know.
+
+        The platform's start/stop response carries only the job's own fields
+        (``id``, ``status``, ``jobType``, ...) -- it does not echo back the
+        dataflow id or the command. We know both, so we attach them.
+        """
+        job = DataflowJob(**response)
+        if job.dataflow_id is None:
+            job.dataflow_id = dataflow_id
+        if job.command is None:
+            job.command = command  # type: ignore[assignment]
+        if job.dataflow_name is None:
+            try:
+                job.dataflow_name = (await self.get_dataflow(dataflow_id)).name
+            except Exception:
+                job.dataflow_name = None
+        return job
 
     # =========================================================================
     # Job Monitoring

@@ -856,6 +856,112 @@ DATASET_DEPENDENCIES = {
     'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000',
 }
 
+# GET /services/data/{version}/wave/datasets/{id}/versions
+# Dataset version listing.
+#
+# The owning dataset is a nested `dataset` object, not a flat `datasetId`.
+# There is no `versionNumber` and no `status`.
+DATASET_VERSIONS = {
+    'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000/versions',
+    'versions': [
+        {
+            'createdBy': {
+                'id': '005050000000000AAA',
+                'name': 'Example Integration User',
+                'profilePhotoUrl': 'https://example-org.my.salesforce.com/profilephoto/005/T',
+            },
+            'createdDate': '2026-09-20T02:42:03.000Z',
+            'dataset': {
+                'id': '0Fb010000000000000',
+                'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000',
+            },
+            'files': [],
+            'id': '0Fc030000000000000',
+            'lastModifiedBy': {
+                'id': '005050000000000AAA',
+                'name': 'Example Integration User',
+                'profilePhotoUrl': 'https://example-org.my.salesforce.com/profilephoto/005/T',
+            },
+            'lastModifiedDate': '2026-10-21T13:58:05.000Z',
+            'permissions': {
+                'create': True,
+                'modify': True,
+                'view': True,
+            },
+            'predicate': '&#39;Owner.Role.Roles&#39; == &quot;$User.UserRoleId&quot; || &#39;OwnerId&#39; == &quot;$User.Id&quot;',
+            'predicateVersion': 1.0,
+            'securityCoverageUrl': '/services/data/v67.0/wave/security/coverage/datasets/0Fb010000000000000/versions/0Fc030000000000000',
+            'totalRowCount': 1001,
+            'type': 'datasetversion',
+            'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000/versions/0Fc030000000000000',
+            'xmdsUrl': '/services/data/v67.0/wave/datasets/0Fb010000000000000/versions/0Fc030000000000000/xmds',
+        },
+        {
+            'createdBy': {
+                'id': '005050000000000AAA',
+                'name': 'Example Integration User',
+                'profilePhotoUrl': 'https://example-org.my.salesforce.com/profilephoto/005/T',
+            },
+            'createdDate': '2026-10-21T13:57:31.000Z',
+            'dataset': {
+                'id': '0Fb010000000000000',
+                'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000',
+            },
+            'files': [],
+            'id': '0Fc330000000000000',
+            'lastModifiedBy': {
+                'id': '005050000000000AAA',
+                'name': 'Example Integration User',
+                'profilePhotoUrl': 'https://example-org.my.salesforce.com/profilephoto/005/T',
+            },
+            'lastModifiedDate': '2026-10-21T13:58:05.000Z',
+            'permissions': {
+                'create': True,
+                'modify': True,
+                'view': True,
+            },
+            'predicate': '&#39;Owner.Role.Roles&#39; == &quot;$User.UserRoleId&quot; || &#39;OwnerId&#39; == &quot;$User.Id&quot;',
+            'predicateVersion': 1.0,
+            'securityCoverageUrl': '/services/data/v67.0/wave/security/coverage/datasets/0Fb010000000000000/versions/0Fc330000000000000',
+            'totalRowCount': 1001,
+            'type': 'datasetversion',
+            'url': '/services/data/v67.0/wave/datasets/0Fb010000000000000/versions/0Fc330000000000000',
+            'xmdsUrl': '/services/data/v67.0/wave/datasets/0Fb010000000000000/versions/0Fc330000000000000/xmds',
+        },
+    ],
+}
+
+# GET /services/data/{version}/limits
+# API limits.
+#
+# A flat mapping of limit name -> {Max, Remaining}, NOT a list.
+LIMITS = {
+    'AnalyticsExternalDataSizeMB': {
+        'Max': 40960,
+        'Remaining': 40960,
+    },
+    'CdpAiInferenceApiMonthlyLimit': {
+        'Max': 500000000,
+        'Remaining': 500000000,
+    },
+    'ConcurrentAsyncGetReportInstances': {
+        'Max': 200,
+        'Remaining': 200,
+    },
+    'ConcurrentEinsteinDataInsightsStoryCreation': {
+        'Max': 5,
+        'Remaining': 5,
+    },
+    'ConcurrentEinsteinDiscoveryStoryCreation': {
+        'Max': 2,
+        'Remaining': 2,
+    },
+    'ConcurrentSyncReportRuns': {
+        'Max': 20,
+        'Remaining': 20,
+    },
+}
+
 # GET /services/data/{version}/wave/replicatedDatasets
 # Replicated dataset listing. Each entry carries `datasetId`,
 # `replicationDataflowId`, `sourceObjectName`, `connector` and `status`.

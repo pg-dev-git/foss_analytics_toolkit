@@ -130,17 +130,30 @@ class DatasetXMD(BaseModel):
 
 
 class DatasetVersion(BaseModel):
-    """Dataset version information."""
+    """Dataset version information.
+
+    The platform returns the owning dataset as a nested ``dataset`` object
+    (not a flat ``datasetId``) and has no ``versionNumber``/``status``.
+    """
+
     id: str
-    dataset_id: str = Field(alias="datasetId")
-    version_number: int = Field(alias="versionNumber")
-    created_date: datetime = Field(alias="CreatedDate")
-    created_by_id: str = Field(alias="CreatedById")
-    status: str
-    row_count: int | None = Field(default=None, alias="rowCount")
+    created_date: datetime | None = Field(default=None, alias="createdDate")
+    last_modified_date: datetime | None = Field(default=None, alias="lastModifiedDate")
+    dataset: dict | None = None
+    total_row_count: int | None = Field(default=None, alias="totalRowCount")
+    type: str | None = None
+    url: str | None = None
+    xmds_url: str | None = Field(default=None, alias="xmdsUrl")
     xmd: DatasetXMD | None = None
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @property
+    def dataset_id(self) -> str | None:
+        """Get the owning dataset id from the nested ``dataset`` object."""
+        if self.dataset and isinstance(self.dataset, dict):
+            return self.dataset.get("id")
+        return None
 
 
 class Dataset(BaseModel):
@@ -189,7 +202,7 @@ class Dataset(BaseModel):
 class DatasetListResponse(BaseModel):
     """Response for dataset listing."""
     datasets: list[Dataset]
-    next_page_url: str | None = None
+    next_page_url: str | None = Field(default=None, alias="nextPageUrl")
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
@@ -282,7 +295,7 @@ class Dashboard(BaseModel):
 class DashboardListResponse(BaseModel):
     """Response for dashboard listing."""
     dashboards: list[Dashboard]
-    next_page_url: str | None = None
+    next_page_url: str | None = Field(default=None, alias="nextPageUrl")
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
@@ -349,41 +362,70 @@ class DataflowListResponse(BaseModel):
 
 
 class DataflowJob(BaseModel):
-    """Dataflow job execution."""
-    id: str
-    dataflow_id: str
-    dataflow_name: str
-    command: Literal["start", "stop"]
-    status: Literal["Queued", "Running", "Success", "Failed", "Cancelled"]
-    start_time: datetime | None = None
-    end_time: datetime | None = None
-    error_message: str | None = None
+    """Dataflow job execution.
 
-    model_config = ConfigDict(extra="allow")
+    The platform does not return ``dataflowId``/``dataflowName``/``command``
+    on a job -- it returns the job's own ``label`` and timestamps under
+    ``startDate``/``executedDate``. ``dataflow_id`` and ``dataflow_name``
+    are therefore optional and only populated by callers that know which
+    dataflow they asked for (e.g. the response to a start/stop request).
+    """
+
+    id: str
+    status: Literal["Queued", "Running", "Success", "Failed", "Cancelled", "NotStarted"]
+    label: str | None = None
+    job_type: str | None = Field(default=None, alias="jobType")
+    dataflow_id: str | None = None
+    dataflow_name: str | None = None
+    command: Literal["start", "stop"] | None = None
+    start_time: datetime | None = Field(default=None, alias="startDate")
+    end_time: datetime | None = Field(default=None, alias="executedDate")
+    duration: int | None = None
+    progress: float | None = None
+    retry_count: int | None = Field(default=None, alias="retryCount")
+    wait_time: int | None = Field(default=None, alias="waitTime")
+    error_message: str | None = Field(default=None, alias="message")
+    nodes_url: str | None = Field(default=None, alias="nodesUrl")
+    url: str | None = None
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DataflowJobListResponse(BaseModel):
     """Response for dataflow job listing."""
-    dataflowjobs: list[DataflowJob]
+    dataflowjobs: list[DataflowJob] = Field(default_factory=list, alias="dataflowJobs")
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 # Limits Models
 class APILimit(BaseModel):
-    """API limit information."""
-    name: str
-    remaining: int
-    max: int
+    """API limit information.
 
-    model_config = ConfigDict(extra="allow")
+    ``/limits`` returns a flat mapping of limit name -> ``{Max, Remaining}``,
+    not a list, so the name lives on the response rather than on the entry.
+    """
+
+    max: int = Field(alias="Max")
+    remaining: int = Field(alias="Remaining")
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class LimitsResponse(BaseModel):
-    """API limits response."""
-    limits: list[APILimit]
+    """API limits response.
 
-    model_config = ConfigDict(extra="allow")
+    The platform returns ``{"LimitName": {"Max": N, "Remaining": N}, ...}``.
+    """
+
+    limits: dict[str, APILimit] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @classmethod
+    def from_platform_response(cls, payload: dict[str, Any]) -> "LimitsResponse":
+        """Build a response from the platform's flat ``{name: {Max, Remaining}}``."""
+        return cls(limits={k: APILimit(**v) for k, v in payload.items()})
 
 
 # Dependency Models
@@ -394,14 +436,38 @@ class Dependency(BaseModel):
     type: str
     label: str | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 class DependenciesResponse(BaseModel):
-    """Dependencies response."""
-    dependencies: list[Dependency]
+    """Dependencies response.
 
-    model_config = ConfigDict(extra="allow")
+    ``/wave/dependencies/{id}`` groups dependencies by consumer type, e.g.
+    ``{"dashboards": {"dependencies": [...], "totalSize": N}}``. ``dependencies``
+    is a convenience view over every group.
+    """
+
+    dashboards: dict[str, Any] | None = None
+    recipes: dict[str, Any] | None = None
+    lenses: dict[str, Any] | None = None
+    dataflows: dict[str, Any] | None = None
+    id: str | None = None
+    name: str | None = None
+    type: str | None = None
+    url: str | None = None
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    @property
+    def dependencies(self) -> list[Dependency]:
+        """All dependencies across every consumer group."""
+        result: list[Dependency] = []
+        for group in (self.dashboards, self.recipes, self.lenses, self.dataflows):
+            if not group:
+                continue
+            for item in group.get("dependencies", []) or []:
+                result.append(Dependency(**item))
+        return result
 
 
 __all__ = [

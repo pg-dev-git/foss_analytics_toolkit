@@ -59,8 +59,8 @@ async def list_jobs_async() -> None:
 
             table = Table(title="Data Manager Jobs", show_header=True)
             table.add_column("ID", style="cyan")
-            table.add_column("Dataflow", style="white")
-            table.add_column("Command", style="blue")
+            table.add_column("Label", style="white")
+            table.add_column("Type", style="blue")
             table.add_column("Status", style="bold")
             table.add_column("Started", style="dim")
 
@@ -73,8 +73,8 @@ async def list_jobs_async() -> None:
                 )
                 table.add_row(
                     job.id,
-                    job.dataflow_name,
-                    job.command,
+                    job.label or job.dataflow_name or "N/A",
+                    job.job_type or job.command or "N/A",
                     f"[{color}]{job.status}[/{color}]",
                     started,
                 )
@@ -99,8 +99,14 @@ async def show_job_async(job_id: str) -> None:
                 raise typer.Exit(1) from None
 
             print_header(f"Job: {job.id}")
-            print_info(f"Dataflow: {job.dataflow_name} ({job.dataflow_id})")
-            print_info(f"Command: {job.command}")
+            if job.label:
+                print_info(f"Label: {job.label}")
+            if job.dataflow_name:
+                print_info(f"Dataflow: {job.dataflow_name} ({job.dataflow_id})")
+            if job.job_type:
+                print_info(f"Type: {job.job_type}")
+            if job.command:
+                print_info(f"Command: {job.command}")
             color = _STATUS_COLORS.get(job.status, "white")
             print_info(f"Status: [{color}]{job.status}[/{color}]")
             print_info(
@@ -109,6 +115,8 @@ async def show_job_async(job_id: str) -> None:
             print_info(
                 f"Ended: {job.end_time.isoformat() if job.end_time else 'N/A'}"
             )
+            if job.duration is not None:
+                print_info(f"Duration: {job.duration}s")
             if job.error_message:
                 print_info(f"Error: {job.error_message}")
     except DataflowError as e:
