@@ -97,7 +97,6 @@ variables:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ENCRYPTION_KEY` | Base64 32-byte key for token encryption | required¹ |
-| `JWT_SECRET_KEY` | Internal token signing secret (≥32 chars) | optional² |
 | `SF_API_VERSION` | Salesforce API version | `v68.0` |
 | `SF_DEFAULT_DOMAIN` | Login domain | `login.salesforce.com` |
 | `APP_NAME` | Application name | `asftool` |
@@ -112,8 +111,6 @@ variables:
 
 ¹ Required to store tokens: it encrypts what goes into the OS keyring. Without it,
 `asftool` exits with a message telling you to run `asftool init` or create a `.env`.
-
-² Only used by the JWT-bearer flow, which is not part of the SF CLI auth path.
 
 Generate keys:
 

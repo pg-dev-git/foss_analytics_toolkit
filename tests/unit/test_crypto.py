@@ -13,11 +13,9 @@ from asftool.core.exceptions import CryptoError
 def test_settings():
     """Create test settings with valid keys."""
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
     # Use model_construct to bypass .env file loading and validation
     return Settings.model_construct(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret,
     )
 
 
@@ -92,13 +90,6 @@ class TestCryptoManager:
         key = generate_encryption_key()
         decoded = base64.urlsafe_b64decode(key + "=" * (-len(key) % 4))
         assert len(decoded) == 32
-
-    def test_generate_jwt_secret(self):
-        """Test JWT secret generation."""
-        from asftool.core.config import generate_jwt_secret
-
-        secret = generate_jwt_secret()
-        assert len(secret) >= 32
 
 
 class TestMasterKeyPadding:

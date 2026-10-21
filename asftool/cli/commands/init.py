@@ -12,7 +12,7 @@ from pathlib import Path
 import typer
 
 from asftool.cli.ui import print_error, print_info, print_success, print_warning
-from asftool.core.config import generate_encryption_key, generate_jwt_secret
+from asftool.core.config import generate_encryption_key
 
 #: The settings written by `asftool init`.
 _ENV_TEMPLATE = """# ASFTool configuration
@@ -35,18 +35,15 @@ SF_DEFAULT_DOMAIN=login.salesforce.com
 # with it can decrypt the contents of the keyring entry.
 ENCRYPTION_KEY={encryption_key}
 
-# Internal token signing secret (not for Salesforce auth).
-JWT_SECRET_KEY={jwt_secret}
 """
 
 
-def _write_env(target: Path, encryption_key: str, jwt_secret: str) -> None:
+def _write_env(target: Path, encryption_key: str) -> None:
     from datetime import UTC, datetime
 
     content = _ENV_TEMPLATE.format(
         created=datetime.now(UTC).isoformat(timespec="seconds"),
         encryption_key=encryption_key,
-        jwt_secret=jwt_secret,
     )
     target.write_text(content, encoding="utf-8")
     # The file holds a secret: keep it to the owner.
@@ -67,10 +64,9 @@ def init(
         raise typer.Exit(1)
 
     encryption_key = generate_encryption_key()
-    jwt_secret = generate_jwt_secret()
 
     try:
-        _write_env(path, encryption_key, jwt_secret)
+        _write_env(path, encryption_key)
     except OSError as e:
         print_error(f"Could not write {path}: {e}")
         raise typer.Exit(1) from e

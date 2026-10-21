@@ -70,11 +70,6 @@ async def _collect_checks(
     checks.append(
         ("Encryption key", "SET" if has_encryption else "MISSING", has_encryption)
     )
-    has_jwt = bool(settings.jwt_secret_key)
-    checks.append(
-        ("JWT secret", "SET" if has_jwt else "MISSING", has_jwt)
-    )
-
     # Keyring backend
     try:
         import keyring
@@ -190,4 +185,3 @@ def show_config():
     print_info(f"API version: {settings.sf_api_version}")
     print_info(f"Default domain: {settings.sf_default_domain}")
     print_info(f"Encryption key: {'SET' if settings.encryption_key else 'MISSING'}")
-    print_info(f"JWT secret: {'SET' if settings.jwt_secret_key else 'MISSING'}")

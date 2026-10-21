@@ -27,7 +27,6 @@ def _run(args: list[str], env: dict[str, str] | None = None) -> subprocess.Compl
 
     full_env = dict(os.environ)
     full_env.pop("ENCRYPTION_KEY", None)
-    full_env.pop("JWT_SECRET_KEY", None)
     # Pin the terminal size. Rich truncates its help table to the terminal
     # height, so the rendered help differs between a developer's terminal
     # and a CI runner.
@@ -103,7 +102,7 @@ class TestPreflight:
         monkeypatch.setattr(
             "asftool.core.config.get_settings",
             lambda: type(
-                "S", (), {"encryption_key": None, "jwt_secret_key": None}
+                "S", (), {"encryption_key": None}
             )(),
         )
         message = _preflight()
@@ -117,7 +116,7 @@ class TestPreflight:
         monkeypatch.setattr(
             "asftool.core.config.get_settings",
             lambda: type(
-                "S", (), {"encryption_key": "k", "jwt_secret_key": "s"}
+                "S", (), {"encryption_key": "k"}
             )(),
         )
         assert _preflight() is None

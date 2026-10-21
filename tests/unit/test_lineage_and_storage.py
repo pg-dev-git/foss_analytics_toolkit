@@ -28,7 +28,6 @@ def _manager(tmp_path: Path) -> StorageManager:
 
     settings = Settings(
         encryption_key=base64.urlsafe_b64encode(b"x" * 32).decode(),
-        jwt_secret_key=base64.urlsafe_b64encode(b"y" * 32).decode(),
     )
     return StorageManager(settings=settings, base_dir=tmp_path)
 

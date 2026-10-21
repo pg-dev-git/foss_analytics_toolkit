@@ -22,7 +22,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # A valid 32-byte encryption key, so the CLI gets past its own validation.
 VALID_ENCRYPTION_KEY = base64.urlsafe_b64encode(b"t" * 32).decode()
-VALID_JWT_SECRET = "test-jwt-secret-key-not-used-in-production-000"
 
 
 @pytest.fixture
@@ -94,7 +93,6 @@ def _cli_env(tmp_path: Path) -> dict:
     env = dict(os.environ)
     env["HOME"] = str(tmp_path)
     env["ENCRYPTION_KEY"] = VALID_ENCRYPTION_KEY
-    env["JWT_SECRET_KEY"] = VALID_JWT_SECRET
     return env
 
 

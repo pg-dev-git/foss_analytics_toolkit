@@ -37,10 +37,8 @@ def settings():
     """Create test settings."""
     import base64
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     return Settings(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret_key,
         sf_api_version="v60.0",
         sf_default_domain="test.salesforce.com",
     )

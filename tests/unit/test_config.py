@@ -15,7 +15,6 @@ from asftool.core.config import Settings
 def _enc_keys():
     return {
         "encryption_key": base64.urlsafe_b64encode(b"x" * 32).decode(),
-        "jwt_secret_key": base64.urlsafe_b64encode(b"y" * 32).decode(),
     }
 
 

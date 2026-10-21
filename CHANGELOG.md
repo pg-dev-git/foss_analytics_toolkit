@@ -74,6 +74,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated `datetime.utcnow()` and `pd.Timestamp.utcnow()` calls replaced
   with the timezone-aware equivalents; a leaked file handle closed.
 
+### Removed
+
+- The JWT-bearer (Connected App), Web OAuth (PKCE) and Device Flow
+  settings (`JWT_SECRET_KEY`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`,
+  `REFRESH_TOKEN_EXPIRE_DAYS`, `SF_CONNECTED_APP_*`, `SF_WEB_OAUTH_*`,
+  `SF_DEVICE_FLOW_CLIENT_ID`) and the `has_*_credentials` properties. None
+  of them was read by any code path -- the only implemented authentication
+  is the SF CLI. **Breaking change** for anyone who set those variables:
+  they are now ignored. `asftool doctor` no longer checks a JWT secret.
+- The `authlib` and `python-jose` dependencies, which had zero imports.
+- Five exception classes that were never raised or caught
+  (`ConfigurationError`, `OAuthError`, `TokenExpiredError`,
+  `TokenNotFoundError`, `FieldImpactError`).
+
 ### Changed
 
 - Downloads now live under `~/.asftool/downloads` instead of

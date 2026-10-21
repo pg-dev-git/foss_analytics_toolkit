@@ -14,10 +14,8 @@ from asftool.core.services.asset_graph import AssetGraphBuilder
 @pytest.fixture
 def settings():
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     return Settings(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret_key,
         sf_api_version="v60.0",
     )
 

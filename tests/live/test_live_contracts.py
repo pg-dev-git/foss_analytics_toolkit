@@ -65,7 +65,6 @@ async def client():
     token, instance_url, api_version = _credentials()
     settings = Settings(
         encryption_key="dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHQ=",
-        jwt_secret_key="live-test-secret-not-used-in-production-00000",
         sf_api_version=api_version,
     )
     c = SalesforceClient(

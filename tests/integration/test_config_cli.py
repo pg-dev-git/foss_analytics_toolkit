@@ -44,12 +44,11 @@ class TestConfigShow:
         """``config show`` must not depend on the developer's ambient env.
 
         Regression test for H-1: the command used to raise ValidationError
-        when ENCRYPTION_KEY / JWT_SECRET_KEY were absent from the machine.
+        when ENCRYPTION_KEY was absent from the machine.
         """
         from asftool.core.config import get_settings
 
         monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
-        monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
         get_settings.cache_clear()
 
         result = runner.invoke(config_app, ["show"])

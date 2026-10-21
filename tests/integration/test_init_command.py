@@ -31,7 +31,6 @@ def clean_env(tmp_path):
     """An environment with no ASFTool configuration."""
     env = dict(os.environ)
     env.pop("ENCRYPTION_KEY", None)
-    env.pop("JWT_SECRET_KEY", None)
     env["HOME"] = str(tmp_path)
     return env
 

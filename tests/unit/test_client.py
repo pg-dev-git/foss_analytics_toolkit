@@ -25,11 +25,9 @@ from asftool.core.exceptions import (
 def test_settings():
     """Create test settings with valid keys."""
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
     # Use model_construct to bypass .env file loading and validation
     return Settings.model_construct(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret,
         sf_api_version="v60.0",
         sf_default_domain="test.salesforce.com",
     )
@@ -49,11 +47,9 @@ def client(test_settings):
 def retry_test_settings():
     """Create test settings with valid keys for retry tests."""
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret = base64.urlsafe_b64encode(b"y" * 32).decode()
     # Use model_construct to bypass .env file loading and validation
     return Settings.model_construct(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret,
         sf_api_version="v60.0",
         sf_default_domain="test.salesforce.com",
     )
