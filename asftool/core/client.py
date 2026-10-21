@@ -3,6 +3,7 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any, Optional
 
 import httpx
@@ -27,6 +28,68 @@ from asftool.core.exceptions import (
 from asftool.core.pagination import build_page_params
 
 logger = structlog.get_logger(__name__)
+
+#: The longest we will honour a server's Retry-After for. A server asking
+#: for an hour is not a situation the CLI should sit through silently.
+MAX_RETRY_AFTER = 900  # seconds
+
+#: Fallback delay when the server says nothing useful.
+DEFAULT_RETRY_AFTER = 60  # seconds
+
+
+def parse_retry_after(value: str | None) -> int:
+    """Parse a ``Retry-After`` header into seconds.
+
+    The header has two forms: delta-seconds (``"300"``) and an HTTP-date
+    (``"Wed, 21 Oct 2026 07:28:00 GMT"``). Salesforce uses both.
+
+    Returns:
+        The number of seconds to wait, or ``DEFAULT_RETRY_AFTER`` when the
+        value is missing or unusable.
+    """
+    if not value:
+        return DEFAULT_RETRY_AFTER
+
+    value = value.strip()
+    if value.isdigit():
+        return int(value)
+
+    try:
+        from email.utils import parsedate_to_datetime
+
+        when = parsedate_to_datetime(value)
+        if when is None:
+            return DEFAULT_RETRY_AFTER
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        seconds = (when - datetime.now(UTC)).total_seconds()
+        return max(0, int(seconds))
+    except (TypeError, ValueError):
+        return DEFAULT_RETRY_AFTER
+
+
+def wait_retry_after(retry_state: Any) -> float:
+    """Wait strategy that honours the server's ``Retry-After``.
+
+    The default exponential backoff ignored the delay the server asked for,
+    so a 429 that said "wait 300 seconds" was retried after 1.7 s and then
+    3 s -- three rapid-fire requests against an already-throttling server.
+
+    The wait is capped at :data:`MAX_RETRY_AFTER` so a server cannot park
+    the CLI indefinitely.
+    """
+    outcome = retry_state.outcome
+    if outcome is not None and outcome.failed:
+        exception = outcome.exception()
+        if isinstance(exception, SalesforceRateLimitError):
+            delay = min(exception.retry_after, MAX_RETRY_AFTER)
+            logger.warning(
+                "rate_limit_backoff",
+                retry_after=exception.retry_after,
+                waiting_for=delay,
+            )
+            return float(max(0, delay))
+    return wait_exponential_jitter(initial=1, max=30)(retry_state)
 
 
 class SalesforceClient:
@@ -92,7 +155,7 @@ class SalesforceClient:
         """Get or create the retry client with configured policies."""
         if self._retry_client is None:
             self._retry_client = AsyncRetrying(
-                wait=wait_exponential_jitter(initial=1, max=30),
+                wait=wait_retry_after,
                 stop=stop_after_attempt(3),
                 retry=retry_if_exception_type((
                     httpx.TimeoutException,
@@ -126,20 +189,56 @@ class SalesforceClient:
             return f"{self.base_url}{path}"
         return f"{self.base_url}/{path}"
 
+    @staticmethod
+    def _parse_error_detail(response: httpx.Response) -> tuple[str, str]:
+        """Extract ``(error_code, message)`` from a Salesforce error body.
+
+        Salesforce returns errors either as a list of objects or as a single
+        object, and not every error carries both fields.
+        """
+        try:
+            error_data = response.json()
+        except Exception:
+            return ("UNKNOWN_ERROR", f"Request failed: {response.status_code}")
+
+        if isinstance(error_data, list) and error_data:
+            error = error_data[0]
+        elif isinstance(error_data, dict):
+            error = error_data
+        else:
+            return ("UNKNOWN_ERROR", f"Request failed: {response.status_code}")
+
+        if not isinstance(error, dict):
+            return ("UNKNOWN_ERROR", f"Request failed: {response.status_code}")
+
+        error_code = error.get("errorCode", "UNKNOWN_ERROR")
+        error_msg = error.get("message", "Unknown error")
+        return (str(error_code), str(error_msg))
+
     def _handle_response(self, response: httpx.Response) -> httpx.Response:
         """Handle response and raise appropriate exceptions."""
         if response.status_code == 401:
             raise SalesforceAuthError("Authentication failed or token expired")
         elif response.status_code == 403:
-            raise SalesforceAPIError("Access forbidden", status_code=403)
+            # Keep the platform's own message: a 403 usually names the
+            # missing permission, which is the only actionable part.
+            error_code, error_msg = self._parse_error_detail(response)
+            raise SalesforceAPIError(
+                f"Access forbidden: {error_code}: {error_msg}",
+                status_code=403,
+                error_code=error_code,
+            )
         elif response.status_code == 404:
-            raise SalesforceNotFoundError("Resource not found")
+            error_code, error_msg = self._parse_error_detail(response)
+            raise SalesforceNotFoundError(
+                f"Resource not found: {error_code}: {error_msg}"
+            )
         elif response.status_code == 429:
             # Rate limited - extract retry-after header if present
-            retry_after = response.headers.get("Retry-After", "60")
+            retry_after = parse_retry_after(response.headers.get("Retry-After"))
             raise SalesforceRateLimitError(
                 "Rate limit exceeded",
-                retry_after=int(retry_after) if retry_after.isdigit() else 60,
+                retry_after=retry_after,
             )
         elif response.status_code >= 500:
             raise SalesforceAPIError(
@@ -147,30 +246,12 @@ class SalesforceClient:
                 status_code=response.status_code,
             )
         elif response.status_code >= 400:
-            # Try to parse error details from response
-            try:
-                error_data = response.json()
-                # Salesforce returns errors as a list
-                if isinstance(error_data, list) and error_data:
-                    error = error_data[0]
-                    error_msg = error.get("message", "Unknown error")
-                    error_code = error.get("errorCode", "UNKNOWN_ERROR")
-                else:
-                    error_msg = error_data.get("message", "Unknown error")
-                    error_code = error_data.get("errorCode", "UNKNOWN_ERROR")
-                raise SalesforceAPIError(
-                    f"{error_code}: {error_msg}",
-                    status_code=response.status_code,
-                    error_code=error_code,
-                )
-            except SalesforceAPIError:
-                # Re-raise SalesforceAPIError (e.g., from the raise above)
-                raise
-            except Exception:
-                raise SalesforceAPIError(
-                    f"Request failed: {response.status_code}",
-                    status_code=response.status_code,
-                ) from None
+            error_code, error_msg = self._parse_error_detail(response)
+            raise SalesforceAPIError(
+                f"{error_code}: {error_msg}",
+                status_code=response.status_code,
+                error_code=error_code,
+            )
         return response
 
     async def _request(
