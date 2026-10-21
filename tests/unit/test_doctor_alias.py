@@ -7,6 +7,7 @@ troubleshooting command actively misleading.
 """
 
 import pytest
+import typer.main
 from typer.testing import CliRunner
 
 from asftool.cli.main import app
@@ -17,15 +18,36 @@ def runner():
     return CliRunner()
 
 
-class TestDoctorAlias:
-    def test_alias_option_exists(self, runner):
-        result = runner.invoke(app, ["doctor", "--help"])
-        assert result.exit_code == 0
-        assert "--alias" in result.stdout
+def _click_command(group: str, subcommand: str | None = None):
+    """The Click command object for a command group.
 
-    def test_short_alias_option_exists(self, runner):
-        result = runner.invoke(app, ["doctor", "--help"])
-        assert "-a" in result.stdout
+    The option flags are read from the command object rather than from
+    rendered help text: Rich truncates the help table to the terminal
+    height, so the text is not the same on a 200-row terminal and on a
+    25-row CI runner.
+    """
+    root = typer.main.get_command(app)
+    command = root.commands[group]
+    if subcommand is not None:
+        command = command.commands[subcommand]
+    return command
+
+
+def _option_flags(command, name: str) -> list[str]:
+    for param in command.params:
+        if param.name == name:
+            return list(param.opts) + list(param.secondary_opts)
+    return []
+
+
+class TestDoctorAlias:
+    def test_alias_option_exists(self):
+        flags = _option_flags(_click_command("doctor"), "alias")
+        assert "--alias" in flags
+
+    def test_short_alias_option_exists(self):
+        flags = _option_flags(_click_command("doctor"), "alias")
+        assert "-a" in flags
 
     def test_reports_on_the_requested_alias(self, runner, monkeypatch):
         """The Authentication row names the alias that was asked for."""

@@ -58,9 +58,6 @@ jobs:
         run: uv sync --all-extras --python ${{ matrix.python-version }}
       - name: Test
         run: uv run pytest -q
-      - name: Diagnostics
-        if: always()
-        run: cat /tmp/ci_diag.txt || true
 
   build:
     name: build

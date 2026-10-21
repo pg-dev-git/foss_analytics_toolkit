@@ -28,6 +28,11 @@ def _run(args: list[str], env: dict[str, str] | None = None) -> subprocess.Compl
     full_env = dict(os.environ)
     full_env.pop("ENCRYPTION_KEY", None)
     full_env.pop("JWT_SECRET_KEY", None)
+    # Pin the terminal size. Rich truncates its help table to the terminal
+    # height, so the rendered help differs between a developer's terminal
+    # and a CI runner.
+    full_env["COLUMNS"] = "200"
+    full_env["LINES"] = "100"
     if env:
         full_env.update(env)
 
@@ -60,7 +65,6 @@ class TestStartupWithoutConfiguration:
         result = _run(["--help"])
         assert result.returncode == 0
         assert "Usage" in result.stdout
-        assert "datasets" in result.stdout
 
     def test_short_help_flag_works(self):
         result = _run(["-h"])
@@ -84,6 +88,12 @@ class TestStartupWithoutConfiguration:
         result = _run(["datasets", "--help"])
         assert result.returncode == 0
         assert "Usage" in result.stdout
+
+    def test_help_lists_the_command_groups(self):
+        """The help must name the available command groups."""
+        result = _run(["--help"])
+        assert result.returncode == 0
+        assert "datasets" in result.stdout
 
 
 class TestPreflight:
