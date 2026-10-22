@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A 401 now triggers a token refresh and a single replay of the request,
+  instead of failing outright. The request is only replayed when
+  repeating it is safe: reads always, a `PUT` or `DELETE` that names one
+  specific asset, and never an action such as starting a dataflow or
+  processing a Data Manager job. See
+  `docs/decisions/0002-replay-policy.md`.
+- `SalesforceClient` accepts an injected `httpx.AsyncClient` and an
+  optional `token_refresher` callback, so the request path can be tested
+  without a network.
+
 ### Fixed
 
 - `asftool auth list-orgs` reported "No authorized orgs found" on a machine
