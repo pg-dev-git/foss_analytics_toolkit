@@ -208,6 +208,74 @@ class TestRefreshAccessToken:
         assert stored.alias == "default"
 
 
+class TestLoginStoresUnderTheRequestedAlias:
+    """The login path has the same alias trap as the refresh path.
+
+    ``login()`` stores the token twice: once from the login result and
+    once from the follow-up org lookup. Both must use the alias the
+    caller asked for, or the token lands under a key the session will
+    never read.
+    """
+
+    def _service(self, settings, sf_cli):
+        service = build_service(settings, sf_cli)
+        service.token_store.load_token = AsyncMock(return_value=make_stored_token())
+        service.token_store.save_token = AsyncMock()
+        return service
+
+    async def test_login_stores_under_the_requested_alias(self, settings):
+        sf_cli = MagicMock()
+        sf_cli.is_available = MagicMock(return_value=True)
+        sf_cli.login_web = AsyncMock(
+            return_value=SFCLIAuthResult(
+                access_token="web_token",
+                instance_url="https://example.my.salesforce.com",
+                alias="some-other-alias",
+            )
+        )
+        sf_cli.get_access_token = AsyncMock(return_value="real_token")
+        sf_cli.get_org_info = AsyncMock(
+            return_value=SFCLIAuthResult(
+                access_token="real_token",
+                instance_url="https://example.my.salesforce.com",
+                alias="some-other-alias",
+                username="user@example.com",
+            )
+        )
+        service = self._service(settings, sf_cli)
+
+        await service.login(alias="default")
+
+        for call in service.token_store.save_token.await_args_list:
+            assert call.args[0].alias == "default"
+
+    async def test_device_login_stores_under_the_requested_alias(self, settings):
+        sf_cli = MagicMock()
+        sf_cli.is_available = MagicMock(return_value=True)
+        sf_cli.login_device = AsyncMock(
+            return_value=SFCLIAuthResult(
+                access_token="web_token",
+                instance_url="https://example.my.salesforce.com",
+                alias="some-other-alias",
+            )
+        )
+        sf_cli.get_access_token = AsyncMock(return_value="real_token")
+        sf_cli.get_org_info = AsyncMock(
+            return_value=SFCLIAuthResult(
+                access_token="real_token",
+                instance_url="https://example.my.salesforce.com",
+                alias="some-other-alias",
+                username="user@example.com",
+            )
+        )
+        service = self._service(settings, sf_cli)
+
+        await service.login_device(alias="default")
+
+        for call in service.token_store.save_token.await_args_list:
+            assert call.args[0].alias == "default"
+
+
 class TestSessionWiring:
     """The CLI session must give the client a way to refresh."""
 

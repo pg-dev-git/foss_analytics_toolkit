@@ -83,7 +83,7 @@ class SFCLIAuthService:
                 instance_url=auth_result.instance_url,
                 refresh_token=auth_result.refresh_token,
                 expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
-                alias=auth_result.alias,
+                alias=alias,
                 username=auth_result.username,
             )
             await self.token_store.save_token(stored_token)
@@ -105,7 +105,7 @@ class SFCLIAuthService:
                 instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
-                alias=org_info.alias,
+                alias=alias,
                 username=org_info.username,
             )
             await self.token_store.save_token(refreshed_token)
@@ -160,7 +160,7 @@ class SFCLIAuthService:
                 instance_url=auth_result.instance_url,
                 refresh_token=auth_result.refresh_token,
                 expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
-                alias=auth_result.alias,
+                alias=alias,
                 username=auth_result.username,
             )
             await self.token_store.save_token(stored_token)
@@ -182,7 +182,7 @@ class SFCLIAuthService:
                 instance_url=org_info.instance_url or auth_result.instance_url,
                 refresh_token=org_info.refresh_token,
                 expires_at=org_info.expires_at.isoformat() if org_info.expires_at else None,
-                alias=org_info.alias,
+                alias=alias,
                 username=org_info.username,
             )
             await self.token_store.save_token(refreshed_token)
