@@ -28,6 +28,7 @@ from asftool.core.exceptions import (
     UploadError,
     ValidationError,
 )
+from asftool.core.replay import has_explicit_asset_id, is_replayable
 from asftool.core.storage import StorageManager, get_storage_manager
 
 __all__ = [
@@ -37,6 +38,8 @@ __all__ = [
     "EncryptedData",
     "StorageManager",
     "get_storage_manager",
+    "has_explicit_asset_id",
+    "is_replayable",
     "SalesforceClient",
     "create_client",
     "create_client_from_sf_cli",

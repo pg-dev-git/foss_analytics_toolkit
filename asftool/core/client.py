@@ -1,7 +1,8 @@
 """Async HTTP client for Salesforce API with retry logic and circuit breaker."""
 
+import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any, Optional
@@ -26,6 +27,7 @@ from asftool.core.exceptions import (
     SalesforceRateLimitError,
 )
 from asftool.core.pagination import build_page_params
+from asftool.core.replay import is_replayable
 
 logger = structlog.get_logger(__name__)
 
@@ -100,6 +102,8 @@ class SalesforceClient:
         access_token: str,
         instance_url: str,
         settings: Settings | None = None,
+        token_refresher: Callable[[], Awaitable[str]] | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ):
         """Initialize the client with authentication and configuration.
 
@@ -107,12 +111,26 @@ class SalesforceClient:
             access_token: OAuth access token for authentication
             instance_url: Salesforce instance URL (e.g., https://na100.salesforce.com)
             settings: Optional settings override
+            token_refresher: Optional async callable that returns a fresh
+                access token. It is called once when the platform answers a
+                request with a 401, and the request is then replayed with
+                the new token. Injecting it as a callback keeps
+                ``core/client.py`` free of any dependency on
+                ``core/auth/``, which imports from ``core/``.
+            http_client: Optional pre-built HTTP client. When given, it is
+                used as-is and is *not* closed by :meth:`close`, because the
+                caller owns it. This is the seam that lets the request path
+                be tested without a network.
         """
         self.access_token = access_token
         self.instance_url = instance_url.rstrip("/")
         self.settings = settings or get_settings()
-        self._client: httpx.AsyncClient | None = None
+        self._token_refresher = token_refresher
+        self._client: httpx.AsyncClient | None = http_client
+        self._owns_client = http_client is None
         self._retry_client: AsyncRetrying | None = None
+        self._refresh_lock = asyncio.Lock()
+        self._token_epoch = 0
 
     @property
     def base_url(self) -> str:
@@ -170,8 +188,12 @@ class SalesforceClient:
         return self._retry_client
 
     async def close(self) -> None:
-        """Close the underlying HTTP client."""
-        if self._client:
+        """Close the underlying HTTP client.
+
+        A client that was injected by the caller is left open: the caller
+        owns it and may still be using it.
+        """
+        if self._client and self._owns_client:
             await self._client.aclose()
             self._client = None
 
@@ -260,14 +282,77 @@ class SalesforceClient:
         path: str,
         **kwargs: Any,
     ) -> httpx.Response:
-        """Make an HTTP request with retry logic."""
+        """Make an HTTP request with retry logic.
+
+        A 401 is handled once, outside the retry loop: the token is
+        refreshed and the request is replayed, but only when repeating it
+        is safe. The retry loop itself never sees a 401, because a refresh
+        that did not help will not help on a second attempt either.
+        """
         url = self._build_url(path)
+
+        # The epoch is captured before the request is sent, so that a
+        # refresh triggered by *this* request can be recognised as such
+        # even if another request refreshed the token in the meantime.
+        epoch = self._token_epoch
 
         async def _make_request() -> httpx.Response:
             response = await self.client.request(method, url, **kwargs)
             return self._handle_response(response)
 
+        try:
+            return await self.retry_client(_make_request)
+        except SalesforceAuthError:
+            if not await self._refresh_token(epoch):
+                raise
+
+        if not is_replayable(method, path):
+            logger.info("auth_refreshed_but_request_not_replayable", method=method, path=path)
+            raise SalesforceAuthError(
+                "Authentication failed; the token has been refreshed but the request "
+                "was not repeated, because repeating it is not safe. Run the command again."
+            )
+
+        logger.info("replaying_request_after_token_refresh", method=method, path=path)
         return await self.retry_client(_make_request)
+
+    async def _refresh_token(self, epoch: int) -> bool:
+        """Refresh the access token once, if a refresher is configured.
+
+        Concurrent callers share a single refresh: the first one to take
+        the lock performs it, and the others find that the token epoch has
+        moved on and reuse the new token rather than refreshing again.
+
+        Args:
+            epoch: The token epoch the caller's request was sent with.
+
+        Returns:
+            True when a fresh token is now in place, False when no
+            refresher is configured or the refresh failed.
+        """
+        if self._token_refresher is None:
+            return False
+
+        async with self._refresh_lock:
+            if self._token_epoch != epoch:
+                # Another request refreshed the token while we waited.
+                return True
+
+            try:
+                new_token = await self._token_refresher()
+            except Exception as e:
+                logger.warning("token_refresh_failed", error=str(e))
+                return False
+
+            if not new_token:
+                logger.warning("token_refresh_returned_empty_token")
+                return False
+
+            self.access_token = new_token
+            self._token_epoch += 1
+            self.client.headers["Authorization"] = f"Bearer {new_token}"
+            logger.info("token_refreshed")
+            return True
 
     # Convenience methods
     async def get(self, path: str, params: dict | None = None, **kwargs: Any) -> httpx.Response:
