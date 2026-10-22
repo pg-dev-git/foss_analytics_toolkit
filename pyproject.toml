@@ -49,6 +49,8 @@ dev = [
     "mypy>=1.10.0",
     "ruff>=0.5.0",
     "pre-commit>=3.7.0",
+    # Mock HTTP transport for the git-sync integration tests.
+    "respx>=0.21.0",
 ]
 headless = [
     # Fallback keyring backend for containers and CI runners that have no

@@ -702,4 +702,3 @@ class SFCLIManager:
         except Exception as e:
             logger.warning("get_sf_cli_orgs_failed", error=str(e))
             return []
->>>>>>> ed1be03 (feat(auth): SF CLI auth verification and startup org selection)

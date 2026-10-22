@@ -1,5 +1,7 @@
 """Unit tests for asftool.core.auth.sf_cli_auth (SF CLI authentication service)."""
 
+import base64
+
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from datetime import UTC, datetime, timedelta
@@ -18,7 +20,9 @@ def mock_settings():
 
 @pytest.fixture
 def mock_crypto():
-    return CryptoManager("test_key_base64_encoded_32_chars==")
+    # The key must decode to exactly 32 bytes; the manager rejects
+    # anything else.
+    return CryptoManager(base64.urlsafe_b64encode(b"t" * 32).decode())
 
 
 @pytest.fixture

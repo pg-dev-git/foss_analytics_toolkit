@@ -25,8 +25,10 @@ class WebPKCEAuthService:
         self.settings = settings
         self.crypto = crypto_manager
         self.token_store = TokenStore(crypto_manager)
-        self.client_id = settings.sf_web_oauth_client_id or "asftool_pkce_default"
-        self.redirect_uri = settings.sf_web_oauth_redirect_uri
+        # The OAuth settings were removed from ``Settings`` as dead
+        # configuration, so read them defensively.
+        self.client_id = getattr(settings, "sf_web_oauth_client_id", None) or "asftool_pkce_default"
+        self.redirect_uri = getattr(settings, "sf_web_oauth_redirect_uri", None)
         self.authorize_url = f"https://{settings.sf_default_domain}/services/oauth2/authorize"
         self.token_url = f"https://{settings.sf_default_domain}/services/oauth2/token"
 

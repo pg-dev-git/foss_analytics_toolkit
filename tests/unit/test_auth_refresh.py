@@ -223,9 +223,22 @@ class TestLoginStoresUnderTheRequestedAlias:
         service.token_store.save_token = AsyncMock()
         return service
 
-    async def test_login_stores_under_the_requested_alias(self, settings):
+    def _sf_cli(self):
+        """An SF CLI stub whose org list is empty.
+
+        ``login()`` looks the org up in the SF CLI's own list to find the
+        alias the CLI actually uses, and asks for the org's API version.
+        An empty list means it keeps the requested alias, which is what
+        these tests assert.
+        """
         sf_cli = MagicMock()
         sf_cli.is_available = MagicMock(return_value=True)
+        sf_cli.get_org_list = AsyncMock(return_value=[])
+        sf_cli.get_org_api_version = AsyncMock(return_value=None)
+        return sf_cli
+
+    async def test_login_stores_under_the_requested_alias(self, settings):
+        sf_cli = self._sf_cli()
         sf_cli.login_web = AsyncMock(
             return_value=SFCLIAuthResult(
                 access_token="web_token",
@@ -250,8 +263,7 @@ class TestLoginStoresUnderTheRequestedAlias:
             assert call.args[0].alias == "default"
 
     async def test_device_login_stores_under_the_requested_alias(self, settings):
-        sf_cli = MagicMock()
-        sf_cli.is_available = MagicMock(return_value=True)
+        sf_cli = self._sf_cli()
         sf_cli.login_device = AsyncMock(
             return_value=SFCLIAuthResult(
                 access_token="web_token",
@@ -288,6 +300,9 @@ class TestSessionWiring:
         auth.get_access_token = AsyncMock(return_value="stale_token")
         auth.get_instance_url = AsyncMock(return_value="https://example.my.salesforce.com")
         auth.refresh_access_token = AsyncMock(return_value="fresh_token")
+        # The session also reads the stored token, to pick up the org's
+        # API version.
+        auth.token_store.load_token = AsyncMock(return_value=None)
         session._auth_service = auth
 
         client = await session.get_client()
@@ -304,6 +319,7 @@ class TestSessionWiring:
         auth.get_access_token = AsyncMock(return_value="stale_token")
         auth.get_instance_url = AsyncMock(return_value="https://example.my.salesforce.com")
         auth.refresh_access_token = AsyncMock(return_value="fresh_token")
+        auth.token_store.load_token = AsyncMock(return_value=None)
         session._auth_service = auth
 
         client = await session.get_client()
