@@ -181,6 +181,32 @@ class TestRefreshAccessToken:
         stored = service.token_store.save_token.await_args.args[0]
         assert stored.instance_url == "https://example.my.salesforce.com"
 
+    async def test_the_token_is_stored_under_the_requested_alias(self, settings):
+        """The SF CLI can report a different alias than the one requested.
+
+        The SF CLI reports the alias the org was first authorised under.
+        A user who runs the tool with ``--alias default`` therefore gets
+        a refresh result carrying the org's own alias. Storing the token
+        under *that* alias would put it under a key the next lookup never
+        reads, and the session would look "not authenticated" again.
+        """
+        sf_cli = MagicMock()
+        sf_cli.refresh_token = AsyncMock(
+            return_value=SFCLIAuthResult(
+                access_token="fresh_token",
+                instance_url="https://example.my.salesforce.com",
+                alias="some-other-alias",
+            )
+        )
+        service = build_service(settings, sf_cli)
+        service.token_store.load_token = AsyncMock(return_value=make_stored_token())
+        service.token_store.save_token = AsyncMock()
+
+        await service.refresh_access_token(alias="default")
+
+        stored = service.token_store.save_token.await_args.args[0]
+        assert stored.alias == "default"
+
 
 class TestSessionWiring:
     """The CLI session must give the client a way to refresh."""

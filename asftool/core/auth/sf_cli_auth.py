@@ -244,7 +244,13 @@ class SFCLIAuthService:
             instance_url=auth_result.instance_url or stored.instance_url,
             refresh_token=auth_result.refresh_token,
             expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
-            alias=auth_result.alias or alias,
+            # The token is stored under the alias the caller asked for, not
+            # the one the SF CLI reports for the org. Those can differ --
+            # a user who authorised the org as "default" is reported by
+            # the CLI under whatever alias it was first created with --
+            # and the store is keyed on the requested alias, because that
+            # is the alias the next lookup will use.
+            alias=alias,
             username=auth_result.username or stored.username,
         )
         await self.token_store.save_token(new_token)
