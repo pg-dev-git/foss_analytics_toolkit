@@ -7,8 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A 401 now triggers a token refresh and a single replay of the request,
+  instead of failing outright. The request is only replayed when
+  repeating it is safe: reads always, a `PUT` or `DELETE` that names one
+  specific asset, and never an action such as starting a dataflow or
+  processing a Data Manager job. See
+  `docs/decisions/0002-replay-policy.md`.
+- `SalesforceClient` accepts an injected `httpx.AsyncClient` and an
+  optional `token_refresher` callback, so the request path can be tested
+  without a network.
+
 ### Fixed
 
+- A token was stored under the alias the SF CLI *reported* for the org
+  rather than the alias the user asked for. The two can differ — the CLI
+  reports the alias an org was first authorised under — so a session
+  using the "default" alias could not find a token that had just been
+  stored for it, and fell back to an interactive browser login. Both the
+  login and the refresh path now use the requested alias.
+- "Show dashboard details" showed nothing at all when the platform
+  answered 404 for the dashboard's datasets sub-resource. The datasets
+  are supplementary; failing to fetch them no longer discards the
+  dashboard's own details.
 - `asftool auth list-orgs` reported "No authorized orgs found" on a machine
   with authorized orgs. The SF CLI does not return a single `orgs` array; it
   partitions orgs across `other`, `nonScratchOrgs`, `devHubs`, `scratchOrgs`

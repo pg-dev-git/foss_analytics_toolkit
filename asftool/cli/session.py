@@ -71,10 +71,22 @@ class Session:
         )
         instance_url = await self.auth_service.get_instance_url(alias=self.alias)
 
+        alias = self.alias
+
+        async def _refresh_token() -> str:
+            """Get a new access token after the platform rejected the old one.
+
+            The client cannot import the auth service -- ``core/auth/``
+            already imports from ``core/`` -- so the refresh is injected
+            as a callback instead.
+            """
+            return await self.auth_service.refresh_access_token(alias=alias)
+
         self._client = SalesforceClient(
             access_token=token,
             instance_url=instance_url,
             settings=self.settings,
+            token_refresher=_refresh_token,
         )
         return self._client
 

@@ -84,6 +84,15 @@ Because SF CLI owns the refresh token, ASFTool gets a fresh token on demand with
 > `asftool/core/auth/token_store.py`), at which point it is refreshed. When the
 > platform does supply an expiry, that value is used instead.
 
+> **What happens on a 401.** If the platform rejects a request with a 401 — which
+> happens when Salesforce invalidates a token that still looks fresh to the token
+> store — the token is refreshed and the request is repeated once. The request is
+> only repeated when repeating it is safe: a read, or a `PUT`/`DELETE` that names
+> one specific asset. A request that *acts* (starting a dataflow, creating a
+> dashboard, processing a Data Manager job) is not repeated, because the platform
+> may have already performed the action. The policy is recorded in
+> `docs/decisions/0002-replay-policy.md`.
+
 > **Headless hosts without a keyring:** install the fallback backend with
 > `pip install 'asftool[headless]'` (pulls in `keyrings.alt`). Without a keyring
 > backend, `asftool auth status` reports that the token store is unavailable rather
