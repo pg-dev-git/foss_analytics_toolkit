@@ -7,7 +7,7 @@ import structlog
 from asftool.core.auth.token_store import StoredToken, TokenStore
 from asftool.core.config import Settings
 from asftool.core.crypto import CryptoManager
-from asftool.core.exceptions import TokenStoreUnavailableError
+from asftool.core.exceptions import TokenRefreshError, TokenStoreUnavailableError
 from asftool.core.sf_cli import SFCLIError, SFCLIManager, SFCLINotFoundError
 
 logger = structlog.get_logger(__name__)
@@ -197,6 +197,59 @@ class SFCLIAuthService:
             raise SFCLIAuthError(f"SF CLI device login failed: {e}") from e
         except Exception as e:
             raise SFCLIAuthError(f"Unexpected error during device login: {e}") from e
+
+    async def refresh_access_token(self, alias: str = "default") -> str:
+        """
+        Force a token refresh and return the new access token.
+
+        This is deliberately separate from :meth:`get_access_token`. That
+        method returns the *stored* token whenever it has not yet expired,
+        which is the right behaviour when starting a session but the wrong
+        one when the platform has just rejected a token with a 401: the
+        store still believes that token is good, so it would hand back the
+        very token that just failed.
+
+        Args:
+            alias: Org alias
+
+        Returns:
+            A freshly obtained access token.
+
+        Raises:
+            TokenRefreshError: If the token could not be refreshed. The
+                failure is reported rather than swallowed, because
+                silently continuing with the stale token turns one clear
+                error into a confusing one.
+            SFCLIAuthError: If no token is stored for the alias.
+        """
+        stored = await self.token_store.load_token(alias)
+        if not stored:
+            raise SFCLIAuthError(
+                f"No token for alias '{alias}'. Run 'asftool auth login' first."
+            )
+
+        logger.info("forcing_token_refresh", alias=alias)
+
+        try:
+            auth_result = await self.sf_cli.refresh_token(alias)
+        except Exception as e:
+            logger.error("token_refresh_failed", alias=alias, error=str(e))
+            raise TokenRefreshError(
+                f"Failed to refresh the token for alias '{alias}': {e}. "
+                "Run 'asftool auth login' to re-authenticate."
+            ) from e
+
+        new_token = StoredToken(
+            access_token=auth_result.access_token,
+            instance_url=auth_result.instance_url or stored.instance_url,
+            refresh_token=auth_result.refresh_token,
+            expires_at=auth_result.expires_at.isoformat() if auth_result.expires_at else None,
+            alias=auth_result.alias or alias,
+            username=auth_result.username or stored.username,
+        )
+        await self.token_store.save_token(new_token)
+        logger.info("token_refreshed", alias=alias)
+        return new_token.access_token
 
     async def get_access_token(
         self,
