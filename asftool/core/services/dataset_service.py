@@ -6,7 +6,6 @@ import math
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
 import structlog
@@ -23,6 +22,7 @@ from asftool.core.models import (
     UploadJob,
     UploadProgress,
 )
+from asftool.core.pagination import extract_page_token
 from asftool.core.storage import get_storage_manager
 
 logger = structlog.get_logger(__name__)
@@ -53,6 +53,7 @@ class DatasetService:
         """List all datasets with pagination."""
         all_datasets = []
         page_token = None
+        seen_tokens: set[str] = set()
 
         while True:
             response = await self.client.list_datasets(
@@ -66,8 +67,13 @@ class DatasetService:
             if not data.next_page_url:
                 break
 
-            # Extract page token from next_page_url
-            page_token = self._extract_page_token(data.next_page_url)
+            next_token = extract_page_token(data.next_page_url)
+            if not next_token or next_token in seen_tokens:
+                # A repeated cursor means the platform is not advancing;
+                # stop rather than loop forever.
+                break
+            seen_tokens.add(next_token)
+            page_token = next_token
 
         return all_datasets
 
@@ -262,7 +268,7 @@ class DatasetService:
 
         job.status = "completed"
         job.result_path = str(output_path)
-        job.completed_at = pd.Timestamp.utcnow().to_pydatetime()
+        job.completed_at = pd.Timestamp.now("UTC").to_pydatetime()
 
         logger.info(
             "extraction_completed",
@@ -477,7 +483,7 @@ class DatasetService:
         await self.client.process_insights_external_data(external_data_id)
 
         job.status = "completed"
-        job.completed_at = pd.Timestamp.utcnow().to_pydatetime()
+        job.completed_at = pd.Timestamp.now("UTC").to_pydatetime()
 
         logger.info(
             "upload_completed",
@@ -514,7 +520,8 @@ class DatasetService:
         )
         external_data_id = job_response["id"]
 
-        total_rows = sum(1 for _ in open(file_path, encoding="utf-8")) - 1
+        with open(file_path, encoding="utf-8") as f:
+            total_rows = sum(1 for _ in f) - 1
         total_parts = math.ceil(total_rows / chunk_size)
 
         part_number = 1
@@ -573,8 +580,3 @@ class DatasetService:
     # Helper Methods
     # =========================================================================
 
-    def _extract_page_token(self, url: str) -> str | None:
-        """Extract page token from next page URL."""
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-        return params.get("pageToken", [None])[0]

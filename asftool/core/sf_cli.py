@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -32,6 +33,102 @@ class SFCLIError(Exception):
 class SFCLINotFoundError(SFCLIError):
     """SF CLI not installed or not in PATH."""
     pass
+
+
+#: The keys under which `sf org list --json --all` groups authorized orgs.
+#: The platform does not use a single `orgs` array.
+_ORG_LIST_KEYS = (
+    "other",
+    "nonScratchOrgs",
+    "devHubs",
+    "scratchOrgs",
+    "sandboxes",
+)
+
+
+def parse_org_list(payload: str | dict[str, Any]) -> list[dict[str, Any]]:
+    """Parse the output of ``sf org list --json --all``.
+
+    The SF CLI partitions authorized orgs across several arrays (``other``,
+    ``nonScratchOrgs``, ``devHubs``, ``scratchOrgs`` and sometimes
+    ``sandboxes``) rather than returning a single ``orgs`` array. The same
+    org is frequently present in more than one array, so the results are
+    de-duplicated by org id, falling back to the alias.
+
+    Args:
+        payload: The raw JSON string, or the already-decoded object.
+
+    Returns:
+        The list of orgs.
+
+    Raises:
+        SFCLIError: If the payload is not JSON, or does not have the
+            expected shape. Failing loudly matters here: the previous
+            implementation returned an empty list on any problem, so a
+            parsing bug was indistinguishable from "you have no orgs".
+    """
+    if isinstance(payload, str):
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError as e:
+            raise SFCLIError(f"Could not parse SF CLI output as JSON: {e}") from e
+    else:
+        data = payload
+
+    if not isinstance(data, dict):
+        raise SFCLIError(
+            f"Unexpected SF CLI response type {type(data).__name__}; expected an object"
+        )
+
+    result = data.get("result", data)
+    if not isinstance(result, dict):
+        raise SFCLIError(
+            f"Unexpected SF CLI 'result' type {type(result).__name__}; expected an object"
+        )
+
+    found_keys = [k for k in _ORG_LIST_KEYS if k in result]
+    if not found_keys:
+        raise SFCLIError(
+            "Unexpected SF CLI org-list response: no org arrays found. "
+            f"Expected one of {list(_ORG_LIST_KEYS)}, got keys {sorted(result.keys())}"
+        )
+
+    orgs: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for key in _ORG_LIST_KEYS:
+        entries = result.get(key) or []
+        if not isinstance(entries, list):
+            continue
+        for org in entries:
+            if not isinstance(org, dict):
+                continue
+            identity = str(org.get("id") or org.get("orgId") or org.get("alias") or "")
+            if identity and identity in seen:
+                continue
+            if identity:
+                seen.add(identity)
+            orgs.append(org)
+
+    return orgs
+
+
+#: Environment variables that must not reach the SF CLI subprocess.
+#:
+#: ``SF_API_VERSION`` is read by ASFTool to pick the org's API version, and
+#: the SF CLI also reads it as an override. When the value is not supported
+#: for the org, the CLI fails to resolve the org at all and reports
+#: "No authorization information found for <alias>" -- a credential error
+#: that is really a self-inflicted one.
+_ENV_BLOCKLIST = ("SF_API_VERSION",)
+
+
+def sf_cli_env() -> dict[str, str]:
+    """Build the environment for an SF CLI subprocess.
+
+    Everything is inherited except the variables in ``_ENV_BLOCKLIST``, which
+    are removed so ASFTool's own settings cannot change the CLI's behaviour.
+    """
+    return {k: v for k, v in os.environ.items() if k not in _ENV_BLOCKLIST}
 
 
 class SFCLIManager:
@@ -136,6 +233,7 @@ class SFCLIManager:
                 text=True,
                 timeout=timeout,
                 check=False,
+                env=sf_cli_env(),
             )
         except subprocess.TimeoutExpired as e:
             raise SFCLIError(f"SF CLI command timed out after {timeout}s: {cmd}") from e
@@ -188,6 +286,7 @@ class SFCLIManager:
                     shell_cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    env=sf_cli_env(),
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
@@ -206,6 +305,7 @@ class SFCLIManager:
                     *cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
+                    env=sf_cli_env(),
                 )
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
@@ -455,11 +555,7 @@ class SFCLIManager:
             username=username,
         )
 
-    def list_orgs(self) -> list[Any]:
+    def list_orgs(self) -> list[dict[str, Any]]:
         """List all authorized orgs."""
         result = self._run_command(["org", "list", "--json", "--all"])
-        try:
-            output = json.loads(result.stdout)
-            return output.get("result", {}).get("orgs", [])  # type: ignore[no-any-return]
-        except (json.JSONDecodeError, KeyError):
-            return []
+        return parse_org_list(result.stdout)

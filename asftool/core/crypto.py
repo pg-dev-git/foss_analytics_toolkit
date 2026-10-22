@@ -1,6 +1,7 @@
 """Cryptography utilities with dynamic salt and keyring integration."""
 
 import base64
+import binascii
 import json
 import os
 from dataclasses import dataclass
@@ -10,6 +11,8 @@ import keyring
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+from asftool.core.exceptions import CryptoError
 
 
 @dataclass
@@ -51,8 +54,27 @@ class CryptoManager:
     DEFAULT_ITERATIONS = 214322
 
     def __init__(self, master_key: str):
-        """Initialize with master key (base64 encoded 32 bytes)."""
-        self._master_key = base64.urlsafe_b64decode(master_key.encode())
+        """Initialize with master key (base64 encoded 32 bytes).
+
+        The key is decoded leniently: base64 padding is added when it is
+        missing. ``Settings`` accepts an unpadded key, so a strict decode
+        here would accept it at validation time and then fail on use.
+
+        Raises:
+            CryptoError: If the key is not valid base64, or does not decode
+                to 32 bytes. A bare ``binascii.Error`` here is opaque.
+        """
+        try:
+            padded = master_key + "=" * (-len(master_key) % 4)
+            self._master_key = base64.urlsafe_b64decode(padded.encode())
+        except (binascii.Error, ValueError) as e:
+            raise CryptoError(f"Invalid encryption key: {e}") from e
+
+        if len(self._master_key) != 32:
+            raise CryptoError(
+                "Invalid encryption key: must decode to exactly 32 bytes "
+                f"(got {len(self._master_key)})"
+            )
 
     def _derive_key(self, salt: bytes, iterations: int | None = None) -> bytes:
         """Derive encryption key from master key and salt."""
@@ -145,7 +167,19 @@ class CryptoManager:
 
 
 def create_crypto_manager() -> CryptoManager:
-    """Factory function to create CryptoManager from settings."""
+    """Factory function to create CryptoManager from settings.
+
+    Raises:
+        CryptoError: If no encryption key is configured. The key is what
+            protects the tokens in the OS keyring, so there is no safe
+            fallback -- the caller must report the missing configuration
+            rather than silently storing tokens unprotected.
+    """
     from asftool.core.config import get_settings
     settings = get_settings()
+    if not settings.encryption_key:
+        raise CryptoError(
+            "No ENCRYPTION_KEY is configured. "
+            "Run 'asftool init' or copy .env.example to .env."
+        )
     return CryptoManager(settings.encryption_key)

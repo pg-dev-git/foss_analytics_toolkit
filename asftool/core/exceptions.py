@@ -9,12 +9,6 @@ class ASFToolError(Exception):
         self.message = message
 
 
-class ConfigurationError(ASFToolError):
-    """Raised when configuration is invalid or missing."""
-
-    pass
-
-
 class CryptoError(ASFToolError):
     """Raised when encryption/decryption fails."""
 
@@ -63,29 +57,22 @@ class SalesforceNotFoundError(SalesforceAPIError):
         super().__init__(message, status_code=404)
 
 
-class OAuthError(ASFToolError):
-    """Raised when OAuth flow fails."""
+class TokenStoreUnavailableError(ASFToolError):
+    """Raised when no OS keyring backend is available.
 
-    def __init__(
-        self,
-        message: str,
-        *,
-        error_code: str | None = None,
-    ) -> None:
-        super().__init__(message)
-        self.error_code = error_code
+    Headless containers frequently have no keyring. The failure is
+    recoverable -- install ``keyrings.alt`` -- so it gets its own type
+    rather than surfacing as a raw ``NoKeyringError`` traceback.
+    """
 
 
-class TokenExpiredError(OAuthError):
-    """Raised when OAuth token has expired and cannot be refreshed."""
+class TokenRefreshError(ASFToolError):
+    """Raised when refreshing an expired token fails.
 
-    pass
-
-
-class TokenNotFoundError(OAuthError):
-    """Raised when no token is found for the user."""
-
-    pass
+    Distinct from "there is no token": a refresh failure must not be
+    confused with an empty store, because the first means "your session
+    broke" and the second means "log in".
+    """
 
 
 class ValidationError(ASFToolError):
@@ -118,7 +105,3 @@ class UploadError(ASFToolError):
     pass
 
 
-class FieldImpactError(ASFToolError):
-    """Raised when field impact analysis fails."""
-
-    pass

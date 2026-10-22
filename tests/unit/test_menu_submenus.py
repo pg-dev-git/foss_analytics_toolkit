@@ -117,6 +117,13 @@ def test_doctor_menu_uses_async_path() -> None:
     )
 
 
+def _fake_init(self, alias: str = "default", settings=None, crypto=None):
+    """A Session stand-in that still has the attributes the code reads."""
+    self.alias = alias
+    self.settings = settings
+    self.crypto = crypto
+
+
 def test_doctor_menu_does_not_crash_inside_running_event_loop():
     """The menu's doctor handler must run cleanly inside a live event loop.
 
@@ -145,7 +152,7 @@ def test_doctor_menu_does_not_crash_inside_running_event_loop():
         return _MockResp()
 
     async def run_inside_loop():
-        with patch.object(Session, "__init__", lambda self: None), \
+        with patch.object(Session, "__init__", _fake_init), \
              patch.object(Session, "close", _noop_close), \
              patch("httpx.AsyncClient.get", _mock_get), \
              patch("asftool.cli.commands.doctor._collect_checks",
@@ -164,6 +171,6 @@ def test_doctor_menu_does_not_crash_inside_running_event_loop():
     asyncio.run(run_inside_loop())
 
 
-async def _async_noop_collect(session, verbose):
+async def _async_noop_collect(session, verbose, alias="default"):
     """Return a single passing check so the doctor prints and exits."""
     return [("Test", "OK", True)]

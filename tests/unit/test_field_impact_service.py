@@ -1,5 +1,6 @@
 """Unit tests for FieldImpactService."""
 
+import asyncio
 import base64
 from unittest.mock import AsyncMock
 
@@ -7,8 +8,8 @@ import pytest
 
 from asftool.core.client import SalesforceClient
 from asftool.core.config import Settings
+from asftool.core.exceptions import SalesforceNotFoundError
 from asftool.core.models import (
-    AssetType,
     MatchMode,
     MatchType,
 )
@@ -17,10 +18,8 @@ from asftool.core.services.field_impact_service import FieldImpactService
 
 def _settings():
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     return Settings(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret_key,
         sf_api_version="v60.0",
     )
 
@@ -422,13 +421,97 @@ async def test_progress_callback_invoked():
 # ----------------------------------------------------------------------------
 
 
-@pytest.mark.asyncio
-async def test_extract_page_token():
-    s = FieldImpactService.__new__(FieldImpactService)
-    assert s._extract_page_token("") is None
-    assert s._extract_page_token("/path?other=x") is None
-    assert s._extract_page_token("/path?pageToken=abc") == "abc"
-    assert s._extract_page_token("/path?pageToken=abc&sort=name") == "abc"
+class TestBoundedConcurrency:
+    """A scan must not fire one request per asset simultaneously.
+
+    The service created a semaphore but never acquired it, and fanned out
+    with a bare ``asyncio.gather`` -- so a 200-asset org produced 200
+    concurrent requests, which the Wave API answers with 429s.
+    """
+
+    @pytest.mark.asyncio
+    async def test_scan_does_not_exceed_the_concurrency_limit(self):
+        settings = _settings()
+        in_flight = 0
+        peak = 0
+
+        class _Client:
+            async def list_datasets(self, page_token=None, **kwargs):
+                return {
+                    "datasets": [
+                        {
+                            "id": f"ds{i}",
+                            "name": f"ds{i}",
+                            "label": f"ds{i}",
+                            "currentVersionId": "v1",
+                        }
+                        for i in range(200)
+                    ]
+                }
+
+            async def get_dataset_xmd(self, dataset_id, version_id):
+                nonlocal in_flight, peak
+                in_flight += 1
+                peak = max(peak, in_flight)
+                try:
+                    await asyncio.sleep(0.01)
+                    return {"measures": [], "dimensions": [], "dates": []}
+                finally:
+                    in_flight -= 1
+
+        service = FieldImpactService(
+            _Client(), settings=settings, max_concurrent=10
+        )
+
+        await service._scan_datasets("revenue", MatchMode.BOTH, None)
+
+        assert peak <= 10, f"peak in-flight requests was {peak}, limit was 10"
+
+    @pytest.mark.asyncio
+    async def test_service_uses_the_configured_concurrency(self):
+        """The `field_impact_max_concurrent_scans` setting must be honoured."""
+        settings = _settings()
+        settings.field_impact_max_concurrent_scans = 3
+        service = FieldImpactService(_client(settings), settings=settings)
+        assert service.max_concurrent == 3
+        assert service._semaphore._value == 3
+
+    @pytest.mark.asyncio
+    async def test_one_failing_asset_does_not_abort_the_scan(self):
+        """A failure on one asset must not lose the other assets' results."""
+        settings = _settings()
+
+        class _Client:
+            async def list_datasets(self, page_token=None, **kwargs):
+                return {
+                    "datasets": [
+                        {
+                            "id": "ok1",
+                            "name": "ok1",
+                            "label": "ok1",
+                            "currentVersionId": "v1",
+                        },
+                        {
+                            "id": "bad",
+                            "name": "bad",
+                            "label": "bad",
+                            "currentVersionId": "v1",
+                        },
+                    ]
+                }
+
+            async def get_dataset_xmd(self, dataset_id, version_id):
+                if dataset_id == "bad":
+                    raise SalesforceNotFoundError("nope")
+                return {"measures": [], "dimensions": [], "dates": []}
+
+        service = FieldImpactService(
+            _Client(), settings=settings, max_concurrent=5
+        )
+        results = await service._scan_datasets("revenue", MatchMode.BOTH, None)
+        # Both assets are reported: the failing one comes back as a result
+        # with no matches rather than aborting the whole scan.
+        assert len(results) == 2
 
 
 @pytest.mark.asyncio

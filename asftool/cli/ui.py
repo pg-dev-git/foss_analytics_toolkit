@@ -172,26 +172,84 @@ async def run_with_progress(
             return await coro()
 
 
-def prompt_select(prompt_text: str, choices: list[str], default: str | None = None) -> str:
-    """Prompt user to select from a list of choices."""
+#: How many invalid answers a select prompt accepts before giving up.
+#: Without a cap, a prompt whose default is not a valid index loops forever
+#: and the user can only escape by killing the process.
+MAX_SELECT_ATTEMPTS = 10
+
+
+def prompt_select(
+    prompt_text: str,
+    choices: list[str],
+    default: str | None = None,
+) -> str | None:
+    """Prompt the user to select one of ``choices``.
+
+    The user may answer with the 1-based number shown next to a choice, or
+    with the choice's value itself. Either is accepted.
+
+    Args:
+        prompt_text: The question to display.
+        choices: The available choices.
+        default: The choice used when the user presses Enter. It must be one
+            of ``choices``; a default that is not in the list is ignored
+            rather than being offered as an answer that cannot be parsed.
+
+    Returns:
+        The selected choice, or None if the user gave up (too many invalid
+        answers, or the prompt was cancelled).
+    """
     console.print(f"\n[bold]{prompt_text}[/bold]")
     for i, choice in enumerate(choices, 1):
         console.print(f"  [cyan]{i}[/cyan]. {choice}")
 
-    while True:
+    if not choices:
+        return None
+
+    valid_default = default if default in choices else None
+    if default is not None and valid_default is None:
+        print_warning(
+            f"Default {default!r} is not one of the choices; no default will be offered."
+        )
+
+    for _ in range(MAX_SELECT_ATTEMPTS):
         try:
             selection = Prompt.ask(
                 "Enter your choice",
-                default=str(default) if default else None,
+                default=valid_default,
             )
-            if selection is None:
-                continue
+        except (EOFError, KeyboardInterrupt):
+            return None
+
+        if selection is None:
+            continue
+
+        selection = selection.strip()
+        if not selection:
+            if valid_default is not None:
+                return valid_default
+            continue
+
+        # A choice value, e.g. "v68.0".
+        if selection in choices:
+            return selection
+
+        # A 1-based index, e.g. "2".
+        try:
             idx = int(selection) - 1
-            if 0 <= idx < len(choices):
-                return choices[idx]
-            print_error("Invalid selection. Please try again.")
         except ValueError:
-            print_error("Please enter a number.")
+            print_error("Please enter a number or one of the listed values.")
+            continue
+
+        if 0 <= idx < len(choices):
+            return choices[idx]
+
+        print_error("Invalid selection. Please try again.")
+
+    print_error(
+        f"Too many invalid selections ({MAX_SELECT_ATTEMPTS}); giving up."
+    )
+    return None
 
 
 def prompt_confirm(prompt_text: str, default: bool = False) -> bool:
@@ -200,8 +258,16 @@ def prompt_confirm(prompt_text: str, default: bool = False) -> bool:
 
 
 def prompt_text(prompt_text: str, default: str | None = None) -> str:
-    """Prompt user for text input."""
-    result = Prompt.ask(prompt_text, default=default)
+    """Prompt the user for text input.
+
+    The ``default`` parameter means the same thing here as in
+    :func:`prompt_select`: the value used when the user presses Enter. An
+    empty answer returns ``""``.
+    """
+    try:
+        result = Prompt.ask(prompt_text, default=default)
+    except (EOFError, KeyboardInterrupt):
+        return ""
     return result or ""
 
 

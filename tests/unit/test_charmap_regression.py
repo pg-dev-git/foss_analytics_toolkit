@@ -66,12 +66,10 @@ def test_storage_manager_persists_emoji_utf8():
     """
     # Create a minimal settings object with valid encryption key (32 bytes base64 encoded)
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     settings = Settings(
         app_name="asftool",
         app_version="0.1.0",
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret_key,
     )
 
     storage = StorageManager(settings)

@@ -22,6 +22,9 @@ async def generate_lineage() -> None:
         # Offer two paths: load an existing impact file, or run a field search first
         mode = prompt_text("Use an existing impact file? Type 'y' to load one, or 'n' to search a field first", default="n")
         impact_path: str | None = None
+        # Initialised here because the "existing file" branch below never
+        # assigns it -- reading it unconditionally raised a NameError.
+        search_term: str | None = None
         if mode and mode.lower() in ("y", "yes", "1", "true"):
             impact_path_raw = prompt_text("Path to the impact JSON file (short name is fine — e.g., 'opportunity_impact')")
             if not impact_path_raw:
@@ -58,20 +61,20 @@ async def generate_lineage() -> None:
             try:
                 print_info(f"Running field impact analysis for: '{search_term}'...")
                 # Call the async analysis command directly
-                await analyze_field_async(
+                written = await analyze_field_async(
                     search_term=search_term,
                     mode="both",
                     fmt="json",
                 )
-                # After analysis completes, infer the output path from session storage
-                # (No extra prompt — the user just gave a search term; we'll use the default path automatically)
-                # Note: analyze_field_async writes to a default path; we resolve it here.
-                from asftool.core.config import get_settings
-                from asftool.core.storage import get_storage_manager
-                alias = session.alias
-                settings = get_settings()
-                storage = get_storage_manager(settings)
-                impact_path = str(storage.field_impact_path(alias=alias, search_term=search_term))
+                # Use the path the analysis actually wrote. Recomputing it
+                # with storage.field_impact_path() embeds a fresh timestamp,
+                # so the two never match and the menu went on to look for a
+                # file that did not exist.
+                if written:
+                    impact_path = str(written)
+                else:
+                    print_error("Field impact analysis did not produce a report file.")
+                    return
                 print_info(f"Using generated impact file: {impact_path}")
             except Exception as exc:
                 print_error(f"Field impact analysis failed: {exc}")
@@ -92,7 +95,7 @@ async def generate_lineage() -> None:
 
         # Quick confirmation — tell them exactly what they're getting
         formats_str = ", ".join(formats)
-        source_name = impact_path if impact_path else (search_term if 'search_term' in locals() else "lineage")
+        source_name = impact_path or search_term or "lineage"
         # Extract just the filename, not the full path, for a clean message
         import os
         clean_name = os.path.basename(str(source_name))

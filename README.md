@@ -4,7 +4,7 @@ ASFTool is a lightweight, high-performance async Python CLI for the Salesforce A
 
 ## Features
 
-- **SF CLI Authentication** — web login (opens browser) or device flow for headless/SSH; token auto-refresh and multi-org support
+- **SF CLI Authentication** — web login (opens browser) or device flow for headless/SSH; multi-org support
 - **Interactive Menu** — `asftool` alone drops you into a menu loop, like the original toolkit
 - **Dataset Operations** — list, extract to CSV, upload CSV, delete, show details
 - **Dashboard Operations** — list, backup JSON, show details
@@ -12,7 +12,7 @@ ASFTool is a lightweight, high-performance async Python CLI for the Salesforce A
 - **Data Manager Jobs** — list, show job details
 - **Diagnostics** — `asftool doctor` runs a full environment check
 - **Cross-Platform** — Windows, Linux, macOS
-- **Production Ready** — structured JSON logging, retries, async + multiprocessing parallelism
+- **Production Ready** — structured JSON logging to stderr and `~/.asftool/asftool.log`, retries that honour the server's `Retry-After`, bounded parallel scans, async + multiprocessing parallelism
 
 ## Installation
 
@@ -30,6 +30,9 @@ ASFT is designed to be product-agnostic: it talks to the Salesforce Analytics RE
 ## Quick Start
 
 ```bash
+# Create a working configuration (.env with a generated encryption key)
+asftool init
+
 # Authenticate (opens a browser)
 asftool auth login
 
@@ -55,6 +58,9 @@ asftool jobs list
 # Environment diagnostics
 asftool doctor
 asftool doctor config
+
+# Where is everything stored?
+asftool config show
 ```
 
 ## How Authentication Works
@@ -66,27 +72,45 @@ toolkit:
 1. `asftool auth login` runs `sf org login web --alias default` (opens the browser).
 2. The access token, instance URL, and username are captured from
    `sf org display --target-org default --json`.
-3. Credentials are encrypted and stored in the OS keyring (with encryption-key file
-   fallback for headless containers).
+3. Credentials are encrypted and stored in the OS keyring.
 
 Because SF CLI owns the refresh token, ASFTool gets a fresh token on demand with
-`sf org display` whenever the stored one is expired.
+`sf org display`.
+
+> **How expiry is detected.** The SF CLI does not report a token expiry — `sf org
+> display` has no such field, and the access token is opaque rather than a decodable
+> JWT. ASFTool therefore records when a token was last observed and treats it as
+> expired once it is older than an hour (`MAX_TOKEN_AGE` in
+> `asftool/core/auth/token_store.py`), at which point it is refreshed. When the
+> platform does supply an expiry, that value is used instead.
+
+> **Headless hosts without a keyring:** install the fallback backend with
+> `pip install 'asftool[headless]'` (pulls in `keyrings.alt`). Without a keyring
+> backend, `asftool auth status` reports that the token store is unavailable rather
+> than failing with a traceback.
 
 ## Configuration
 
 Copy `.env.example` to `.env` for local development. ASFTool reads these environment
-variables (with `ASFTOOL_` prefix):
+variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ASFTOOL_APP_NAME` | Application name | `asftool` |
-| `ASFTOOL_APP_VERSION` | Application version | `0.1.0` |
-| `ASFTOOL_LOG_LEVEL` | Log level | `INFO` |
-| `ASFTOOL_DEBUG` | Debug mode | `false` |
-| `ASFTOOL_SF_API_VERSION` | Salesforce API version | `v60.0` |
-| `ASFTOOL_SF_DEFAULT_DOMAIN` | Login domain | `login.salesforce.com` |
-| `ENCRYPTION_KEY` | Base64 32-byte key for token encryption | required |
-| `JWT_SECRET_KEY` | Internal token signing secret (≥32 chars) | required |
+| `ENCRYPTION_KEY` | Base64 32-byte key for token encryption | required¹ |
+| `SF_API_VERSION` | Salesforce API version | `v68.0` |
+| `SF_DEFAULT_DOMAIN` | Login domain | `login.salesforce.com` |
+| `APP_NAME` | Application name | `asftool` |
+| `APP_VERSION` | Application version | `0.1.0` |
+| `LOG_LEVEL` | Log level | `INFO` |
+| `DEBUG` | Debug mode | `false` |
+| `FIELD_IMPACT_MAX_CONCURRENT_SCANS` | Parallel asset scans during a field scan | `10` |
+
+> The variable names are **not** prefixed with `ASFTOOL_`. Earlier versions of this
+> README documented `ASFTOOL_*` names that the code never read; the table above lists
+> the names the code actually uses. `asftool config show` prints the values in effect.
+
+¹ Required to store tokens: it encrypts what goes into the OS keyring. Without it,
+`asftool` exits with a message telling you to run `asftool init` or create a `.env`.
 
 Generate keys:
 
@@ -94,8 +118,15 @@ Generate keys:
 python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
 ```
 
-Persistent state lives under `~/.asftool/`: configuration directory, log file
-(`asftool.log`), and (optionally) an encryption-key fallback file.
+Persistent state lives under `~/.asftool/`:
+
+| Path | Contents |
+|------|----------|
+| `~/.asftool/config.json` | Persisted user settings (e.g. the API version) |
+| `~/.asftool/asftool.log` | Structured JSON log |
+| `~/.asftool/downloads/<alias>/` | Extracted datasets, backups, lineage output |
+
+`asftool config show` prints all of these paths.
 
 ## Architecture
 
@@ -145,6 +176,25 @@ uv run ruff check .                # lint
 uv run mypy asftool                # typecheck
 uv run python scripts/verify-cross-platform.py  # platform sanity checks
 ```
+
+All three checks (`pytest`, `ruff`, `mypy`) also run in CI on every pull
+request. See [CHANGELOG.md](CHANGELOG.md) for the release history.
+
+### Contract tests against a real org
+
+`tests/live/` holds contract tests that call the real Analytics REST API
+and assert the models still parse what the platform returns. They are
+excluded from the default run because they need credentials and a real
+org:
+
+```bash
+# needs SF_AUTH_TOKEN and SF_DEFAULT_DOMAIN in .env
+uv run pytest -m live
+```
+
+The checked-in fixtures in `tests/fixtures/wave_responses.py` were
+captured from a live org and sanitized; these tests are what tells you
+when the platform has moved on from them.
 
 ### Live testing against a real org
 

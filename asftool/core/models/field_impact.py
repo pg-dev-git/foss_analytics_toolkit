@@ -1,6 +1,6 @@
 """Pydantic models for Field Impact Analysis Crawler."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -375,7 +375,7 @@ class FieldImpactReport(BaseModel):
     scope: FieldImpactScope
     summary: FieldImpactSummary
     details: FieldImpactDetail
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     execution_time_ms: int = 0
     errors: list[str] = Field(default_factory=list)  # Non-fatal errors during scan
 

@@ -13,6 +13,7 @@ from asftool.core.models import (
     DashboardDataset,
     DashboardListResponse,
 )
+from asftool.core.pagination import extract_page_token
 from asftool.core.storage import get_storage_manager
 
 logger = structlog.get_logger(__name__)
@@ -43,6 +44,7 @@ class DashboardService:
         """List all dashboards with pagination."""
         all_dashboards = []
         page_token = None
+        seen_tokens: set[str] = set()
 
         while True:
             response = await self.client.list_dashboards(
@@ -56,7 +58,13 @@ class DashboardService:
             if not data.next_page_url:
                 break
 
-            page_token = self._extract_page_token(data.next_page_url)
+            next_token = extract_page_token(data.next_page_url)
+            if not next_token or next_token in seen_tokens:
+                # A repeated cursor means the platform is not advancing;
+                # stop rather than loop forever.
+                break
+            seen_tokens.add(next_token)
+            page_token = next_token
 
         return all_dashboards
 
@@ -107,6 +115,8 @@ class DashboardService:
                 dashboard_id=dashboard_id,
             )
 
+        # A user-chosen path may not have an existing parent directory.
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(json_definition, indent=2, ensure_ascii=False), encoding="utf-8")
         logger.info("dashboard_backup_saved", path=str(output_path))
 
@@ -144,9 +154,3 @@ class DashboardService:
     # Helper Methods
     # =========================================================================
 
-    def _extract_page_token(self, url: str) -> str | None:
-        """Extract page token from next page URL."""
-        from urllib.parse import parse_qs, urlparse
-        parsed = urlparse(url)
-        params = parse_qs(parsed.query)
-        return params.get("pageToken", [None])[0]

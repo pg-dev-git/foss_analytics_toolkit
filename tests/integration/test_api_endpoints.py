@@ -37,10 +37,8 @@ def settings():
     """Create test settings."""
     import base64
     encryption_key = base64.urlsafe_b64encode(b"x" * 32).decode()
-    jwt_secret_key = base64.urlsafe_b64encode(b"y" * 32).decode()
     return Settings(
         encryption_key=encryption_key,
-        jwt_secret_key=jwt_secret_key,
         sf_api_version="v60.0",
         sf_default_domain="test.salesforce.com",
     )
@@ -248,15 +246,15 @@ class TestDashboardServiceIntegration:
         """Test dashboard backup."""
         service = DashboardService(mock_client, settings=settings)
 
-        from datetime import datetime
+        from datetime import UTC, datetime
         mock_response = MockResponse({
             "id": "0FK000000000001",
             "name": "TestDashboard",
             "label": "Test Dashboard",
             "state": {"widgets": []},
-            "created_date": datetime.utcnow().isoformat(),
+            "created_date": datetime.now(UTC).isoformat(),
             "created_by_id": "005000000000001",
-            "last_modified_date": datetime.utcnow().isoformat(),
+            "last_modified_date": datetime.now(UTC).isoformat(),
             "last_modified_by_id": "005000000000001",
         })
         mock_client._client.request.return_value = mock_response
@@ -282,23 +280,30 @@ class TestDataflowServiceIntegration:
         async def mock_list_jobs():
             nonlocal call_count
             call_count += 1
+            # The platform returns camelCase keys and a `dataflowJobs`
+            # collection key; the job carries a `label`, not a
+            # `dataflowName`/`dataflowId`/`command` triple.
             if call_count < 3:
                 return {
-                    "dataflowjobs": [{
+                    "dataflowJobs": [{
                         "id": "03D000000000001",
-                        "dataflow_id": "03C000000000001",
-                        "dataflow_name": "TestDataflow",
-                        "command": "start",
+                        "label": "TestDataflow",
+                        "jobType": "datasync",
+                        "startDate": "2024-01-01T00:00:00.000Z",
                         "status": "Running",
+                        "type": "dataflowjob",
                     }]
                 }
             return {
-                "dataflowjobs": [{
+                "dataflowJobs": [{
                     "id": "03D000000000001",
-                    "dataflow_id": "03C000000000001",
-                    "dataflow_name": "TestDataflow",
-                    "command": "start",
+                    "label": "TestDataflow",
+                    "jobType": "datasync",
+                    "startDate": "2024-01-01T00:00:00.000Z",
+                    "executedDate": "2024-01-01T00:05:00.000Z",
+                    "duration": 300,
                     "status": "Success",
+                    "type": "dataflowjob",
                 }]
             }
 

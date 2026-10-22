@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "ASFTool — Analytics REST API Software Tool (ASFT) — Lightweight, high-performance async Python CLI for the Salesforce Analytics REST API"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "Apache License 2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [
     {name = "Pedro Gagliardi", email = "pg-dev-git@users.noreply.github.com"}
 ]
@@ -12,7 +13,6 @@ keywords = ["salesforce", "asft", "analytics", "rest", "api", "cli", "async", "f
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU Affero General Public License v3 (AGPLv3)",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
@@ -31,8 +31,6 @@ dependencies = [
     "structlog>=24.1.0",
     "pandas>=2.2.0",
     "python-dotenv>=1.0.0",
-    "authlib>=1.3.0",
-    "python-jose[cryptography]>=3.3.0",
     "questionary>=2.0.0",
     "thefuzz[speedup]>=0.22.0",
 ]
@@ -50,6 +48,11 @@ dev = [
     "ruff>=0.5.0",
     "pre-commit>=3.7.0",
 ]
+headless = [
+    # Fallback keyring backend for containers and CI runners that have no
+    # OS keyring (e.g. a plain Docker image or a headless SSH session).
+    "keyrings.alt>=5.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/pg-dev-git/foss_analytics_toolkit"
@@ -57,12 +60,15 @@ Repository = "https://github.com/pg-dev-git/foss_analytics_toolkit"
 Issues = "https://github.com/pg-dev-git/foss_analytics_toolkit/issues"
 
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["asftool*"]
+
+[tool.setuptools.package-data]
+asftool = ["py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -70,7 +76,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers --tb=short"
+addopts = "-v --strict-markers --tb=short -m 'not live'"
+markers = [
+    "live: contract tests that run against a real Salesforce org (opt-in; needs SF_AUTH_TOKEN and SF_DEFAULT_DOMAIN in .env)",
+]
 
 [tool.mypy]
 python_version = "3.11"

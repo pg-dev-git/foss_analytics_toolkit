@@ -40,6 +40,22 @@ class TestConfigShow:
         assert "v68.0" in result.stdout
         assert "persisted" in result.stdout.lower()
 
+    def test_show_works_with_minimal_settings(self, runner, tmp_config, monkeypatch):
+        """``config show`` must not depend on the developer's ambient env.
+
+        Regression test for H-1: the command used to raise ValidationError
+        when ENCRYPTION_KEY was absent from the machine.
+        """
+        from asftool.core.config import get_settings
+
+        monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
+        get_settings.cache_clear()
+
+        result = runner.invoke(config_app, ["show"])
+        assert result.exit_code == 0, result.stdout
+        assert "Configuration" in result.stdout
+
+
 
 class TestConfigSetApiVersion:
     def test_persists_value(self, runner, tmp_config):

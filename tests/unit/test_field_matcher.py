@@ -1,6 +1,5 @@
 """Unit tests for FieldMatcher."""
 
-import pytest
 
 from asftool.core.models import MatchMode, MatchType
 from asftool.core.services.field_matcher import FieldMatcher, extract_field_strings

@@ -42,6 +42,7 @@ from asftool.cli.commands.dataflows import app as dataflows_app
 from asftool.cli.commands.datasets import app as datasets_app
 from asftool.cli.commands.doctor import app as doctor_app
 from asftool.cli.commands.fields import app as fields_app
+from asftool.cli.commands.init import init as init_command
 from asftool.cli.commands.jobs import app as jobs_app
 from asftool.cli.commands.lineage import app as lineage_app
 from asftool.cli.menu import Menu, create_menus
@@ -53,6 +54,7 @@ app = typer.Typer(
     help="ASFTool — Analytics REST API Software Tool (ASFT): lightweight CLI for Salesforce Analytics REST API",
     add_completion=False,
     no_args_is_help=True,  # subcommands-only when no menu loop
+    context_settings={"help_option_names": ["--help", "-h"]},
 )
 
 app.add_typer(auth_app, name="auth")
@@ -64,6 +66,7 @@ app.add_typer(doctor_app, name="doctor")
 app.add_typer(fields_app, name="fields")
 app.add_typer(config_app, name="config")
 app.add_typer(lineage_app, name="lineage")
+app.command("init")(init_command)
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +193,18 @@ async def _run_menu_loop(main_menu: Menu) -> None:
 
 def _has_subcommand(argv: list[str]) -> bool:
     """True if argv contains a known subcommand (not just --flags)."""
-    known = {"auth", "datasets", "dashboards", "dataflows", "jobs", "doctor", "fields", "config", "lineage"}
+    known = {
+        "auth",
+        "datasets",
+        "dashboards",
+        "dataflows",
+        "jobs",
+        "doctor",
+        "fields",
+        "config",
+        "lineage",
+        "init",
+    }
     for arg in argv[1:]:
         if arg in known:
             return True
@@ -200,8 +214,94 @@ def _has_subcommand(argv: list[str]) -> bool:
     return False
 
 
+def _wants_help(argv: list[str]) -> bool:
+    """True if the user asked for help or the version.
+
+    These must be handled by Typer. Routing them to the menu loop meant
+    `asftool --help` printed nothing useful (or died), and `--version`
+    did the same.
+    """
+    return any(arg in ("--help", "-h", "--version") for arg in argv[1:])
+
+
+def _preflight() -> str | None:
+    """Check the required configuration before doing any work.
+
+    Returns:
+        An actionable message when a required setting is missing, else None.
+
+    The encryption key protects the tokens stored in the OS keyring, so
+    without it the tool cannot authenticate. Saying so plainly beats a
+    pydantic traceback.
+
+    ``doctor`` and ``config show`` are exempt: they are the commands a
+    user runs precisely *because* something is misconfigured, and they
+    must work without a working configuration.
+    """
+    from asftool.core.config import get_settings
+
+    try:
+        settings = get_settings()
+    except Exception as e:  # pragma: no cover - defensive
+        return f"Could not read the configuration: {e}"
+
+    missing = []
+    if not settings.encryption_key:
+        missing.append("ENCRYPTION_KEY")
+    if not missing:
+        return None
+
+    names = ", ".join(missing)
+    return (
+        f"Missing {names}. "
+        "Run: cp .env.example .env  (then set the value), "
+        "or: asftool init"
+    )
+
+
+#: Commands that must run even when the configuration is incomplete.
+#: ``doctor`` and ``config show`` are the commands a user runs precisely
+#: because something is misconfigured; ``init`` is what fixes it.
+_PREFLIGHT_EXEMPT = {"doctor", "config", "init"}
+
+
+def _setup_logging() -> None:
+    """Configure structured JSON logging.
+
+    Without this the whole package used structlog's default configuration:
+    human-readable output on stdout, never written to a file. The README
+    advertises "structured JSON logging" and the doctor command checks for
+    ``~/.asftool/asftool.log`` -- neither was true.
+
+    A failure to set up logging must not stop the tool from running, so
+    this degrades to the default configuration rather than raising.
+    """
+    try:
+        from asftool.core.logger import setup_logging
+
+        setup_logging()
+    except Exception as e:  # pragma: no cover - defensive
+        print_error(f"Could not configure logging: {e}")
+
+
 def main() -> None:
     """Entry point: dispatch to subcommand or run interactive menu loop."""
+    if _wants_help(sys.argv):
+        # Let Typer print the help / version text.
+        app()
+        return
+
+    _setup_logging()
+
+    argv_subcommand = next(
+        (arg for arg in sys.argv[1:] if arg in _PREFLIGHT_EXEMPT), None
+    )
+    if argv_subcommand is None:
+        problem = _preflight()
+        if problem:
+            print_error(problem)
+            raise SystemExit(1)
+
     if not _has_subcommand(sys.argv):
         main_menu, _ = create_menus()
         asyncio.run(_run_menu_loop(main_menu))
