@@ -106,13 +106,22 @@ async def show_dashboard_async(dashboard_id: str) -> None:
         async with session.client_context() as client:
             service = DashboardService(client, session.settings)
             db = await service.get_dashboard(dashboard_id)
-            datasets = await service.get_dashboard_datasets(dashboard_id)
+
+            # The datasets are supplementary. The platform answers 404 for
+            # this sub-resource on some dashboards, and that must not stop
+            # the dashboard's own details from being shown.
+            try:
+                datasets = await service.get_dashboard_datasets(dashboard_id)
+            except Exception:
+                datasets = None
 
             print_header(f"Dashboard: {db.name}")
             print_info(f"ID: {db.id}")
             print_info(f"Label: {db.label}")
             print_info(f"Folder: {db.folder_name or 'N/A'}")
-            if datasets:
+            if datasets is None:
+                print_info("Datasets: (not available)")
+            elif datasets:
                 names = ", ".join(d.name for d in datasets)
                 print_info(f"Datasets: {names}")
             else:
